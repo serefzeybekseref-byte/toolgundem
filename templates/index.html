@@ -48,29 +48,32 @@
     <div class="section-header">
       <h2 class="section-title">🔥 Öne Çıkan Araçlar</h2>
     </div>
-    <div class="card-grid">
+    <div class="leaderboard-list">
       {% for p in trending %}
-      <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
-        {% if p.thumbnail %}
-        <div class="tool-card-img">
+      <a class="leaderboard-item fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+        <div class="leaderboard-rank">#{{ loop.index }}</div>
+        <div class="leaderboard-logo">
+          {% if p.thumbnail %}
           <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+          {% else %}
+          <span class="leaderboard-logo-fallback">{{ p.original_name[0]|upper }}</span>
+          {% endif %}
         </div>
-        {% endif %}
-        <div class="tool-card-body">
-          <div class="tool-card-badges">
-            {% if loop.index <= 3 %}<span class="badge badge-trend">🔥 Trend</span>{% endif %}
-            {% if p.votes > 100 %}<span class="badge badge-popular">⭐ Popüler</span>{% endif %}
+        <div class="leaderboard-main">
+          <div class="leaderboard-title-row">
+            <span class="leaderboard-title">{{ p.original_name }}</span>
+            {% if loop.index <= 3 %}<span class="badge badge-trend">🔥</span>{% endif %}
           </div>
-          <h3 class="tool-card-title">{{ p.original_name }}</h3>
-          <p class="tool-card-summary">{{ p.summary_tr }}</p>
-          <div class="tool-card-footer">
-            <div class="tool-card-tags">
-              {% for t in p.tags.split(',')[:2] if t %}
-              <span class="tag">{{ t.strip() }}</span>
-              {% endfor %}
-            </div>
-            <div class="tool-card-votes">▲ {{ p.votes }}</div>
+          <div class="leaderboard-summary">{{ p.summary_tr }}</div>
+          <div class="leaderboard-tags">
+            {% for t in p.tags.split(',')[:2] if t %}
+            <span class="tag">{{ t.strip() }}</span>
+            {% endfor %}
           </div>
+        </div>
+        <div class="leaderboard-action">
+          <span>▲ {{ p.votes }}</span>
+          <span class="leaderboard-action-label">Siteye Git</span>
         </div>
       </a>
       {% endfor %}
