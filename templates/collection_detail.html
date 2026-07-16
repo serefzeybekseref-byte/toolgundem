@@ -24,6 +24,13 @@
       <div class="comparison-rank">
         <span class="rank-badge">#{{ loop.index }}</span>
       </div>
+      <div class="leaderboard-logo" style="width: 56px; height: 56px;">
+        {% if item.thumbnail %}
+        <img src="{{ item.thumbnail }}" alt="{{ item.original_name }}" loading="lazy">
+        {% else %}
+        <span class="leaderboard-logo-fallback">{{ item.original_name[0]|upper }}</span>
+        {% endif %}
+      </div>
       <div class="comparison-main">
         <div class="comparison-top">
           <div>

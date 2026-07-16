@@ -90,11 +90,13 @@
     <div class="card-grid">
       {% for p in recent %}
       <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
-        {% if p.thumbnail %}
         <div class="tool-card-img">
+          {% if p.thumbnail %}
           <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+          {% else %}
+          <span class="tool-card-img-fallback">{{ p.original_name[0]|upper }}</span>
+          {% endif %}
         </div>
-        {% endif %}
         <div class="tool-card-body">
           <div class="tool-card-badges">
             <span class="badge badge-new">🆕 Yeni</span>

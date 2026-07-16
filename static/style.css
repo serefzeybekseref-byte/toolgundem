@@ -532,6 +532,15 @@ h1, h2, h3, h4 {
   background-color: var(--surface-hover);
   border-bottom: 1px solid var(--border);
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-card-img-fallback {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--accent);
 }
 
 .tool-card-img img {
