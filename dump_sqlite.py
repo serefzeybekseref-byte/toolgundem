@@ -5,6 +5,11 @@ import db
 
 products = db.get_all_products()
 comparisons = db.get_all_comparisons()
+# get_all_comparisons() araclari (tools) icermez, o yuzden her karsilastirmanin
+# detayini get_comparison_by_slug ile ayrica cekip tools'u ekliyoruz.
+for c in comparisons:
+    full = db.get_comparison_by_slug(c["slug"])
+    c["tools"] = full["tools"] if full else []
 collections = db.get_all_collections()
 # get_all_collections() urunleri (items) icermez, o yuzden her koleksiyonun
 # detayini get_collection_by_slug ile ayrica cekip items'i ekliyoruz.

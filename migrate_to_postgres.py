@@ -52,8 +52,14 @@ for c in comparisons:
     conn = db.get_connection()
     existing = conn.execute("SELECT id FROM comparisons WHERE slug = ?", (c["slug"],)).fetchone()
     if existing:
-        conn.close()
-        continue
+        comp_id = dict(existing)["id"]
+        existing_items = conn.execute(
+            "SELECT COUNT(*) as cnt FROM comparison_items WHERE comparison_id = ?", (comp_id,)
+        ).fetchone()
+        if dict(existing_items)["cnt"] > 0:
+            conn.close()
+            continue
+    conn.close()
     items = [
         {
             "rank": it["rank"], "name": it["name"], "score": it["score"],
