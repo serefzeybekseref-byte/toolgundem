@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ product.original_name }} — ToolGündem{% endblock %}
+{% block description %}{{ product.summary_tr }}{% endblock %}
+{% block og_title %}{{ product.original_name }}{% endblock %}
+{% block og_desc %}{{ product.summary_tr }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    {% if product.topics %}
+    {% set first_topic = product.topics.split(',')[0].strip() %}
+    <a href="/kategori/{{ first_topic }}">{{ topic_labels.get(first_topic, first_topic) }}</a>
+    <span class="breadcrumb-sep">/</span>
+    {% endif %}
+    <span>{{ product.original_name }}</span>
+  </nav>
+
+  <div class="detail-hero">
+    <div class="detail-info">
+      <div class="detail-badges">
+        {% if product.votes > 100 %}<span class="badge badge-popular">⭐ Popüler</span>{% endif %}
+        {% if product.website and 'free' in (product.tags|lower) %}<span class="badge badge-free">🆓 Ücretsiz</span>{% endif %}
+      </div>
+      <h1 class="detail-title">{{ product.original_name }}</h1>
+      <p class="detail-original mono" style="color: var(--accent); font-size: 1.1rem; font-weight: 500;">{{ product.title_tr }}</p>
+      <p class="detail-summary">{{ product.summary_tr }}</p>
+      <div class="detail-actions">
+        {% if product.website %}
+        <a class="btn btn-primary" href="{{ product.website }}" target="_blank" rel="noopener">Siteyi Ziyaret Et →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% if product.thumbnail %}
+    <div class="detail-logo-card" style="width: 200px; flex-shrink: 0; background-color: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+      <img src="{{ product.thumbnail }}" alt="{{ product.original_name }} logo" style="width: 100%; height: auto; display: block; object-fit: cover;">
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="detail-content">
+    <div class="detail-body" style="font-size: 1.1rem; line-height: 1.8; color: var(--text);">
+      <h3 style="margin-bottom: 16px; color: var(--accent);">Detaylı İnceleme</h3>
+      {{ product.content_tr }}
+    </div>
+  </div>
+
+  <div class="detail-tags">
+    {% for t in product.tags.split(',') if t %}
+    <span class="tag">{{ t.strip() }}</span>
+    {% endfor %}
+  </div>
+
+  {% if product.topics %}
+  <div class="detail-topics">
+    <span class="detail-topics-label">Kategoriler:</span>
+    {% for t in product.topics.split(',') if t.strip() %}
+    <a href="/kategori/{{ t.strip() }}" class="category-chip-sm">
+      {{ topic_icons.get(t.strip(), '📁') }} {{ topic_labels.get(t.strip(), t.strip()) }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="detail-meta mono">
+    Eklenme: {{ product.created_at[:10] if product.created_at else 'Bilinmiyor' }}
+  </div>
+
+  {% if similar %}
+  <section class="section similar-section">
+    <div class="section-header">
+      <h2 class="section-title">🔗 Benzer Araçlar</h2>
+    </div>
+    <div class="card-grid">
+      {% for p in similar %}
+      <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+        <div class="tool-card-body">
+          <h3 class="tool-card-title">{{ p.original_name }}</h3>
+          <p class="tool-card-summary">{{ p.summary_tr }}</p>
+          <div class="tool-card-footer">
+            <div class="tool-card-tags">
+              {% for t in p.tags.split(',')[:2] if t %}
+              <span class="tag">{{ t.strip() }}</span>
+              {% endfor %}
+            </div>
+            <div class="tool-card-votes">▲ {{ p.votes }}</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

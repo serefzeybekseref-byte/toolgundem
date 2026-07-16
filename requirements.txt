@@ -1,1 +1,6 @@
 flask
+requests
+python-dotenv
+gunicorn
+google-generativeai
+psycopg2-binary

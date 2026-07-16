@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}"{{ query }}" Arama Sonuçları — ToolGündem{% endblock %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>Arama</span>
+  </nav>
+
+  <div class="page-header">
+    {% if query %}
+    <h1 class="page-title">"{{ query }}" için sonuçlar</h1>
+    <p class="page-subtitle">{{ results|length }} araç bulundu</p>
+    {% else %}
+    <h1 class="page-title">🔍 Araç Ara</h1>
+    <p class="page-subtitle">Yapay zeka araçları arasında arayın</p>
+    {% endif %}
+  </div>
+
+  {% if query %}
+  <div class="card-grid">
+    {% for p in results %}
+    <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+      {% if p.thumbnail %}
+      <div class="tool-card-img">
+        <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+      </div>
+      {% endif %}
+      <div class="tool-card-body">
+        <h3 class="tool-card-title">{{ p.original_name }}</h3>
+        <p class="tool-card-summary">{{ p.summary_tr }}</p>
+        <div class="tool-card-footer">
+          <div class="tool-card-tags">
+            {% for t in p.tags.split(',')[:2] if t %}
+            <span class="tag">{{ t.strip() }}</span>
+            {% endfor %}
+          </div>
+          <div class="tool-card-votes">▲ {{ p.votes }}</div>
+        </div>
+      </div>
+    </a>
+    {% else %}
+    <div class="empty-state">
+      <p>"{{ query }}" ile eşleşen araç bulunamadı.</p>
+      <a href="/" class="btn btn-outline">Ana Sayfaya Dön</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

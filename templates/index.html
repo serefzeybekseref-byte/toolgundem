@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}ToolGündem — Türkiye'nin AI Araç Keşif Platformu{% endblock %}
+
+{% block ticker %}
+<div class="ticker">
+  <div class="ticker-track">
+    {% for p in trending %}
+    <span class="ticker-item">{{ p.original_name }} <span class="ticker-votes">▲{{ p.votes }}</span></span>
+    {% endfor %}
+    {% for p in trending %}
+    <span class="ticker-item">{{ p.original_name }} <span class="ticker-votes">▲{{ p.votes }}</span></span>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container text-center">
+    <div class="hero-badge">✨ Türkiye'nin Yapay Zeka Haritası</div>
+    <h1 class="hero-title" style="font-size: 3.5rem; line-height: 1.1; margin-bottom: 24px;">Doğru Yapay Zeka Aracını<br><span style="color: var(--accent);">Dakikalar İçinde Bulun</span></h1>
+    <p class="hero-subtitle" style="font-size: 1.15rem; max-width: 650px; margin-inline: auto;">Binlerce araç arasında kaybolmayın. Sizin için en uygun olanı keşfedin, karşılaştırın ve hemen kullanmaya başlayın.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-number">{{ total_products }}+</span><span class="stat-label">Araç</span></div>
+      <div class="stat"><span class="stat-number">{{ comparisons|length }}</span><span class="stat-label">Karşılaştırma</span></div>
+      <div class="stat"><span class="stat-number">{{ topics|length }}</span><span class="stat-label">Kategori</span></div>
+    </div>
+    
+    <div class="ai-advisor-box fade-in" style="margin-top: 56px; max-width: 750px; margin-inline: auto; background-color: var(--surface); padding: 32px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.3); position: relative; overflow: hidden;">
+      <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent), var(--green));"></div>
+      <h3 style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; font-size: 1.5rem;"><span style="font-size: 1.8rem;">🤖</span> AI Karar Danışmanı</h3>
+      <p style="color: var(--text-secondary); font-size: 1.05rem; margin-bottom: 24px; text-align: center;">Ne yapmak istediğinizi kendi kelimelerinizle yazın, aradığınızı sizin yerinize bulup filtreleyelim.</p>
+      <form id="ai-advisor-form" style="display: flex; gap: 12px;">
+        <input type="text" id="advisor-input" placeholder="Örn: Sunum hazırlamam lazım, hangi araç işimi çözer?" style="flex: 1; padding: 16px 20px; font-size: 1.05rem; border-radius: var(--radius-md); border: 2px solid var(--border); background: var(--bg); color: var(--text); transition: border-color 0.2s;" required>
+        <button type="submit" class="btn btn-primary" id="advisor-submit" style="padding: 16px 32px; font-size: 1.05rem;">Danış</button>
+      </form>
+      <div id="advisor-results" style="margin-top: 24px; text-align: left; display: none;">
+        <div id="advisor-message" style="margin-bottom: 16px; font-weight: 500; color: var(--accent);"></div>
+        <div id="advisor-tools" style="display: flex; flex-direction: column; gap: 12px;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Trending -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">🔥 Öne Çıkan Araçlar</h2>
+    </div>
+    <div class="card-grid">
+      {% for p in trending %}
+      <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+        {% if p.thumbnail %}
+        <div class="tool-card-img">
+          <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+        </div>
+        {% endif %}
+        <div class="tool-card-body">
+          <div class="tool-card-badges">
+            {% if loop.index <= 3 %}<span class="badge badge-trend">🔥 Trend</span>{% endif %}
+            {% if p.votes > 100 %}<span class="badge badge-popular">⭐ Popüler</span>{% endif %}
+          </div>
+          <h3 class="tool-card-title">{{ p.original_name }}</h3>
+          <p class="tool-card-summary">{{ p.summary_tr }}</p>
+          <div class="tool-card-footer">
+            <div class="tool-card-tags">
+              {% for t in p.tags.split(',')[:2] if t %}
+              <span class="tag">{{ t.strip() }}</span>
+              {% endfor %}
+            </div>
+            <div class="tool-card-votes">▲ {{ p.votes }}</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Recent -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">🆕 Son Eklenenler</h2>
+    </div>
+    <div class="card-grid">
+      {% for p in recent %}
+      <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+        {% if p.thumbnail %}
+        <div class="tool-card-img">
+          <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+        </div>
+        {% endif %}
+        <div class="tool-card-body">
+          <div class="tool-card-badges">
+            <span class="badge badge-new">🆕 Yeni</span>
+          </div>
+          <h3 class="tool-card-title">{{ p.original_name }}</h3>
+          <p class="tool-card-summary">{{ p.summary_tr }}</p>
+          <div class="tool-card-footer">
+            <div class="tool-card-tags">
+              {% for t in p.tags.split(',')[:2] if t %}
+              <span class="tag">{{ t.strip() }}</span>
+              {% endfor %}
+            </div>
+            <div class="tool-card-votes">▲ {{ p.votes }}</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Categories -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">📂 Kategoriler</h2>
+    </div>
+    <div class="category-grid">
+      {% for topic, count in topics[:16] %}
+      <a href="{{ url_for('category', topic=topic) }}" class="category-chip fade-in">
+        <span class="category-icon">{{ topic_icons.get(topic, '📁') }}</span>
+        <span class="category-name">{{ topic_labels.get(topic, topic) }}</span>
+        <span class="category-count">{{ count }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Comparisons -->
+{% if comparisons %}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">⚔️ Karşılaştırmalar</h2>
+      <a href="/karsilastirma" class="section-link">Tümünü Gör →</a>
+    </div>
+    <div class="card-grid">
+      {% for c in comparisons[:3] %}
+      <a href="/karsilastirma/{{ c.slug }}" class="compare-card fade-in">
+        <span class="compare-count">{{ c.tool_count }} araç</span>
+        <h3 class="compare-title">{{ c.title }}</h3>
+        <span class="compare-date mono">{{ c.updated_at[:10] }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ collection.title }} — ToolGündem{% endblock %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="/koleksiyonlar">Koleksiyonlar</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{ collection.title }}</span>
+  </nav>
+
+  <div class="detail-hero">
+    <div class="detail-info">
+      <h1 class="detail-title">{{ collection.title }}</h1>
+      <p class="detail-summary">{{ collection.description }}</p>
+    </div>
+  </div>
+
+  <div class="comparison-list">
+    {% for item in collection.items %}
+    <div class="comparison-item fade-in">
+      <div class="comparison-rank">
+        <span class="rank-badge">#{{ loop.index }}</span>
+      </div>
+      <div class="comparison-main">
+        <div class="comparison-top">
+          <div>
+            <h3 class="comparison-name">
+              <a href="/urun/{{ item.slug }}">{{ item.original_name }}</a>
+            </h3>
+            <p class="comparison-best-for" style="color: var(--text-secondary); margin-bottom: 8px;">{{ item.summary_tr }}</p>
+            {% if item.reason %}
+            <div style="background-color: var(--surface-hover); padding: 12px; border-radius: var(--radius-sm); border-left: 3px solid var(--accent); margin-top: 12px;">
+              <span style="font-weight: 600; color: var(--accent); font-size: 0.875rem;">💡 Neden Seçtik?</span>
+              <p style="font-size: 0.9rem; margin-top: 4px;">{{ item.reason }}</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ comparison.title }} — ToolGündem{% endblock %}
+{% block description %}{{ comparison.intro }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="/karsilastirma">Karşılaştırmalar</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{ comparison.title }}</span>
+  </nav>
+
+  <div class="page-header">
+    <h1 class="page-title">{{ comparison.title }}</h1>
+    <p class="page-subtitle">{{ comparison.intro }}</p>
+  </div>
+
+  <div class="comparison-list">
+    {% for item in comparison.tools %}
+    <div class="comparison-item fade-in{% if loop.index == 1 %} comparison-winner{% endif %}">
+      <div class="comparison-rank">
+        {% if loop.index == 1 %}
+        <span class="rank-badge rank-gold">🥇</span>
+        {% elif loop.index == 2 %}
+        <span class="rank-badge rank-silver">🥈</span>
+        {% elif loop.index == 3 %}
+        <span class="rank-badge rank-bronze">🥉</span>
+        {% else %}
+        <span class="rank-badge">#{{ item.rank }}</span>
+        {% endif %}
+      </div>
+      <div class="comparison-main">
+        <div class="comparison-top">
+          <div>
+            <h3 class="comparison-name">
+              {% if item.website %}<a href="{{ item.website }}" target="_blank" rel="noopener">{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}
+            </h3>
+            {% if item.best_for %}
+            <p class="comparison-best-for">{{ item.best_for }}</p>
+            {% endif %}
+          </div>
+          <div class="comparison-score">
+            <div class="score-bar">
+              <div class="score-fill" style="width: {{ (item.score / 10 * 100)|round(0, 'floor') }}%;"></div>
+            </div>
+            <span class="score-label mono">{{ item.score }}/10</span>
+          </div>
+        </div>
+
+        {% if item.pricing %}
+        <div class="comparison-pricing">
+          {% set p = item.pricing|lower %}
+          {% if 'ucretsiz' in p and ('$' not in p and 'ucretli' not in p and '/ay' not in p) %}
+            <span class="badge badge-free">🆓 Ücretsiz</span>
+          {% elif 'ucretsiz' in p %}
+            <span class="badge badge-freemium">💎 Freemium</span>
+          {% else %}
+            <span class="badge badge-paid">💰 Ücretli</span>
+          {% endif %}
+          <span class="pricing-detail mono">{{ item.pricing }}</span>
+        </div>
+        {% endif %}
+
+        <div class="comparison-pros-cons">
+          {% if item.pros %}
+          <div class="pros">
+            <div class="pros-title">✅ Artılar</div>
+            <ul>
+              {% for p in item.pros %}<li>{{ p }}</li>{% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          {% if item.cons %}
+          <div class="cons">
+            <div class="cons-title">❌ Eksiler</div>
+            <ul>
+              {% for c in item.cons %}<li>{{ c }}</li>{% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="detail-meta mono">Son güncelleme: {{ comparison.updated_at[:10] }}</p>
+</div>
+{% endblock %}

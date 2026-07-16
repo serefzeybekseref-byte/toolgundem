@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}ToolGündem — Türkiye'nin AI Araç Keşif Platformu{% endblock %}</title>
+<meta name="description" content="{% block description %}Yapay zeka araçlarını keşfedin, karşılaştırın ve en iyisini seçin. Türkçe incelemeler, günlük güncellemeler.{% endblock %}">
+<meta property="og:title" content="{% block og_title %}ToolGündem{% endblock %}">
+<meta property="og:description" content="{% block og_desc %}Türkiye'nin AI araç keşif platformu{% endblock %}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="tr_TR">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <a href="/" class="logo">
+      <span class="logo-accent">Tool</span>Gündem
+    </a>
+    <nav class="nav">
+      <a href="/" class="nav-link">Keşfet</a>
+      <a href="/koleksiyonlar" class="nav-link">Koleksiyonlar</a>
+      <a href="/karsilastirma" class="nav-link">Karşılaştır</a>
+    </nav>
+    <div class="header-actions">
+      <form id="search-form" action="/ara" method="GET" class="search-form">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="search-input" name="q" placeholder="Araç ara..." class="search-input" autocomplete="off" value="{{ request.args.get('q', '') }}">
+      </form>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="theme-hint">Modu Değiştir</span>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Tema değiştir">🌙</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+{% block ticker %}{% endblock %}
+
+<main class="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="logo"><span class="logo-accent">Tool</span>Gündem</span>
+      <p class="footer-tagline">Türkiye'nin AI araç keşif platformu</p>
+    </div>
+    <div class="footer-links">
+      <a href="/">Ana Sayfa</a>
+      <a href="/karsilastirma">Karşılaştırmalar</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+    <div class="footer-copy">
+      Yapay zeka ekosisteminden günlük verilerle güncellenir.
+    </div>
+  </div>
+</footer>
+
+<button id="scroll-top" class="scroll-top" aria-label="Yukarı çık">↑</button>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

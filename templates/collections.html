@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Koleksiyonlar — ToolGündem{% endblock %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>Koleksiyonlar</span>
+  </nav>
+
+  <div class="page-header">
+    <h1 class="page-title">📦 Araç Koleksiyonları</h1>
+    <p class="page-subtitle">İhtiyacınıza en uygun özenle seçilmiş yapay zeka araç paketleri.</p>
+  </div>
+
+  <div class="card-grid">
+    {% for col in collections %}
+    <a href="/koleksiyon/{{ col.slug }}" class="compare-card fade-in">
+      <h3 class="compare-title">{{ col.title }}</h3>
+      {% if col.description %}
+      <p class="compare-intro">{{ col.description }}</p>
+      {% endif %}
+    </a>
+    {% else %}
+    <div class="empty-state">
+      <p>Henüz koleksiyon bulunmuyor.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

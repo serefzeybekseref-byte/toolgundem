@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}AI Araç Karşılaştırmaları — ToolGündem{% endblock %}
+{% block description %}AI araçlarını kategorilere göre karşılaştırın. ChatGPT vs Claude, Midjourney vs DALL-E ve daha fazlası.{% endblock %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>Karşılaştırmalar</span>
+  </nav>
+
+  <div class="page-header">
+    <h1 class="page-title">⚔️ Kategori Karşılaştırmaları</h1>
+    <p class="page-subtitle">Her kategoride en iyi araçlar, 10 üzerinden puanlanmış ve güncel tutuluyor.</p>
+  </div>
+
+  <div class="card-grid">
+    {% for c in comparisons %}
+    <a href="/karsilastirma/{{ c.slug }}" class="compare-card fade-in">
+      <span class="compare-count">{{ c.tool_count }} araç</span>
+      <h3 class="compare-title">{{ c.title }}</h3>
+      {% if c.intro %}
+      <p class="compare-intro">{{ c.intro[:100] }}{% if c.intro|length > 100 %}...{% endif %}</p>
+      {% endif %}
+      <span class="compare-date mono">Güncellendi: {{ c.updated_at[:10] }}</span>
+    </a>
+    {% else %}
+    <div class="empty-state">
+      <p>Henüz karşılaştırma eklenmedi.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

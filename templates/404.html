@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Sayfa Bulunamadı — ToolGündem{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="error-page">
+    <div class="error-code" style="font-size: 6rem; font-weight: 800; color: var(--accent); margin-bottom: 1rem;">404</div>
+    <h1 class="error-title" style="margin-bottom: 1rem;">Sayfa Bulunamadı</h1>
+    <p class="error-message" style="color: var(--text-secondary); margin-bottom: 2rem;">Aradığınız sayfa mevcut değil veya taşınmış olabilir.</p>
+    <a href="/" class="btn btn-primary">Ana Sayfaya Dön</a>
+  </div>
+</div>
+{% endblock %}

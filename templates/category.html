@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ topic_label }} AI Araçları — ToolGündem{% endblock %}
+{% block description %}{{ topic_label }} kategorisindeki en iyi yapay zeka araçlarını keşfedin.{% endblock %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{ topic_label }}</span>
+  </nav>
+
+  <div class="page-header">
+    <h1 class="page-title">{{ topic_icon }} {{ topic_label }} Araçları</h1>
+    <p class="page-subtitle">{{ products|length }} araç listeleniyor</p>
+  </div>
+
+  <div class="category-sidebar-layout">
+    <aside class="category-sidebar">
+      <h3 class="sidebar-title">Kategoriler</h3>
+      <div class="sidebar-topics">
+        {% for t, count in all_topics[:20] %}
+        <a href="/kategori/{{ t }}" class="sidebar-topic{% if t == topic %} active{% endif %}">
+          {{ topic_icons.get(t, '📁') }} {{ topic_labels.get(t, t) }}
+          <span class="sidebar-count">{{ count }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <div class="category-main">
+      <div id="products-grid" class="card-grid">
+        {% for p in products %}
+        <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+          {% if p.thumbnail %}
+          <div class="tool-card-img">
+            <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+          </div>
+          {% endif %}
+          <div class="tool-card-body">
+            <h3 class="tool-card-title">{{ p.original_name }}</h3>
+            <p class="tool-card-summary">{{ p.summary_tr }}</p>
+            <div class="tool-card-footer">
+              <div class="tool-card-tags">
+                {% for t in p.tags.split(',')[:2] if t %}
+                <span class="tag">{{ t.strip() }}</span>
+                {% endfor %}
+              </div>
+              <div class="tool-card-votes">▲ {{ p.votes }}</div>
+            </div>
+          </div>
+        </a>
+        {% else %}
+        <div class="empty-state">
+          <p>Bu kategoride henüz araç yok.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
