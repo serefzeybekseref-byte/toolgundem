@@ -9,7 +9,7 @@ from db import (
     get_trending_products, get_recent_products,
     get_products_by_topic, search_products,
     get_all_topics, get_similar_products,
-    get_products_paginated, get_comparisons_for_product,
+    get_products_paginated, get_comparisons_for_product, get_collections_for_product,
 )
 from rules_engine import derive_use_cases_and_personas
 
@@ -121,10 +121,12 @@ def detail(slug):
         abort(404)
     similar = get_similar_products(product["id"], limit=4)
     related_comparisons = get_comparisons_for_product(product.get("normalized_name"))
+    related_collections = get_collections_for_product(product.get("id"))
     tags = derive_use_cases_and_personas(product.get("topics", ""), product.get("tags", ""))
     return render_template(
         "detail.html", product=product, similar=similar,
         related_comparisons=related_comparisons,
+        related_collections=related_collections,
         use_cases=tags["use_cases"], personas=tags["personas"],
     )
 

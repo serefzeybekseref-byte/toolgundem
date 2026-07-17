@@ -490,6 +490,21 @@ def get_comparisons_for_product(normalized_name: str, limit: int = 3):
     conn.close()
     return [dict(r) for r in rows]
 
+def get_collections_for_product(product_id: int, limit: int = 3):
+    """Bir urunun hangi koleksiyonlarda yer aldigini dondurur (cross-link icin)."""
+    if not product_id:
+        return []
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT DISTINCT col.slug, col.title
+        FROM collections col
+        JOIN collection_items ci ON ci.collection_id = col.id
+        WHERE ci.product_id = ?
+        LIMIT ?
+    """, (product_id, limit)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
 def get_trending_products(limit=5):
     """En cok oy alan urunler."""
     conn = get_connection()
