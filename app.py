@@ -11,6 +11,7 @@ from db import (
     get_all_topics, get_similar_products,
     get_products_paginated, get_comparisons_for_product,
 )
+from rules_engine import derive_use_cases_and_personas
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("toolgundem")
@@ -120,7 +121,12 @@ def detail(slug):
         abort(404)
     similar = get_similar_products(product["id"], limit=4)
     related_comparisons = get_comparisons_for_product(product.get("normalized_name"))
-    return render_template("detail.html", product=product, similar=similar, related_comparisons=related_comparisons)
+    tags = derive_use_cases_and_personas(product.get("topics", ""), product.get("tags", ""))
+    return render_template(
+        "detail.html", product=product, similar=similar,
+        related_comparisons=related_comparisons,
+        use_cases=tags["use_cases"], personas=tags["personas"],
+    )
 
 
 @app.route("/karsilastirma")

@@ -48,6 +48,22 @@
         <div>{{ product.why_use_it }}</div>
       </div>
       {% endif %}
+      {% if use_cases %}
+      <div>
+        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">🎯 KULLANIM AMACI</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          {% for u in use_cases %}<span class="tag">{{ u }}</span>{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% if personas %}
+      <div>
+        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">👥 SIKLIKLA TERCİH EDEN</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          {% for p in personas %}<span class="tag">{{ p }}</span>{% endfor %}
+        </div>
+      </div>
+      {% endif %}
       {% if product.platforms %}
       <div>
         <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">💻 PLATFORM</div>

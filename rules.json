@@ -1,0 +1,51 @@
+{
+  "_meta": {
+    "use_cases_sozluk": [
+      "Kod yazmak", "Görsel üretmek", "Video üretmek", "Ses üretmek",
+      "Sunum hazırlamak", "Yazı yazmak", "Araştırma yapmak", "Veri analizi yapmak",
+      "Otomasyon kurmak", "Pazarlama yapmak", "Tasarım yapmak", "Genel üretkenlik"
+    ],
+    "persona_sozluk": [
+      "Yeni Başlayan", "Profesyonel", "Yazılımcı", "Tasarımcı",
+      "İçerik Üreticisi", "Pazarlamacı", "Öğrenci", "İşletme"
+    ]
+  },
+  "AI": { "use_cases": ["Genel üretkenlik"], "personas": ["Profesyonel"] },
+  "Chatbot": { "use_cases": ["Araştırma yapmak", "Genel üretkenlik"], "personas": ["Yeni Başlayan", "Profesyonel"] },
+  "Gorsel": { "use_cases": ["Görsel üretmek", "Tasarım yapmak"], "personas": ["Tasarımcı", "İçerik Üreticisi"] },
+  "Video": { "use_cases": ["Video üretmek"], "personas": ["İçerik Üreticisi", "Pazarlamacı"] },
+  "Kod": { "use_cases": ["Kod yazmak"], "personas": ["Yazılımcı", "Profesyonel"] },
+  "NoCode": { "use_cases": ["Otomasyon kurmak", "Kod yazmak"], "personas": ["İşletme", "Yeni Başlayan"] },
+  "Yazi": { "use_cases": ["Yazı yazmak"], "personas": ["İçerik Üreticisi", "Pazarlamacı"] },
+  "SEO": { "use_cases": ["Pazarlama yapmak", "Yazı yazmak"], "personas": ["Pazarlamacı", "İşletme"] },
+  "Sunum": { "use_cases": ["Sunum hazırlamak"], "personas": ["Profesyonel", "Öğrenci"] },
+  "Otomasyon": { "use_cases": ["Otomasyon kurmak"], "personas": ["İşletme", "Profesyonel"] },
+  "Yaraticilik": { "use_cases": ["Görsel üretmek", "Tasarım yapmak"], "personas": ["Tasarımcı", "İçerik Üreticisi"] },
+  "Ses": { "use_cases": ["Ses üretmek"], "personas": ["İçerik Üreticisi"] },
+  "Muzik": { "use_cases": ["Ses üretmek"], "personas": ["İçerik Üreticisi"] },
+  "Pazarlama": { "use_cases": ["Pazarlama yapmak"], "personas": ["Pazarlamacı", "İşletme"] },
+  "WebSitesi": { "use_cases": ["Otomasyon kurmak", "Tasarım yapmak"], "personas": ["İşletme", "Yeni Başlayan"] },
+  "Avatar": { "use_cases": ["Video üretmek", "Görsel üretmek"], "personas": ["İçerik Üreticisi"] },
+  "Transkripsiyon": { "use_cases": ["Araştırma yapmak", "Genel üretkenlik"], "personas": ["Profesyonel", "Öğrenci"] },
+  "Satis": { "use_cases": ["Pazarlama yapmak"], "personas": ["Pazarlamacı", "İşletme"] },
+  "Arastirma": { "use_cases": ["Araştırma yapmak"], "personas": ["Öğrenci", "Profesyonel"] },
+  "Ajan": { "use_cases": ["Otomasyon kurmak"], "personas": ["Yazılımcı", "Profesyonel"] },
+  "Eticaret": { "use_cases": ["Pazarlama yapmak", "Otomasyon kurmak"], "personas": ["İşletme"] },
+  "Ceviri": { "use_cases": ["Yazı yazmak", "Araştırma yapmak"], "personas": ["Öğrenci", "Profesyonel"] },
+  "Tasarim": { "use_cases": ["Tasarım yapmak", "Görsel üretmek"], "personas": ["Tasarımcı"] },
+  "Uretkenlik": { "use_cases": ["Genel üretkenlik"], "personas": ["Profesyonel", "İşletme"] },
+  "Egitim": { "use_cases": ["Araştırma yapmak", "Genel üretkenlik"], "personas": ["Öğrenci"] },
+
+  "_keyword_fallback": {
+    "code|dev|api|github|software|program": { "use_cases": ["Kod yazmak"], "personas": ["Yazılımcı"] },
+    "video|film": { "use_cases": ["Video üretmek"], "personas": ["İçerik Üreticisi"] },
+    "image|photo|design|art|görsel|tasarım": { "use_cases": ["Görsel üretmek", "Tasarım yapmak"], "personas": ["Tasarımcı"] },
+    "music|audio|sound|ses|müzik|podcast": { "use_cases": ["Ses üretmek"], "personas": ["İçerik Üreticisi"] },
+    "write|content|blog|yazı|içerik": { "use_cases": ["Yazı yazmak"], "personas": ["İçerik Üreticisi"] },
+    "market|sales|crm|satış|pazarlama": { "use_cases": ["Pazarlama yapmak"], "personas": ["Pazarlamacı", "İşletme"] },
+    "data|analytics|veri|research": { "use_cases": ["Veri analizi yapmak", "Araştırma yapmak"], "personas": ["Profesyonel"] },
+    "learn|education|academic|öğren|akademik": { "use_cases": ["Araştırma yapmak"], "personas": ["Öğrenci"] },
+    "workflow|automation|otomasyon|ajan|agent": { "use_cases": ["Otomasyon kurmak"], "personas": ["İşletme", "Profesyonel"] }
+  },
+  "_default": { "use_cases": ["Genel üretkenlik"], "personas": ["Profesyonel"] }
+}
