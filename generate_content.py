@@ -181,15 +181,50 @@ Yalnızca şu JSON formatında cevap ver, başka hiçbir şey yazma:
 {{"title": "...", "summary": "...", "content": "...", "tags": ["...", "..."], "why_use_it": "...", "key_features": ["...", "..."], "platforms": "...", "pricing_type": "..."}}
 """
 
-    # Bilinen yabanci kelime sizintilarina karsi basit bir kontrol.
-    # Bulursa bir kere daha dener (modelin rastgeleligi degisebilir).
-    suspicious_words = ["thus", "however", "mejores", "the ", " and ", "que ", "para "]
+    # Bilinen yabanci kelime sizintilarina karsi kontrol (Ingilizce/Almanca/Fransizca/Ispanyolca
+    # yaygin kelimeler). Kelime siniri (\b) ile eslestirilir ki Turkce kelimelerin icinde
+    # rastlantisal alt-dize olarak gecmesin (ornek: "the" kelimesi "kanithe" gibi bir seyde gecmez
+    # ama yine de guvenli tarafta kalmak icin sadece bagimsiz kelime olarak arar).
+    import re as _re
+    # DIKKAT: Turkce ile CAKISAN kelimeler bu listeye eklenmemeli (ornek: "de/da" bağlaç,
+    # "can" isim/kelime, "at" (horse), "on" (10 sayisi), "para" (money) - bunlar gercek
+    # Turkce cumlelerde surekli gecer ve false-positive/sonsuz retry dongusune sokar.
+    SUSPICIOUS_WORDS = [
+        # Ingilizce - Turkce ile cakismayan, net yabanci kelimeler
+        "thus", "however", "the", "and", "with", "your", "this", "that",
+        "will", "now", "successfully", "successful", "were",
+        "its", "onto",
+        # Almanca
+        "erfolgreich", "und", "mit", "für", "das", "die", "der", "ist", "nicht", "auch",
+        # Ispanyolca
+        "mejores", "que", "con", "los", "las", "una", "esta",
+        # Fransizca
+        "avec", "pour", "dans",
+    ]
+    _suspicious_pattern = _re.compile(
+        r"\b(" + "|".join(_re.escape(w) for w in SUSPICIOUS_WORDS) + r")\b",
+        flags=_re.IGNORECASE,
+    )
+
+    def _has_language_leak(result: dict) -> bool:
+        full_text = " ".join([
+            result.get("title", ""), result.get("summary", ""), result.get("content", ""),
+            result.get("why_use_it", ""),
+            " ".join(result.get("key_features", [])) if isinstance(result.get("key_features"), list) else str(result.get("key_features", "")),
+        ])
+        return bool(_suspicious_pattern.search(full_text))
+
     groq_extra = {"temperature": 0.75, "response_format": {"type": "json_object"}}
 
     result = _generate_with_fallback(prompt, groq_extra)
-    full_text = (result.get("title", "") + " " + result.get("summary", "") + " " + result.get("content", "")).lower()
-    if any(w in full_text for w in suspicious_words):
-        result = _generate_with_fallback(prompt, groq_extra)  # ikinci deneme
+    attempts = 1
+    while _has_language_leak(result) and attempts < 3:
+        result = _generate_with_fallback(prompt, groq_extra)
+        attempts += 1
+    if _has_language_leak(result):
+        # Uc denemede de temizlenemedi - pipeline'in loglayabilmesi icin isaretle.
+        result["_language_warning"] = True
+        print(f"UYARI: '{product.get('name')}' icin 3 denemede de yabanci kelime sizintisi temizlenemedi.")
 
     return result
 

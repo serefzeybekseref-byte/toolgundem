@@ -1,15 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}ToolGündem — Türkiye'nin AI Araç Keşif Platformu{% endblock %}</title>
+<title>{% block title %}BulurumAI — Türkiye'nin AI Araç Keşif Platformu{% endblock %}</title>
 <meta name="description" content="{% block description %}Yapay zeka araçlarını keşfedin, karşılaştırın ve en iyisini seçin. Türkçe incelemeler, günlük güncellemeler.{% endblock %}">
-<meta property="og:title" content="{% block og_title %}ToolGündem{% endblock %}">
+<meta property="og:title" content="{% block og_title %}BulurumAI{% endblock %}">
 <meta property="og:description" content="{% block og_desc %}Türkiye'nin AI araç keşif platformu{% endblock %}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="tr_TR">
+<meta property="og:url" content="https://{{ request.host }}{{ request.path }}">
+<meta property="og:site_name" content="BulurumAI">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{% block twitter_title %}BulurumAI{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_desc %}Türkiye'nin AI araç keşif platformu{% endblock %}">
 <link rel="canonical" href="https://{{ request.host }}{{ request.path }}">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +27,7 @@
 <header class="header">
   <div class="container header-inner">
     <a href="/" class="logo">
-      <span class="logo-accent">Tool</span>Gündem
+      <span class="logo-accent">Bulurum</span>AI
     </a>
     <nav class="nav">
       <a href="/" class="nav-link">Keşfet</a>
@@ -52,7 +56,7 @@
 <footer class="footer">
   <div class="container footer-inner">
     <div class="footer-brand">
-      <span class="logo"><span class="logo-accent">Tool</span>Gündem</span>
+      <span class="logo"><span class="logo-accent">Bulurum</span>AI</span>
       <p class="footer-tagline">Türkiye'nin AI araç keşif platformu</p>
     </div>
     <div class="footer-links">
