@@ -15,7 +15,9 @@ MODEL = "llama-3.3-70b-versatile"
 
 NVIDIA_NIM_API_KEY = os.getenv("NVIDIA_NIM_API_KEY")
 NVIDIA_NIM_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-NVIDIA_NIM_MODEL = "meta/llama-3.3-70b-instruct"
+# qwen3.5-122b-a10b: llama-3.3-70b'den daha guclu, hizli yanit veriyor, temiz JSON donduruyor.
+# (meta/llama-4-maverick ve deepseek-v4-pro test edildi ama senkron istekte timeout'a girdi.)
+NVIDIA_NIM_MODEL = "qwen/qwen3.5-122b-a10b"
 
 
 def _call_nvidia_nim(prompt: str) -> dict:
@@ -51,10 +53,16 @@ GEMINI_KEYS = [
 _gemini_idx = {"i": 0}
 
 
-def _call_gemini_raw(prompt: str) -> dict:
-    """Gemini ile ayni prompt'u calistirir, JSON dondurur. Key havuzunda rotasyon yapar."""
-    import google.generativeai as genai
+GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_URL_TMPL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
 
+
+def _call_gemini_raw(prompt: str) -> dict:
+    """
+    Gemini'ye native REST ile istek atar (deprecated google-generativeai kutuphanesi
+    KULLANILMIYOR - AQ. formatli yeni key'lerle sorun cikariyordu). Key havuzunda rotasyon yapar.
+    NOT: gemini-2.0-flash bu key'lerde kotasiz (429); gemini-2.5-flash calisiyor.
+    """
     if not GEMINI_KEYS:
         raise ValueError("Hic Gemini API key tanimli degil (.env).")
 
@@ -63,16 +71,22 @@ def _call_gemini_raw(prompt: str) -> dict:
         key = GEMINI_KEYS[_gemini_idx["i"] % len(GEMINI_KEYS)]
         _gemini_idx["i"] += 1
         try:
-            genai.configure(api_key=key)
-            model = genai.GenerativeModel(
-                "gemini-2.0-flash",
-                generation_config={"response_mime_type": "application/json"},
+            resp = requests.post(
+                GEMINI_URL_TMPL.format(model=GEMINI_MODEL, key=key),
+                json={
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"response_mime_type": "application/json"},
+                },
+                timeout=30,
             )
-            resp = model.generate_content(
-                prompt,
-                request_options={"timeout": 15, "retry": None},
-            )
-            return json.loads(resp.text)
+            resp.raise_for_status()
+            raw_text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+            raw_text = raw_text.strip()
+            if raw_text.startswith("```"):
+                raw_text = raw_text.split("```")[1]
+                if raw_text.startswith("json"):
+                    raw_text = raw_text[4:]
+            return json.loads(raw_text.strip())
         except Exception as e:
             last_err = e
             continue
