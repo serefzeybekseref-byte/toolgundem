@@ -13,6 +13,12 @@
   <div class="page-header">
     <h1 class="page-title">{{ topic_icon }} {{ topic_label }} Araçları</h1>
     <p class="page-subtitle">{{ products|length }} araç listeleniyor</p>
+    <div class="price-filter-bar">
+      <a href="/kategori/{{ topic }}" class="price-filter-chip{% if not request.args.get('fiyat') %} active{% endif %}">Tümü</a>
+      <a href="/kategori/{{ topic }}?fiyat=Ücretsiz" class="price-filter-chip price-free{% if request.args.get('fiyat') == 'Ücretsiz' %} active{% endif %}">🟢 Ücretsiz</a>
+      <a href="/kategori/{{ topic }}?fiyat=Freemium" class="price-filter-chip price-freemium{% if request.args.get('fiyat') == 'Freemium' %} active{% endif %}">🟡 Freemium</a>
+      <a href="/kategori/{{ topic }}?fiyat=Ücretli" class="price-filter-chip price-paid{% if request.args.get('fiyat') == 'Ücretli' %} active{% endif %}">🔵 Ücretli</a>
+    </div>
   </div>
 
   <div class="category-sidebar-layout">
@@ -38,6 +44,13 @@
           </div>
           {% endif %}
           <div class="tool-card-body">
+            {% if p.pricing_type %}
+            <div class="tool-card-badges" style="position:static; margin-bottom:8px;">
+              {% if p.pricing_type == 'Ücretsiz' %}<span class="badge badge-free">🟢 Ücretsiz</span>
+              {% elif p.pricing_type == 'Freemium' %}<span class="badge badge-freemium">🟡 Freemium</span>
+              {% elif p.pricing_type == 'Ücretli' %}<span class="badge badge-paid">🔵 Ücretli</span>{% endif %}
+            </div>
+            {% endif %}
             <h3 class="tool-card-title">{{ p.original_name }}</h3>
             <p class="tool-card-summary">{{ p.summary_tr }}</p>
             <div class="tool-card-footer">

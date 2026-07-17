@@ -115,6 +115,17 @@
     {% endif %}
   </div>
 
+  {% if related_comparisons %}
+  <div class="detail-comparisons-link" style="margin: 20px 0; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);">
+    <span class="mono" style="font-size:0.85rem; color: var(--text-secondary);">📊 Bu araç şu karşılaştırmalarda yer alıyor:</span>
+    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;">
+      {% for c in related_comparisons %}
+      <a href="{{ url_for('comparison_detail', slug=c.slug) }}" class="btn" style="padding:6px 14px; font-size:0.88rem;">{{ c.title }} →</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   {% if similar %}
   <section class="section similar-section">
     <div class="section-header">

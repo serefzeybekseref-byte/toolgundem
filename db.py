@@ -459,14 +459,36 @@ def get_comparison_by_slug(slug: str):
         "SELECT * FROM comparison_items WHERE comparison_id = ? ORDER BY rank ASC",
         (comp["id"],)
     ).fetchall()
-    conn.close()
     comp["tools"] = []
     for it in items:
         it = dict(it)
         it["pros"] = it["pros"].split("|") if it["pros"] else []
         it["cons"] = it["cons"].split("|") if it["cons"] else []
+        # Ic sayfa cross-link: bu urunumuzde varsa slug'ini bul (normalized_name eslesmesi)
+        norm = normalize_name(it["name"])
+        match = conn.execute(
+            "SELECT slug FROM products WHERE normalized_name = ?", (norm,)
+        ).fetchone()
+        it["internal_slug"] = dict(match)["slug"] if match else None
         comp["tools"].append(it)
+    conn.close()
     return comp
+
+
+def get_comparisons_for_product(normalized_name: str, limit: int = 3):
+    """Bir urunun adi hangi karsilastirma sayfalarinda geciyorsa onlari dondurur (cross-link icin)."""
+    if not normalized_name:
+        return []
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT DISTINCT c.slug, c.title
+        FROM comparisons c
+        JOIN comparison_items ci ON ci.comparison_id = c.id
+        WHERE LOWER(REPLACE(ci.name, ' ', '')) LIKE ?
+        LIMIT ?
+    """, (f"%{normalized_name.replace(' ', '')}%", limit)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 def get_trending_products(limit=5):
     """En cok oy alan urunler."""
@@ -571,12 +593,21 @@ def get_similar_products(product_id, limit=4):
     scored.sort(key=lambda x: x[0], reverse=True)
     return [c for _, c in scored[:limit]]
 
-def get_products_paginated(page=1, per_page=20):
-    """Sayfalanmis urun listesi."""
+def get_products_paginated(page=1, per_page=20, pricing_type=None):
+    """Sayfalanmis urun listesi. pricing_type verilirse sadece o fiyat modeliyle filtreler."""
     conn = get_connection()
     offset = (page - 1) * per_page
-    rows = conn.execute("SELECT * FROM products ORDER BY votes DESC LIMIT ? OFFSET ?", (per_page, offset)).fetchall()
-    total = conn.execute("SELECT COUNT(*) as cnt FROM products").fetchone()
+    if pricing_type:
+        rows = conn.execute(
+            "SELECT * FROM products WHERE pricing_type = ? ORDER BY votes DESC LIMIT ? OFFSET ?",
+            (pricing_type, per_page, offset)
+        ).fetchall()
+        total = conn.execute(
+            "SELECT COUNT(*) as cnt FROM products WHERE pricing_type = ?", (pricing_type,)
+        ).fetchone()
+    else:
+        rows = conn.execute("SELECT * FROM products ORDER BY votes DESC LIMIT ? OFFSET ?", (per_page, offset)).fetchall()
+        total = conn.execute("SELECT COUNT(*) as cnt FROM products").fetchone()
     conn.close()
     return [dict(r) for r in rows], dict(total)["cnt"]
 

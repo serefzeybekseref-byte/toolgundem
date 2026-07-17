@@ -106,6 +106,9 @@
         <div class="tool-card-body">
           <div class="tool-card-badges">
             {% if p.created_at >= new_cutoff %}<span class="badge badge-new">🆕 Yeni</span>{% endif %}
+            {% if p.pricing_type == 'Ücretsiz' %}<span class="badge badge-free">🟢 Ücretsiz</span>
+            {% elif p.pricing_type == 'Freemium' %}<span class="badge badge-freemium">🟡 Freemium</span>
+            {% elif p.pricing_type == 'Ücretli' %}<span class="badge badge-paid">🔵 Ücretli</span>{% endif %}
           </div>
           <h3 class="tool-card-title">{{ p.original_name }}</h3>
           <p class="tool-card-summary">{{ p.summary_tr }}</p>

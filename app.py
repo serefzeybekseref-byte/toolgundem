@@ -9,7 +9,7 @@ from db import (
     get_trending_products, get_recent_products,
     get_products_by_topic, search_products,
     get_all_topics, get_similar_products,
-    get_products_paginated,
+    get_products_paginated, get_comparisons_for_product,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -119,7 +119,8 @@ def detail(slug):
     if not product:
         abort(404)
     similar = get_similar_products(product["id"], limit=4)
-    return render_template("detail.html", product=product, similar=similar)
+    related_comparisons = get_comparisons_for_product(product.get("normalized_name"))
+    return render_template("detail.html", product=product, similar=similar, related_comparisons=related_comparisons)
 
 
 @app.route("/karsilastirma")
@@ -139,6 +140,9 @@ def comparison_detail(slug):
 @app.route("/kategori/<topic>")
 def category(topic):
     products = get_products_by_topic(topic)
+    fiyat = request.args.get("fiyat", "").strip()
+    if fiyat:
+        products = [p for p in products if p.get("pricing_type") == fiyat]
     label = TOPIC_LABELS.get(topic, topic)
     icon = TOPIC_ICONS.get(topic, "📁")
     all_topics = get_all_topics()
@@ -167,15 +171,18 @@ def api_products():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
     topic = request.args.get("topic", "").strip()
+    pricing = request.args.get("pricing", "").strip()
     if topic:
         products = get_products_by_topic(topic)
+        if pricing:
+            products = [p for p in products if p.get("pricing_type") == pricing]
         # Manual pagination
         start = (page - 1) * per_page
         end = start + per_page
         paginated = products[start:end]
         total = len(products)
     else:
-        paginated, total = get_products_paginated(page, per_page)
+        paginated, total = get_products_paginated(page, per_page, pricing_type=pricing or None)
     return jsonify({
         "products": paginated,
         "page": page,

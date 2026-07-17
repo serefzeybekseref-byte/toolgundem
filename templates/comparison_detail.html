@@ -37,6 +37,9 @@
             <h3 class="comparison-name">
               {% if item.website %}<a href="{{ item.website }}" target="_blank" rel="noopener">{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}
             </h3>
+            {% if item.internal_slug %}
+            <a href="{{ url_for('detail', slug=item.internal_slug) }}" class="mono" style="font-size:0.82rem; color: var(--accent);">Detaylı incelemeyi oku →</a>
+            {% endif %}
             {% if item.best_for %}
             <p class="comparison-best-for">{{ item.best_for }}</p>
             {% endif %}

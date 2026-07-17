@@ -1175,6 +1175,40 @@ h1, h2, h3, h4 {
   color: var(--text-secondary);
 }
 
+/* Fiyat filtre cubugu (kategori sayfasi) */
+.price-filter-bar {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+
+.price-filter-chip {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 7px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.price-filter-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.price-filter-chip.active {
+  background-color: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.price-filter-chip.active.price-free { background-color: var(--green); border-color: var(--green); }
+.price-filter-chip.active.price-freemium { background-color: var(--gold); border-color: var(--gold); color: #000; }
+.price-filter-chip.active.price-paid { background-color: var(--red); border-color: var(--red); }
+
 .empty-state {
   padding: var(--space-12) 0;
   text-align: center;

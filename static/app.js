@@ -32,38 +32,70 @@ updateThemeIcon();
 // Load More button
 const loadMoreBtn = document.getElementById('load-more');
 let currentPage = 1;
+let currentPricing = '';
 
-if (loadMoreBtn) {
-  loadMoreBtn.addEventListener('click', async () => {
-    currentPage++;
-    const topic = loadMoreBtn.dataset.topic || '';
-    const url = `/api/products?page=${currentPage}&per_page=20${topic ? '&topic=' + topic : ''}`;
-    
-    loadMoreBtn.textContent = 'Yükleniyor...';
-    loadMoreBtn.disabled = true;
-    
-    try {
-      const resp = await fetch(url);
-      const data = await resp.json();
-      
-      const grid = document.getElementById('products-grid');
-      if (grid && data.products.length > 0) {
-        data.products.forEach(p => {
-          const card = createProductCard(p);
-          grid.insertAdjacentHTML('beforeend', card);
-        });
-      }
-      
-      if (!data.has_more) {
-        loadMoreBtn.style.display = 'none';
-      } else {
-        loadMoreBtn.textContent = 'Daha Fazla Yükle';
-        loadMoreBtn.disabled = false;
-      }
-    } catch (err) {
+function reloadGrid() {
+  const grid = document.getElementById('products-grid');
+  if (!grid || !loadMoreBtn) return;
+  currentPage = 1;
+  grid.innerHTML = '';
+  loadMoreBtn.style.display = '';
+  loadMoreBtn.dataset.pricing = currentPricing;
+  fetchProducts(false);
+}
+
+async function fetchProducts(append) {
+  const topic = loadMoreBtn.dataset.topic || '';
+  const pricing = loadMoreBtn.dataset.pricing || '';
+  const url = `/api/products?page=${currentPage}&per_page=20${topic ? '&topic=' + topic : ''}${pricing ? '&pricing=' + encodeURIComponent(pricing) : ''}`;
+
+  loadMoreBtn.textContent = 'Yükleniyor...';
+  loadMoreBtn.disabled = true;
+
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    const grid = document.getElementById('products-grid');
+    if (grid && data.products.length > 0) {
+      data.products.forEach(p => {
+        const card = createProductCard(p);
+        grid.insertAdjacentHTML('beforeend', card);
+      });
+    } else if (grid && !append) {
+      grid.innerHTML = '<p style="color: var(--text-secondary); padding: 24px 0;">Bu fiyat kategorisinde araç bulunamadı.</p>';
+    }
+
+    if (!data.has_more) {
+      loadMoreBtn.style.display = 'none';
+    } else {
       loadMoreBtn.textContent = 'Daha Fazla Yükle';
       loadMoreBtn.disabled = false;
+      loadMoreBtn.style.display = '';
     }
+  } catch (err) {
+    loadMoreBtn.textContent = 'Daha Fazla Yükle';
+    loadMoreBtn.disabled = false;
+  }
+}
+
+if (loadMoreBtn) {
+  loadMoreBtn.addEventListener('click', () => {
+    currentPage++;
+    fetchProducts(true);
+  });
+}
+
+// Fiyat filtresi
+const pricingFilterEls = document.querySelectorAll('.pricing-filter-btn');
+if (pricingFilterEls.length && loadMoreBtn) {
+  pricingFilterEls.forEach(btn => {
+    btn.addEventListener('click', () => {
+      pricingFilterEls.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentPricing = btn.dataset.pricing || '';
+      reloadGrid();
+    });
   });
 }
 
