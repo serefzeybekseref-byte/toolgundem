@@ -384,6 +384,70 @@ def update_product_quickfacts(product_id, why_use_it, key_features, platforms, p
     conn.close()
 
 
+def get_admin_stats():
+    """Admin paneli icin ozet istatistikler (tek sorgu setiyle)."""
+    conn = get_connection()
+
+    total_products = dict(conn.execute("SELECT COUNT(*) as c FROM products").fetchone())["c"]
+    avg_quality = conn.execute("SELECT AVG(quality_score) as a FROM products").fetchone()
+    avg_quality = round(dict(avg_quality)["a"] or 0, 1)
+
+    quality_buckets = conn.execute("""
+        SELECT
+            SUM(CASE WHEN quality_score >= 80 THEN 1 ELSE 0 END) as yuksek,
+            SUM(CASE WHEN quality_score >= 50 AND quality_score < 80 THEN 1 ELSE 0 END) as orta,
+            SUM(CASE WHEN quality_score < 50 THEN 1 ELSE 0 END) as dusuk
+        FROM products
+    """).fetchone()
+    quality_buckets = dict(quality_buckets)
+
+    broken_links = dict(conn.execute("SELECT COUNT(*) as c FROM products WHERE is_broken = 1").fetchone())["c"]
+    never_checked = dict(conn.execute(
+        "SELECT COUNT(*) as c FROM products WHERE last_checked_at IS NULL OR last_checked_at = ''"
+    ).fetchone())["c"]
+
+    total_comparisons = dict(conn.execute("SELECT COUNT(*) as c FROM comparisons").fetchone())["c"]
+    total_collections = dict(conn.execute("SELECT COUNT(*) as c FROM collections").fetchone())["c"]
+
+    top_topics = conn.execute("""
+        SELECT topics FROM products WHERE topics IS NOT NULL AND topics != ''
+    """).fetchall()
+    from collections import Counter
+    topic_counter = Counter()
+    for row in top_topics:
+        for t in dict(row)["topics"].split(","):
+            t = t.strip()
+            if t:
+                topic_counter[t] += 1
+    top_topics_list = topic_counter.most_common(10)
+
+    recent = conn.execute(
+        "SELECT original_name, slug, quality_score, created_at FROM products ORDER BY created_at DESC LIMIT 10"
+    ).fetchall()
+    recent = [dict(r) for r in recent]
+
+    pricing_breakdown = conn.execute("""
+        SELECT pricing_type, COUNT(*) as c FROM products
+        WHERE pricing_type IS NOT NULL AND pricing_type != ''
+        GROUP BY pricing_type ORDER BY c DESC
+    """).fetchall()
+    pricing_breakdown = [dict(r) for r in pricing_breakdown]
+
+    conn.close()
+    return {
+        "total_products": total_products,
+        "avg_quality": avg_quality,
+        "quality_buckets": quality_buckets,
+        "broken_links": broken_links,
+        "never_checked": never_checked,
+        "total_comparisons": total_comparisons,
+        "total_collections": total_collections,
+        "top_topics": top_topics_list,
+        "recent": recent,
+        "pricing_breakdown": pricing_breakdown,
+    }
+
+
 def get_all_products():
     """Tum urunleri en yeniden en eskiye siralar."""
     conn = get_connection()

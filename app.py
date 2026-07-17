@@ -10,7 +10,9 @@ from db import (
     get_products_by_topic, search_products,
     get_all_topics, get_similar_products,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
+    get_admin_stats,
 )
+import os
 from rules_engine import derive_use_cases_and_personas
 
 logging.basicConfig(level=logging.INFO)
@@ -337,6 +339,16 @@ Allow: /
 Sitemap: {base}/sitemap.xml
 """
     return Response(txt, mimetype="text/plain")
+
+
+@app.route("/admin")
+def admin():
+    token = request.args.get("token", "")
+    expected = os.getenv("ADMIN_TOKEN", "")
+    if not expected or token != expected:
+        abort(404)  # 401 yerine 404 -> panelin varligini gizler
+    stats = get_admin_stats()
+    return render_template("admin.html", stats=stats)
 
 
 @app.errorhandler(404)

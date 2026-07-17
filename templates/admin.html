@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel — ToolGündem{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 1000px;">
+  <h1 class="detail-title" style="margin: 24px 0 8px;">📊 Admin Panel</h1>
+  <p style="color: var(--text-secondary); margin-bottom: 32px;">Sadece sende görünen dahili istatistik sayfası.</p>
+
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:32px;">
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">TOPLAM ÜRÜN</div>
+      <div style="font-size:2rem; font-weight:700;">{{ stats.total_products }}</div>
+    </div>
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">ORTALAMA KALİTE SKORU</div>
+      <div style="font-size:2rem; font-weight:700; color: var(--accent);">{{ stats.avg_quality }}</div>
+    </div>
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">EN İYİ AI ARAÇLARI</div>
+      <div style="font-size:2rem; font-weight:700;">{{ stats.total_comparisons }}</div>
+    </div>
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">KOLEKSİYON</div>
+      <div style="font-size:2rem; font-weight:700;">{{ stats.total_collections }}</div>
+    </div>
+    <div style="padding:20px; background: var(--surface); border:1px solid #e5484d55; border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">KIRIK LİNK</div>
+      <div style="font-size:2rem; font-weight:700; color:#e5484d;">{{ stats.broken_links }}</div>
+    </div>
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">HİÇ KONTROL EDİLMEMİŞ</div>
+      <div style="font-size:2rem; font-weight:700;">{{ stats.never_checked }}</div>
+    </div>
+  </div>
+
+  <h2 style="font-size:1.2rem; margin-bottom:12px;">Kalite Skoru Dağılımı</h2>
+  <div style="display:flex; gap:16px; margin-bottom:32px;">
+    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div style="color:#3fb950; font-weight:700; font-size:1.4rem;">{{ stats.quality_buckets.yuksek }}</div>
+      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Yüksek (≥80)</div>
+    </div>
+    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div style="color:#e3b341; font-weight:700; font-size:1.4rem;">{{ stats.quality_buckets.orta }}</div>
+      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Orta (50-79)</div>
+    </div>
+    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div style="color:#e5484d; font-weight:700; font-size:1.4rem;">{{ stats.quality_buckets.dusuk }}</div>
+      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Düşük (&lt;50)</div>
+    </div>
+  </div>
+
+  <h2 style="font-size:1.2rem; margin-bottom:12px;">Fiyatlandırma Dağılımı</h2>
+  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:32px;">
+    {% for p in stats.pricing_breakdown %}
+    <span class="tag">{{ p.pricing_type }}: {{ p.c }}</span>
+    {% endfor %}
+  </div>
+
+  <h2 style="font-size:1.2rem; margin-bottom:12px;">En Çok Kullanılan Kategoriler (Top 10)</h2>
+  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:32px;">
+    {% for topic, count in stats.top_topics %}
+    <span class="tag">{{ topic }} ({{ count }})</span>
+    {% endfor %}
+  </div>
+
+  <h2 style="font-size:1.2rem; margin-bottom:12px;">Son Eklenen 10 Ürün</h2>
+  <div style="background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); overflow:hidden;">
+    {% for p in stats.recent %}
+    <div style="display:flex; justify-content:space-between; padding:12px 16px; {% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+      <a href="{{ url_for('detail', slug=p.slug) }}">{{ p.original_name }}</a>
+      <span class="mono" style="color: var(--text-secondary); font-size:0.85rem;">
+        skor: {{ p.quality_score }} · {{ p.created_at[:10] if p.created_at else '' }}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
