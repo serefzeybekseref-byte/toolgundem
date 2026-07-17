@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from dotenv import load_dotenv
+load_dotenv()
 from db import init_db, save_comparison
 
 init_db()

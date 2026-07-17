@@ -5,6 +5,8 @@ Groq ile Turkce icerik uretilir (generate_content.py'daki fonksiyon reuse edilir
 """
 import time
 import sys
+from dotenv import load_dotenv
+load_dotenv()
 from db import init_db, get_connection, slugify, save_product, find_possible_duplicate
 from generate_content import generate_turkish_content
 

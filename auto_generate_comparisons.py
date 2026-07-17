@@ -6,6 +6,8 @@ yapilandirilmis bir karsilastirmaya donusturur.
 """
 import json
 import time
+from dotenv import load_dotenv
+load_dotenv()
 from db import (
     init_db, get_connection, slugify, save_comparison, get_all_comparisons,
 )
