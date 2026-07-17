@@ -13,8 +13,9 @@
   </nav>
 
   <div class="page-header">
-    <h1 class="page-title">{{ comparison.title }}</h1>
+    <h1 class="page-title">{{ comparison.title }} ({{ comparison.updated_at[:4] }})</h1>
     <p class="page-subtitle">{{ comparison.intro }}</p>
+    <p class="mono" style="font-size:0.8rem; color: var(--green); margin-top:8px;">🟢 Son değerlendirme: {{ comparison.updated_at[:10] }} — bu liste düzenli olarak kontrol edilir</p>
   </div>
 
   <div class="comparison-list">
