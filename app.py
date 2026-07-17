@@ -207,25 +207,26 @@ def sitemap():
     topics = get_all_topics()
     from db import get_all_collections
     collections = get_all_collections()
-    
+    base = "https://" + request.host
+
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     # Home
-    xml += '  <url><loc>https://toolgundem.com/</loc><priority>1.0</priority></url>\n'
+    xml += f'  <url><loc>{base}/</loc><priority>1.0</priority></url>\n'
     # Products
     for p in products:
-        xml += f'  <url><loc>https://toolgundem.com/urun/{p["slug"]}</loc></url>\n'
+        xml += f'  <url><loc>{base}/urun/{p["slug"]}</loc></url>\n'
     # Comparisons
-    xml += '  <url><loc>https://toolgundem.com/karsilastirma</loc><priority>0.8</priority></url>\n'
+    xml += f'  <url><loc>{base}/karsilastirma</loc><priority>0.8</priority></url>\n'
     for c in comparisons:
-        xml += f'  <url><loc>https://toolgundem.com/karsilastirma/{c["slug"]}</loc></url>\n'
+        xml += f'  <url><loc>{base}/karsilastirma/{c["slug"]}</loc></url>\n'
     # Categories
     for topic, count in topics:
-        xml += f'  <url><loc>https://toolgundem.com/kategori/{topic}</loc></url>\n'
+        xml += f'  <url><loc>{base}/kategori/{topic}</loc></url>\n'
     # Collections
     for col in collections:
-        xml += f'  <url><loc>https://toolgundem.com/koleksiyon/{col["slug"]}</loc></url>\n'
-        
+        xml += f'  <url><loc>{base}/koleksiyon/{col["slug"]}</loc></url>\n'
+
     xml += '</urlset>'
     return Response(xml, mimetype="application/xml")
 
@@ -330,9 +331,10 @@ JSON formatinda don. Format:
 
 @app.route("/robots.txt")
 def robots():
-    txt = """User-agent: *
+    base = "https://" + request.host
+    txt = f"""User-agent: *
 Allow: /
-Sitemap: https://toolgundem.com/sitemap.xml
+Sitemap: {base}/sitemap.xml
 """
     return Response(txt, mimetype="text/plain")
 
