@@ -549,14 +549,35 @@ def get_similar_products(product_id, limit=4):
     platform eslesmesi + tag overlap. Boylece "ChatGPT alternatifi" ararken
     LLM'in konu disi bir arac onermesi (or. Slack) riski ortadan kalkar -
     tum eslesme kriterleri deterministik/kod tabanlidir.
+
+    NOT: "AI" gibi urunlerin cogunda gecen asiri genel topic'ler
+    (toplam urunun >%15'inde varsa) eslesme agirligina KATILMAZ - yoksa
+    "her ikisi de AI etiketli" diye alakasiz urunler (or. ChatGPT + ClickUp)
+    yanlis pozitif eslesir.
     """
     conn = get_connection()
+    total_count = dict(conn.execute("SELECT COUNT(*) as cnt FROM products").fetchone())["cnt"] or 1
+    topic_rows = conn.execute(
+        "SELECT topics FROM products WHERE topics IS NOT NULL AND topics != ''"
+    ).fetchall()
+    topic_freq = {}
+    for row in topic_rows:
+        for t in dict(row)["topics"].split(","):
+            t = t.strip()
+            if t:
+                topic_freq[t] = topic_freq.get(t, 0) + 1
+    generic_topics = {t for t, cnt in topic_freq.items() if cnt / total_count > 0.15}
+    # Frekans esigi dusuk cikan ama anlamca yine de asiri genel olan topic'ler
+    # (or. "Uretkenlik" hem ChatGPT'de hem ClickUp'ta var ama ikisi alakasiz arac).
+    generic_topics |= {"Uretkenlik", "Productivity", "AI", "Artificial Intelligence"}
+
     product = conn.execute("SELECT * FROM products WHERE id = ?", (product_id,)).fetchone()
     if not product:
         conn.close()
         return []
     product = dict(product)
-    topics = [t.strip() for t in (product.get("topics") or "").split(",") if t.strip()]
+    all_topics = [t.strip() for t in (product.get("topics") or "").split(",") if t.strip()]
+    topics = [t for t in all_topics if t not in generic_topics] or all_topics
     if not topics:
         conn.close()
         return []
@@ -580,7 +601,7 @@ def get_similar_products(product_id, limit=4):
         cand_platforms = set(p.strip().lower() for p in (cand.get("platforms") or "").split(",") if p.strip())
 
         score = 0.0
-        score += 10 * len(set(topics) & cand_topics)          # topic ortakligi - en agirlikli
+        score += 10 * len(set(topics) & cand_topics)          # topic ortakligi (jenerik topic'ler haric) - en agirlikli
         score += 3 * len(tags & cand_tags)                    # tag overlap
         if pricing and cand.get("pricing_type") == pricing:   # ayni fiyat modeli
             score += 4
