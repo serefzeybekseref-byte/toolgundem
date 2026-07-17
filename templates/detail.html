@@ -95,8 +95,24 @@
   </div>
   {% endif %}
 
-  <div class="detail-meta mono">
-    Eklenme: {{ product.created_at[:10] if product.created_at else 'Bilinmiyor' }}
+  <div class="detail-meta mono" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:14px 18px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); margin: 24px 0;">
+    <span style="color: var(--text-secondary);">İçerik oluşturuldu: {{ product.created_at[:10] if product.created_at else 'Bilinmiyor' }}</span>
+    {% if product.last_checked_at %}
+    <span style="color: var(--border);">•</span>
+    {% if product.is_broken %}
+    <span style="color:#e5484d;">⚠ Site şu an erişilemiyor (son kontrol: {{ product.last_checked_at[:10] }})</span>
+    {% else %}
+    <span style="color:#3fb950;">✓ Link doğrulandı — son kontrol: {{ product.last_checked_at[:10] }}</span>
+    {% endif %}
+    {% endif %}
+    {% if product.pricing_type %}
+    <span style="color: var(--border);">•</span>
+    <span style="color:#3fb950;">✓ Fiyat bilgisi mevcut</span>
+    {% endif %}
+    {% if product.platforms %}
+    <span style="color: var(--border);">•</span>
+    <span style="color:#3fb950;">✓ Platform bilgisi mevcut</span>
+    {% endif %}
   </div>
 
   {% if similar %}

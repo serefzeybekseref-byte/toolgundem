@@ -170,6 +170,7 @@ def init_db():
         ("is_partner", "INTEGER DEFAULT 0"),
         ("last_checked_at", "TEXT"),
         ("is_broken", "INTEGER DEFAULT 0"),
+        ("quality_score", "INTEGER DEFAULT 0"),
     ]
     for col_name, col_type in new_columns:
         if USE_POSTGRES:
@@ -182,6 +183,73 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+def compute_quality_score(row: dict) -> int:
+    """
+    Deterministik tamlik puani (0-100). LLM'e "kaliteli mi?" diye SORMAZ -
+    sadece hangi alanlarin dolu/yeterli oldugunu sayar. Ayni girdi her zaman
+    ayni puanu verir, bu yuzden editor panelinde ve kullanicida guvenilir bir
+    sinyal olarak kullanilabilir.
+    Agirliklar: description/summary 25, platform 10, fiyat 10, key_features>=3 15,
+    alternatif/topic 15, son kontrol edilmis 10, logo 5, website 10.
+    """
+    score = 0
+    if (row.get("summary_tr") or "").strip():
+        score += 15
+    if (row.get("content_tr") or "").strip():
+        score += 10
+    if (row.get("platforms") or "").strip():
+        score += 10
+    if (row.get("pricing_type") or "").strip() and row.get("pricing_type") != "Bilinmiyor":
+        score += 10
+    features = row.get("key_features") or ""
+    if isinstance(features, list):
+        feature_count = len(features)
+    else:
+        feature_count = len([f for f in features.split(",") if f.strip()])
+    if feature_count >= 3:
+        score += 15
+    elif feature_count > 0:
+        score += 7
+    if (row.get("topics") or "").strip():
+        score += 15
+    if (row.get("last_checked_at") or "").strip() and not row.get("is_broken"):
+        score += 10
+    if (row.get("thumbnail") or "").strip():
+        score += 5
+    if (row.get("website") or "").strip():
+        score += 10
+    return min(score, 100)
+
+
+def update_quality_score(product_id: int, row: dict = None):
+    """Bir urunun quality_score'unu (yeniden) hesaplayip kaydeder."""
+    conn = get_connection()
+    if row is None:
+        existing = conn.execute("SELECT * FROM products WHERE id = ?", (product_id,)).fetchone()
+        if not existing:
+            conn.close()
+            return None
+        row = dict(existing)
+    score = compute_quality_score(row)
+    conn.execute("UPDATE products SET quality_score = ? WHERE id = ?", (score, product_id))
+    conn.commit()
+    conn.close()
+    return score
+
+
+def recompute_all_quality_scores():
+    """Tum urunler icin quality_score'u yeniden hesaplar (backfill / bakim scripti icin)."""
+    conn = get_connection()
+    rows = conn.execute("SELECT * FROM products").fetchall()
+    conn.close()
+    updated = 0
+    for r in rows:
+        row = dict(r)
+        update_quality_score(row["id"], row)
+        updated += 1
+    return updated
+
 
 def slugify(text: str) -> str:
     """Turkce karakterleri temizleyip URL-dostu slug uretir."""
@@ -261,8 +329,8 @@ def save_product(product: dict, ai_content: dict) -> str:
         INSERT INTO products
         (ph_id, slug, original_name, title_tr, summary_tr, content_tr, tags,
          ph_url, website, thumbnail, votes, topics, created_at, normalized_name,
-         why_use_it, key_features, platforms, pricing_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         why_use_it, key_features, platforms, pricing_type, quality_score)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         product["id"], slug, product["name"],
         ai_content["title"], ai_content["summary"], ai_content["content"],
@@ -274,6 +342,18 @@ def save_product(product: dict, ai_content: dict) -> str:
         ",".join(ai_content.get("key_features", [])) if isinstance(ai_content.get("key_features"), list) else ai_content.get("key_features", ""),
         ai_content.get("platforms", ""),
         ai_content.get("pricing_type", ""),
+        compute_quality_score({
+            "summary_tr": ai_content["summary"],
+            "content_tr": ai_content["content"],
+            "platforms": ai_content.get("platforms", ""),
+            "pricing_type": ai_content.get("pricing_type", ""),
+            "key_features": ai_content.get("key_features", ""),
+            "topics": ",".join(product.get("topics", [])),
+            "last_checked_at": "",
+            "is_broken": 0,
+            "thumbnail": product.get("thumbnail"),
+            "website": product.get("website", ""),
+        }),
     ))
     conn.commit()
     conn.close()
@@ -441,23 +521,55 @@ def get_all_topics():
 
 
 def get_similar_products(product_id, limit=4):
-    """Ayni topic'teki diger urunler."""
+    """
+    Benzer araclari LLM KULLANMADAN, agirlikli bir skorla bulur:
+    topic ortakligi (en yuksek agirlik) + pricing_type eslesmesi +
+    platform eslesmesi + tag overlap. Boylece "ChatGPT alternatifi" ararken
+    LLM'in konu disi bir arac onermesi (or. Slack) riski ortadan kalkar -
+    tum eslesme kriterleri deterministik/kod tabanlidir.
+    """
     conn = get_connection()
-    product = conn.execute("SELECT topics FROM products WHERE id = ?", (product_id,)).fetchone()
-    if not product or not dict(product).get("topics"):
+    product = conn.execute("SELECT * FROM products WHERE id = ?", (product_id,)).fetchone()
+    if not product:
         conn.close()
         return []
-    topics = dict(product)["topics"].split(",")
+    product = dict(product)
+    topics = [t.strip() for t in (product.get("topics") or "").split(",") if t.strip()]
     if not topics:
         conn.close()
         return []
-    first_topic = topics[0].strip()
+    tags = set(t.strip().lower() for t in (product.get("tags") or "").split(",") if t.strip())
+    pricing = (product.get("pricing_type") or "").strip()
+    platforms = set(p.strip().lower() for p in (product.get("platforms") or "").split(",") if p.strip())
+
+    like_clauses = " OR ".join(["topics LIKE ?"] * len(topics))
+    params = [f"%{t}%" for t in topics] + [product_id]
     rows = conn.execute(
-        "SELECT * FROM products WHERE topics LIKE ? AND id != ? ORDER BY votes DESC LIMIT ?",
-        (f"%{first_topic}%", product_id, limit)
+        f"SELECT * FROM products WHERE ({like_clauses}) AND id != ?",
+        params
     ).fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+
+    scored = []
+    for r in rows:
+        cand = dict(r)
+        cand_topics = set(t.strip() for t in (cand.get("topics") or "").split(",") if t.strip())
+        cand_tags = set(t.strip().lower() for t in (cand.get("tags") or "").split(",") if t.strip())
+        cand_platforms = set(p.strip().lower() for p in (cand.get("platforms") or "").split(",") if p.strip())
+
+        score = 0.0
+        score += 10 * len(set(topics) & cand_topics)          # topic ortakligi - en agirlikli
+        score += 3 * len(tags & cand_tags)                    # tag overlap
+        if pricing and cand.get("pricing_type") == pricing:   # ayni fiyat modeli
+            score += 4
+        if platforms and (platforms & cand_platforms):        # ortak platform
+            score += 2
+        score += min((cand.get("votes") or 0) / 100.0, 3)     # kucuk bir populerlik katkisi (tie-break)
+
+        scored.append((score, cand))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [c for _, c in scored[:limit]]
 
 def get_products_paginated(page=1, per_page=20):
     """Sayfalanmis urun listesi."""
@@ -508,3 +620,4 @@ def mark_link_checked(product_id: int, is_broken: bool):
     )
     conn.commit()
     conn.close()
+    update_quality_score(product_id)

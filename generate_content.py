@@ -4,6 +4,7 @@ Model: llama-3.3-70b-versatile (Groq'un hizli ve ucretsiz kotali modeli)
 """
 import os
 import json
+import random
 import requests
 from dotenv import load_dotenv
 
@@ -133,6 +134,18 @@ def _generate_with_fallback(prompt: str, groq_payload_extra: dict) -> dict:
     raise RuntimeError("Tum saglayicilar basarisiz oldu -> " + " | ".join(errors))
 
 
+# Icerik cesitliligini artirmak icin rastgele persona rotasyonu.
+# Sadece temperature yukseltmek yerine, her uretimde farkli bir "ses" ile yazdirmak
+# ayni urun grubunda (ör. iki video araci) bile farkli anlatim tonlari saglar.
+CONTENT_PERSONAS = [
+    "Bir teknoloji blog yazarısın. Meraklı ve gündelik bir dille, okuyucuyla sohbet eder gibi yazarsın.",
+    "Bir ürün incelemecisisin. Eleştirel ve nesnel bir bakış açın var; hem güçlü hem zayıf yönlere değinirsin.",
+    "Bir yazılım geliştiricisin. Teknik detaylara ve pratik kullanım senaryolarına odaklanırsın, jargon kullanmaktan çekinmezsin.",
+    "Bir içerik üreticisisin (creator). Aracın günlük iş akışına nasıl zaman kazandırdığını, somut örneklerle anlatırsın.",
+    "Bir pazarlama uzmanısın. Aracın hangi iş probleminü çözdüğünü ve kime hitap ettiğini net biçimde ortaya koyarsın.",
+]
+
+
 def generate_turkish_content(product: dict) -> dict:
     """
     Bir Product Hunt urunu icin Turkce baslik, aciklama ve etiketler uretir.
@@ -142,7 +155,9 @@ def generate_turkish_content(product: dict) -> dict:
     if not GROQ_API_KEY and not GEMINI_KEYS and not NVIDIA_NIM_API_KEY:
         raise ValueError("Hicbir AI saglayici key'i tanimli degil. .env dosyasini kontrol et.")
 
-    prompt = f"""Sen bir teknoloji blog yazarısın. Aşağıdaki Product Hunt ürünü için Türkçe, doğal ve akıcı bir tanıtım içeriği üret.
+    persona = random.choice(CONTENT_PERSONAS)
+
+    prompt = f"""Sen {persona} Aşağıdaki Product Hunt ürünü için Türkçe, doğal ve akıcı bir tanıtım içeriği üret. Seçtiğin persona/tona uygun bir üslup ve bakış açısı kullan; bu ürünü senden önce başka bir yazar da anlatmış olabilir, o yüzden kendi bakış açını öne çıkar.
 
 Ürün adı: {product['name']}
 İngilizce slogan: {product['tagline']}
@@ -154,7 +169,8 @@ Kurallar:
 - İngilizce'den kelime kelime çeviri yapma, doğal Türkçe ile yeniden yaz.
 - SEO'ya uygun, ilgi çekici bir başlık üret (60 karakteri geçmesin).
 - 2-3 cümlelik kısa bir özet (summary) üret.
-- 3-4 paragraflık, okunması akıcı bir tanıtım metni (content) üret. Ürünün ne işe yaradığını, kimler için uygun olduğunu anlat.
+- ÇEŞİTLİLİK ZORUNLU: summary'yi ASLA "[Ürün adı], ... sağlayan/sunan bir araçtır" kalıbıyla başlatma. Bunun yerine rastgele şu tarzlardan birini seç: doğrudan bir eylemle başla ("Sunum hazırlarken saatler harcamak yerine..."), bir soru ile başla, kullanıcının yaşadığı bir sorunla başla, veya çarpıcı bir sonuçla başla. Aynı ürün grubunda (ör. iki video aracı) art arda üretimlerde farklı açılış cümlesi kullan.
+- 3-4 paragraflık, okunması akıcı bir tanıtım metni (content) üret. Ürünün ne işe yaradığını, kimler için uygun olduğunu anlat. Şablon hissi vermesin; her ürünün kendine özgü bir yönünü (nişini, en dikkat çekici özelliğini veya kullanım senaryosunu) öne çıkar.
 - 3-5 Türkçe etiket (tags) üret (örn: "yapay-zeka", "verimlilik" gibi kısa ve küçük harfli).
 - Kimler için uygun olduğunu tek cümlede özetle (why_use_it), örn: "Sunum hazırlamaya vakti olmayan pazarlamacılar ve içerik üreticileri için."
 - 3-5 maddelik somut özellik listesi üret (key_features), her biri kısa bir cümle.
@@ -168,7 +184,7 @@ Yalnızca şu JSON formatında cevap ver, başka hiçbir şey yazma:
     # Bilinen yabanci kelime sizintilarina karsi basit bir kontrol.
     # Bulursa bir kere daha dener (modelin rastgeleligi degisebilir).
     suspicious_words = ["thus", "however", "mejores", "the ", " and ", "que ", "para "]
-    groq_extra = {"temperature": 0.4, "response_format": {"type": "json_object"}}
+    groq_extra = {"temperature": 0.75, "response_format": {"type": "json_object"}}
 
     result = _generate_with_fallback(prompt, groq_extra)
     full_text = (result.get("title", "") + " " + result.get("summary", "") + " " + result.get("content", "")).lower()

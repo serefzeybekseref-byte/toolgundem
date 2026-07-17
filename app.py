@@ -99,6 +99,7 @@ def home():
         "SELECT COUNT(*) as cnt FROM products WHERE created_at >= ?", (thirty_days_ago,)
     ).fetchone())["cnt"]
     conn.close()
+    three_days_ago = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%d")
 
     return render_template(
         "index.html",
@@ -108,6 +109,7 @@ def home():
         comparisons=comparisons,
         total_products=total_products,
         new_last_30d=new_last_30d,
+        new_cutoff=three_days_ago,
     )
 
 

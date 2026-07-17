@@ -105,7 +105,7 @@
         </div>
         <div class="tool-card-body">
           <div class="tool-card-badges">
-            <span class="badge badge-new">🆕 Yeni</span>
+            {% if p.created_at >= new_cutoff %}<span class="badge badge-new">🆕 Yeni</span>{% endif %}
           </div>
           <h3 class="tool-card-title">{{ p.original_name }}</h3>
           <p class="tool-card-summary">{{ p.summary_tr }}</p>
