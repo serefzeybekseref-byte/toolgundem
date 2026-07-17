@@ -68,7 +68,10 @@ def _call_gemini_raw(prompt: str) -> dict:
                 "gemini-2.0-flash",
                 generation_config={"response_mime_type": "application/json"},
             )
-            resp = model.generate_content(prompt)
+            resp = model.generate_content(
+                prompt,
+                request_options={"timeout": 15, "retry": None},
+            )
             return json.loads(resp.text)
         except Exception as e:
             last_err = e
@@ -101,17 +104,17 @@ def _generate_with_fallback(prompt: str, groq_payload_extra: dict) -> dict:
         except Exception as e:
             errors.append(f"Groq: {e}")
 
-    if GEMINI_KEYS:
-        try:
-            return _call_gemini_raw(prompt)
-        except Exception as e:
-            errors.append(f"Gemini: {e}")
-
     if NVIDIA_NIM_API_KEY:
         try:
             return _call_nvidia_nim(prompt)
         except Exception as e:
             errors.append(f"NVIDIA NIM: {e}")
+
+    if GEMINI_KEYS:
+        try:
+            return _call_gemini_raw(prompt)
+        except Exception as e:
+            errors.append(f"Gemini: {e}")
 
     raise RuntimeError("Tum saglayicilar basarisiz oldu -> " + " | ".join(errors))
 
