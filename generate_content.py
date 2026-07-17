@@ -13,6 +13,36 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "llama-3.3-70b-versatile"
 
+NVIDIA_NIM_API_KEY = os.getenv("NVIDIA_NIM_API_KEY")
+NVIDIA_NIM_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+NVIDIA_NIM_MODEL = "meta/llama-3.3-70b-instruct"
+
+
+def _call_nvidia_nim(prompt: str) -> dict:
+    """NVIDIA NIM (OpenAI-uyumlu) ile ayni prompt'u calistirir, JSON dondurur."""
+    if not NVIDIA_NIM_API_KEY:
+        raise ValueError("NVIDIA_NIM_API_KEY tanimli degil (.env).")
+    headers = {
+        "Authorization": f"Bearer {NVIDIA_NIM_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": NVIDIA_NIM_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.4,
+        "max_tokens": 1024,
+    }
+    resp = requests.post(NVIDIA_NIM_URL, headers=headers, json=payload, timeout=60)
+    resp.raise_for_status()
+    raw_text = resp.json()["choices"][0]["message"]["content"]
+    # Model bazen JSON'u kod bloguna sarabilir, temizle.
+    raw_text = raw_text.strip()
+    if raw_text.startswith("```"):
+        raw_text = raw_text.split("```")[1]
+        if raw_text.startswith("json"):
+            raw_text = raw_text[4:]
+    return json.loads(raw_text.strip())
+
 # Groq kotasi dolduğunda (429) devreye giren Gemini yedek key havuzu.
 GEMINI_KEYS = [
     v for k, v in sorted(os.environ.items())
@@ -46,14 +76,54 @@ def _call_gemini_raw(prompt: str) -> dict:
     raise last_err
 
 
+def _generate_with_fallback(prompt: str, groq_payload_extra: dict) -> dict:
+    """
+    Groq -> Gemini -> NVIDIA NIM sirasiyla dener. Ilk basarili olan sonucu dondurur.
+    groq_payload_extra: Groq'a ozel ek payload alanlari (temperature, response_format vb.)
+    """
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        **groq_payload_extra,
+    }
+
+    errors = []
+
+    if GROQ_API_KEY:
+        try:
+            resp = requests.post(GROQ_URL, headers=headers, json=payload, timeout=60)
+            resp.raise_for_status()
+            return json.loads(resp.json()["choices"][0]["message"]["content"])
+        except Exception as e:
+            errors.append(f"Groq: {e}")
+
+    if GEMINI_KEYS:
+        try:
+            return _call_gemini_raw(prompt)
+        except Exception as e:
+            errors.append(f"Gemini: {e}")
+
+    if NVIDIA_NIM_API_KEY:
+        try:
+            return _call_nvidia_nim(prompt)
+        except Exception as e:
+            errors.append(f"NVIDIA NIM: {e}")
+
+    raise RuntimeError("Tum saglayicilar basarisiz oldu -> " + " | ".join(errors))
+
+
 def generate_turkish_content(product: dict) -> dict:
     """
     Bir Product Hunt urunu icin Turkce baslik, aciklama ve etiketler uretir.
     product: fetch_producthunt.get_latest_products()'tan gelen dict
     Donen: {"title": str, "summary": str, "content": str, "tags": [str]}
     """
-    if not GROQ_API_KEY:
-        raise ValueError("GROQ_API_KEY bulunamadi. .env dosyasini kontrol et.")
+    if not GROQ_API_KEY and not GEMINI_KEYS and not NVIDIA_NIM_API_KEY:
+        raise ValueError("Hicbir AI saglayici key'i tanimli degil. .env dosyasini kontrol et.")
 
     prompt = f"""Sen bir teknoloji blog yazarısın. Aşağıdaki Product Hunt ürünü için Türkçe, doğal ve akıcı bir tanıtım içeriği üret.
 
@@ -78,43 +148,15 @@ Yalnızca şu JSON formatında cevap ver, başka hiçbir şey yazma:
 {{"title": "...", "summary": "...", "content": "...", "tags": ["...", "..."], "why_use_it": "...", "key_features": ["...", "..."], "platforms": "...", "pricing_type": "..."}}
 """
 
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "model": MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.4,
-        "response_format": {"type": "json_object"},
-    }
-
-    def _call_groq():
-        resp = requests.post(GROQ_URL, headers=headers, json=payload, timeout=60)
-        resp.raise_for_status()
-        raw_text = resp.json()["choices"][0]["message"]["content"]
-        return json.loads(raw_text)
-
     # Bilinen yabanci kelime sizintilarina karsi basit bir kontrol.
     # Bulursa bir kere daha dener (modelin rastgeleligi degisebilir).
     suspicious_words = ["thus", "however", "mejores", "the ", " and ", "que ", "para "]
+    groq_extra = {"temperature": 0.4, "response_format": {"type": "json_object"}}
 
-    try:
-        result = _call_groq()
-    except requests.exceptions.HTTPError as e:
-        if e.response is not None and e.response.status_code == 429 and GEMINI_KEYS:
-            result = _call_gemini_raw(prompt)
-        else:
-            raise
+    result = _generate_with_fallback(prompt, groq_extra)
     full_text = (result.get("title", "") + " " + result.get("summary", "") + " " + result.get("content", "")).lower()
     if any(w in full_text for w in suspicious_words):
-        try:
-            result = _call_groq()  # ikinci deneme
-        except requests.exceptions.HTTPError as e:
-            if e.response is not None and e.response.status_code == 429 and GEMINI_KEYS:
-                result = _call_gemini_raw(prompt)
-            else:
-                raise
+        result = _generate_with_fallback(prompt, groq_extra)  # ikinci deneme
 
     return result
 
@@ -125,8 +167,8 @@ def generate_quickfacts(product_row: dict) -> dict:
     why_use_it/key_features/platforms/pricing_type alanlarini uretir.
     product_row: db'den gelen mevcut urun satiri (original_name, summary_tr, content_tr, tags, topics)
     """
-    if not GROQ_API_KEY:
-        raise ValueError("GROQ_API_KEY bulunamadi. .env dosyasini kontrol et.")
+    if not GROQ_API_KEY and not GEMINI_KEYS and not NVIDIA_NIM_API_KEY:
+        raise ValueError("Hicbir AI saglayici key'i tanimli degil. .env dosyasini kontrol et.")
 
     prompt = f"""Sen bir teknoloji editörüsün. Aşağıdaki AI aracı için, var olan Türkçe içeriğe dayanarak
 4 ek bilgi alanı üret. Yeni bilgi uydurma; sadece verilen metinden çıkarım yap, emin değilsen makul bir varsayım kullan.
@@ -148,24 +190,8 @@ Yalnızca şu JSON formatında cevap ver:
 {{"why_use_it": "...", "key_features": ["...", "..."], "platforms": "...", "pricing_type": "..."}}
 """
 
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "model": MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.3,
-        "response_format": {"type": "json_object"},
-    }
-    resp = requests.post(GROQ_URL, headers=headers, json=payload, timeout=60)
-    try:
-        resp.raise_for_status()
-        return json.loads(resp.json()["choices"][0]["message"]["content"])
-    except requests.exceptions.HTTPError as e:
-        if e.response is not None and e.response.status_code == 429 and GEMINI_KEYS:
-            return _call_gemini_raw(prompt)
-        raise
+    groq_extra = {"temperature": 0.3, "response_format": {"type": "json_object"}}
+    return _generate_with_fallback(prompt, groq_extra)
 
 
 if __name__ == "__main__":
