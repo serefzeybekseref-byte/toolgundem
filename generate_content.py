@@ -13,6 +13,38 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "llama-3.3-70b-versatile"
 
+# Groq kotasi dolduğunda (429) devreye giren Gemini yedek key havuzu.
+GEMINI_KEYS = [
+    v for k, v in sorted(os.environ.items())
+    if k.startswith("GEMINI_API_KEY") and v
+]
+_gemini_idx = {"i": 0}
+
+
+def _call_gemini_raw(prompt: str) -> dict:
+    """Gemini ile ayni prompt'u calistirir, JSON dondurur. Key havuzunda rotasyon yapar."""
+    import google.generativeai as genai
+
+    if not GEMINI_KEYS:
+        raise ValueError("Hic Gemini API key tanimli degil (.env).")
+
+    last_err = None
+    for _ in range(len(GEMINI_KEYS)):
+        key = GEMINI_KEYS[_gemini_idx["i"] % len(GEMINI_KEYS)]
+        _gemini_idx["i"] += 1
+        try:
+            genai.configure(api_key=key)
+            model = genai.GenerativeModel(
+                "gemini-2.0-flash",
+                generation_config={"response_mime_type": "application/json"},
+            )
+            resp = model.generate_content(prompt)
+            return json.loads(resp.text)
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err
+
 
 def generate_turkish_content(product: dict) -> dict:
     """
@@ -67,10 +99,22 @@ Yalnızca şu JSON formatında cevap ver, başka hiçbir şey yazma:
     # Bulursa bir kere daha dener (modelin rastgeleligi degisebilir).
     suspicious_words = ["thus", "however", "mejores", "the ", " and ", "que ", "para "]
 
-    result = _call_groq()
+    try:
+        result = _call_groq()
+    except requests.exceptions.HTTPError as e:
+        if e.response is not None and e.response.status_code == 429 and GEMINI_KEYS:
+            result = _call_gemini_raw(prompt)
+        else:
+            raise
     full_text = (result.get("title", "") + " " + result.get("summary", "") + " " + result.get("content", "")).lower()
     if any(w in full_text for w in suspicious_words):
-        result = _call_groq()  # ikinci deneme
+        try:
+            result = _call_groq()  # ikinci deneme
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 429 and GEMINI_KEYS:
+                result = _call_gemini_raw(prompt)
+            else:
+                raise
 
     return result
 
@@ -115,8 +159,13 @@ Yalnızca şu JSON formatında cevap ver:
         "response_format": {"type": "json_object"},
     }
     resp = requests.post(GROQ_URL, headers=headers, json=payload, timeout=60)
-    resp.raise_for_status()
-    return json.loads(resp.json()["choices"][0]["message"]["content"])
+    try:
+        resp.raise_for_status()
+        return json.loads(resp.json()["choices"][0]["message"]["content"])
+    except requests.exceptions.HTTPError as e:
+        if e.response is not None and e.response.status_code == 429 and GEMINI_KEYS:
+            return _call_gemini_raw(prompt)
+        raise
 
 
 if __name__ == "__main__":
