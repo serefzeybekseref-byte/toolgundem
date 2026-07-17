@@ -18,8 +18,14 @@
 <section class="hero">
   <div class="container text-center">
     <div class="hero-badge">✨ Türkiye'nin Yapay Zeka Haritası</div>
-    <h1 class="hero-title" style="font-size: 3.5rem; line-height: 1.1; margin-bottom: 24px;">Doğru Yapay Zeka Aracını<br><span style="color: var(--accent);">Dakikalar İçinde Bulun</span></h1>
-    <p class="hero-subtitle" style="font-size: 1.15rem; max-width: 650px; margin-inline: auto;">Binlerce araç arasında kaybolmayın. Sizin için en uygun olanı keşfedin, karşılaştırın ve hemen kullanmaya başlayın.</p>
+    <h1 class="hero-title" style="font-size: 3.5rem; line-height: 1.1; margin-bottom: 24px;">Türkiye'nin En Kapsamlı<br><span style="color: var(--accent);">AI Araç Keşif Platformu</span></h1>
+    <p class="hero-subtitle" style="font-size: 1.15rem; max-width: 650px; margin-inline: auto;">{{ total_products }}+ AI aracını sizin yerinize inceledik, karşılaştırdık ve doğru seçimi kolaylaştırdık.</p>
+    <div class="trust-checks" style="display:flex; flex-wrap:wrap; justify-content:center; gap: 10px 20px; margin-top:20px; font-size:0.92rem; color: var(--text-secondary);">
+      <span>✅ {{ total_products }}+ doğrulanmış araç</span>
+      {% if new_last_30d and new_last_30d > 0 %}<span>✅ Son 30 günde {{ new_last_30d }} yeni araç</span>{% endif %}
+      <span>✅ {{ comparisons|length }} karşılaştırma</span>
+      <span>✅ AI Danışmanı</span>
+    </div>
     <div class="hero-stats">
       <div class="stat"><span class="stat-number">{{ total_products }}+</span><span class="stat-label">Araç</span></div>
       <div class="stat"><span class="stat-number">{{ comparisons|length }}</span><span class="stat-label">Karşılaştırma</span></div>

@@ -14,7 +14,7 @@ from datetime import datetime
 
 logger = logging.getLogger("toolgundem.db")
 
-DB_PATH = "products.db"
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "products.db")
 DATABASE_URL = os.environ.get("DATABASE_URL")
 USE_POSTGRES = bool(DATABASE_URL)
 
@@ -260,8 +260,9 @@ def save_product(product: dict, ai_content: dict) -> str:
     conn.execute("""
         INSERT INTO products
         (ph_id, slug, original_name, title_tr, summary_tr, content_tr, tags,
-         ph_url, website, thumbnail, votes, topics, created_at, normalized_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ph_url, website, thumbnail, votes, topics, created_at, normalized_name,
+         why_use_it, key_features, platforms, pricing_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         product["id"], slug, product["name"],
         ai_content["title"], ai_content["summary"], ai_content["content"],
@@ -269,10 +270,39 @@ def save_product(product: dict, ai_content: dict) -> str:
         product["url"], product.get("website", ""), product.get("thumbnail"),
         product["votes"], ",".join(product.get("topics", [])),
         datetime.utcnow().isoformat(), normalized,
+        ai_content.get("why_use_it", ""),
+        ",".join(ai_content.get("key_features", [])) if isinstance(ai_content.get("key_features"), list) else ai_content.get("key_features", ""),
+        ai_content.get("platforms", ""),
+        ai_content.get("pricing_type", ""),
     ))
     conn.commit()
     conn.close()
     return slug
+
+def get_products_missing_quickfacts(limit: int = 20):
+    """why_use_it alani bos olan urunleri dondurur (backfill icin)."""
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT * FROM products
+        WHERE why_use_it IS NULL OR why_use_it = ''
+        ORDER BY votes DESC
+        LIMIT ?
+    """, (limit,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def update_product_quickfacts(product_id, why_use_it, key_features, platforms, pricing_type):
+    """Var olan bir urunun why_use_it/key_features/platforms/pricing_type alanlarini gunceller."""
+    conn = get_connection()
+    conn.execute("""
+        UPDATE products
+        SET why_use_it = ?, key_features = ?, platforms = ?, pricing_type = ?
+        WHERE id = ?
+    """, (why_use_it, key_features, platforms, pricing_type, product_id))
+    conn.commit()
+    conn.close()
+
 
 def get_all_products():
     """Tum urunleri en yeniden en eskiye siralar."""

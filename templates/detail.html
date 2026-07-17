@@ -40,6 +40,38 @@
   </div>
 
   <div class="detail-content">
+    {% if product.why_use_it or product.key_features or product.platforms or product.pricing_type %}
+    <div class="detail-quickfacts" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:16px; margin-bottom:32px; padding:24px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      {% if product.why_use_it %}
+      <div style="grid-column: 1 / -1;">
+        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">👤 KİMLER İÇİN</div>
+        <div>{{ product.why_use_it }}</div>
+      </div>
+      {% endif %}
+      {% if product.platforms %}
+      <div>
+        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">💻 PLATFORM</div>
+        <div>{{ product.platforms }}</div>
+      </div>
+      {% endif %}
+      {% if product.pricing_type %}
+      <div>
+        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">💰 FİYATLANDIRMA</div>
+        <div>{{ product.pricing_type }}</div>
+      </div>
+      {% endif %}
+      {% if product.key_features %}
+      <div style="grid-column: 1 / -1;">
+        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">✅ ÖNE ÇIKAN ÖZELLİKLER</div>
+        <ul style="margin:0; padding-left:20px;">
+          {% for f in product.key_features.split(',') if f.strip() %}
+          <li>{{ f.strip() }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
     <div class="detail-body" style="font-size: 1.1rem; line-height: 1.8; color: var(--text);">
       <h3 style="margin-bottom: 16px; color: var(--accent);">Detaylı İnceleme</h3>
       {{ product.content_tr }}

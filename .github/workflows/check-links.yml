@@ -1,0 +1,28 @@
+name: Weekly Link Check
+
+on:
+  schedule:
+    # Her Pazartesi 05:00 UTC
+    - cron: "0 5 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check broken links
+        run: python check_links.py

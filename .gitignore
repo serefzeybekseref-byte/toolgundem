@@ -13,3 +13,6 @@ build/
 .DS_Store
 Thumbs.db
 migration_dump.json
+
+.vercel
+.env*
