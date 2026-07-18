@@ -156,12 +156,18 @@ h1, h2, h3, h4 {
 }
 
 .logo {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 800;
   letter-spacing: -0.04em;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+}
+
+.logo-mark {
+  border-radius: 7px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
 }
 
 .logo-accent {
