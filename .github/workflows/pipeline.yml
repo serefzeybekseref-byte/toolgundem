@@ -11,7 +11,7 @@ on:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     permissions:
       issues: write
     env:
@@ -33,15 +33,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Run Product Hunt pipeline
         id: pipeline
+        timeout-minutes: 15
         run: python pipeline.py
 
       - name: Backfill missing quickfacts (20 products)
+        timeout-minutes: 8
+        continue-on-error: true
         run: python backfill_quickfacts.py 20
 
       - name: Open issue if 2+ days with zero new products
