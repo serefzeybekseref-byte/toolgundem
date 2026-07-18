@@ -4,7 +4,7 @@ import logging
 import requests
 from dotenv import load_dotenv
 load_dotenv()  # local'de .env'i yukler; production'da (Vercel) zaten env var'lar hazir, zararsiz.
-from flask import Flask, render_template, abort, request, jsonify, Response
+from flask import Flask, render_template, abort, request, jsonify, Response, g
 from db import (
     init_db, get_all_products, get_product_by_slug,
     get_all_comparisons, get_comparison_by_slug,
@@ -23,6 +23,17 @@ logger = logging.getLogger("toolgundem")
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 init_db()
+
+
+@app.teardown_appcontext
+def close_db_connection(exception=None):
+    """Istek basi paylasilan DB baglantisini istek bitince gercekten kapatir."""
+    conn = g.pop("_db_conn", None)
+    if conn is not None:
+        try:
+            conn.raw.close()
+        except Exception:
+            pass
 
 
 # --- Topic display labels ---

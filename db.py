@@ -56,12 +56,21 @@ class _PGCursorWrapper:
             return None
 
 
+try:
+    from flask import g, has_request_context
+except ImportError:
+    g = None
+    def has_request_context():
+        return False
+
+
 class _ConnWrapper:
     """SQLite ve Postgres baglantilarini tek bir arayuz (execute/commit/close) altinda birlestirir."""
 
-    def __init__(self, raw, is_pg):
+    def __init__(self, raw, is_pg, shared=False):
         self.raw = raw
         self.is_pg = is_pg
+        self.shared = shared
 
     def execute(self, sql, params=()):
         if self.is_pg:
@@ -78,16 +87,34 @@ class _ConnWrapper:
         self.raw.commit()
 
     def close(self):
-        self.raw.close()
+        # Istek-basi paylasilan baglantilar tek tek kapatilmaz;
+        # gercek kapama Flask'in teardown_appcontext'inde yapilir.
+        if not self.shared:
+            self.raw.close()
+
+
+def _open_raw_connection(shared):
+    if USE_POSTGRES:
+        raw = psycopg2.connect(DATABASE_URL)
+        return _ConnWrapper(raw, is_pg=True, shared=shared)
+    raw = sqlite3.connect(DB_PATH)
+    raw.row_factory = sqlite3.Row
+    return _ConnWrapper(raw, is_pg=False, shared=shared)
 
 
 def get_connection():
-    if USE_POSTGRES:
-        raw = psycopg2.connect(DATABASE_URL)
-        return _ConnWrapper(raw, is_pg=True)
-    raw = sqlite3.connect(DB_PATH)
-    raw.row_factory = sqlite3.Row
-    return _ConnWrapper(raw, is_pg=False)
+    """
+    Flask istek baglaminda (web istekleri) tek bir baglanti acilip istek
+    boyunca paylasilir - boylece bir sayfa yuklemesinde 7-8 ayri Supabase
+    SSL handshake'i yerine sadece 1 tane acilir (onceden ~6sn suren ana
+    sayfa yuklemesi bu sekilde hizlanir). Istek disi (pipeline/script)
+    kullanimda eskisi gibi her cagrida yeni baglanti acilir.
+    """
+    if has_request_context():
+        if not hasattr(g, "_db_conn"):
+            g._db_conn = _open_raw_connection(shared=True)
+        return g._db_conn
+    return _open_raw_connection(shared=False)
 
 
 def init_db():
