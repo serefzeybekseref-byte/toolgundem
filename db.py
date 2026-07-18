@@ -214,6 +214,7 @@ def init_db():
         ("last_checked_at", "TEXT"),
         ("is_broken", "INTEGER DEFAULT 0"),
         ("quality_score", "INTEGER DEFAULT 0"),
+        ("gallery", "TEXT"),
     ]
     for col_name, col_type in new_columns:
         if USE_POSTGRES:
@@ -406,8 +407,8 @@ def save_product(product: dict, ai_content: dict) -> str:
         INSERT INTO products
         (ph_id, slug, original_name, title_tr, summary_tr, content_tr, tags,
          ph_url, website, thumbnail, votes, topics, created_at, normalized_name,
-         why_use_it, key_features, platforms, pricing_type, quality_score)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         why_use_it, key_features, platforms, pricing_type, quality_score, gallery)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         product["id"], slug, product["name"],
         ai_content["title"], ai_content["summary"], ai_content["content"],
@@ -431,6 +432,7 @@ def save_product(product: dict, ai_content: dict) -> str:
             "thumbnail": product.get("thumbnail"),
             "website": product.get("website", ""),
         }),
+        ",".join(product.get("gallery", [])),
     ))
     conn.commit()
     conn.close()

@@ -30,6 +30,11 @@ query($cursor: String) {
         thumbnail {
           url
         }
+        media {
+          url
+          type
+          videoUrl
+        }
         topics(first: 5) {
           edges {
             node {
@@ -77,6 +82,11 @@ def get_latest_products(max_products: int = MAX_PRODUCTS):
         for edge in edges:
             node = edge["node"]
             topics = [t["node"]["name"] for t in node["topics"]["edges"]]
+            # Sadece resim tipi medyayi galeri olarak al (video haric), max 4 tane
+            gallery = [
+                m["url"] for m in node.get("media", [])
+                if m.get("type") == "image" and m.get("url")
+            ][:4]
             products.append({
                 "id": node["id"],
                 "name": node["name"],
@@ -86,6 +96,7 @@ def get_latest_products(max_products: int = MAX_PRODUCTS):
                 "website": node.get("website", ""),
                 "votes": node["votesCount"],
                 "thumbnail": node["thumbnail"]["url"] if node.get("thumbnail") else None,
+                "gallery": gallery,
                 "topics": topics,
             })
             if len(products) >= max_products:
