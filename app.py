@@ -331,6 +331,12 @@ JSON formatinda don. Format:
 
 
 
+@app.route("/favicon.ico")
+def favicon_root():
+    """Tarayicilar <link> tag'inden bagimsiz olarak kokten /favicon.ico ister."""
+    return app.send_static_file("favicon.ico")
+
+
 @app.route("/robots.txt")
 def robots():
     base = "https://" + request.host
