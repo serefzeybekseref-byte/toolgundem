@@ -13,7 +13,7 @@ API_URL = "https://api.producthunt.com/v2/api/graphql"
 
 QUERY = """
 query($cursor: String) {
-  posts(first: 20, order: RANKING, after: $cursor) {
+  posts(first: 20, order: RANKING, after: $cursor, topic: "artificial-intelligence") {
     pageInfo {
       hasNextPage
       endCursor
