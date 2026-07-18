@@ -11,6 +11,7 @@ from db import (
     get_trending_products, get_recent_products,
     get_products_by_topic, search_products, search_products_advisor,
     get_all_topics, get_similar_products, get_top_products_by_period,
+    subscribe_email,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
     get_admin_stats,
 )
@@ -230,6 +231,25 @@ def detail(slug):
 def comparisons_list():
     comparisons = get_all_comparisons()
     return render_template("comparisons.html", comparisons=comparisons)
+
+
+@app.route("/abone", methods=["POST"])
+def subscribe():
+    """Bulten kaydi - hem normal form submit (JS'siz) hem fetch/JSON destekler."""
+    email = request.form.get("email") or (request.get_json(silent=True) or {}).get("email", "")
+    result = subscribe_email(email)
+    if result == "gecersiz":
+        message = "Geçerli bir e-posta adresi girin."
+    elif result == "zaten_var":
+        message = "Zaten abonesin, teşekkürler!"
+    else:
+        message = "Teşekkürler! Abone oldun."
+
+    if request.is_json or request.headers.get("X-Requested-With") == "fetch":
+        return jsonify({"ok": result != "gecersiz", "message": message})
+
+    from flask import redirect, url_for
+    return redirect(request.referrer or url_for("home"))
 
 
 @app.route("/karsilastirma/<slug>")

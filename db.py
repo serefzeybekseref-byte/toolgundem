@@ -151,6 +151,14 @@ def init_db():
         )
     """)
     conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS subscribers (
+            id {pk},
+            email TEXT UNIQUE NOT NULL,
+            subscribed_at TEXT,
+            is_active INTEGER DEFAULT 1
+        )
+    """)
+    conn.execute(f"""
         CREATE TABLE IF NOT EXISTS comparison_items (
             id {pk},
             comparison_id INTEGER NOT NULL,
@@ -625,6 +633,37 @@ def get_recent_products(limit=10):
     rows = conn.execute("SELECT * FROM products ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def subscribe_email(email: str) -> str:
+    """
+    Bulten aboneligi kaydeder. Zaten kayitliysa (UNIQUE ihlali) sessizce basarili sayar
+    (kullaniciya "zaten abonesin" hissi vermek yerine ayni "tesekkurler" mesajini gosterebilmek icin).
+    Donen: "yeni" | "zaten_var" | "gecersiz"
+    """
+    email = (email or "").strip().lower()
+    if not email or "@" not in email or "." not in email.split("@")[-1]:
+        return "gecersiz"
+    conn = get_connection()
+    existing = conn.execute("SELECT 1 FROM subscribers WHERE email = ?", (email,)).fetchone()
+    if existing:
+        conn.close()
+        return "zaten_var"
+    conn.execute(
+        "INSERT INTO subscribers (email, subscribed_at, is_active) VALUES (?, ?, 1)",
+        (email, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
+    return "yeni"
+
+
+def get_active_subscribers():
+    """Haftalik bulten gonderimi icin aktif abone listesini dondurur."""
+    conn = get_connection()
+    rows = conn.execute("SELECT email FROM subscribers WHERE is_active = 1").fetchall()
+    conn.close()
+    return [dict(r)["email"] for r in rows]
 
 
 def get_top_products_by_period(days: int, limit: int = 10):

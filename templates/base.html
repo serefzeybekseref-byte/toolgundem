@@ -63,6 +63,16 @@
       <span class="logo"><img src="/static/icon-b.svg" alt="" class="logo-mark" width="24" height="24"><span class="logo-accent">Bulurum</span>AI</span>
       <p class="footer-tagline">Türkiye'nin AI araç keşif platformu</p>
     </div>
+    <div class="footer-newsletter">
+      <form class="newsletter-form" action="/abone" method="POST" id="newsletter-form">
+        <label for="newsletter-email" class="newsletter-label">📬 Haftalık bülten — yeni ve trend araçlar</label>
+        <div class="newsletter-input-row">
+          <input type="email" id="newsletter-email" name="email" placeholder="eposta@ornek.com" required>
+          <button type="submit">Abone ol</button>
+        </div>
+        <p class="newsletter-msg" id="newsletter-msg"></p>
+      </form>
+    </div>
     <div class="footer-links">
       <a href="/">Ana Sayfa</a>
       <a href="/karsilastirma">En İyi AI Araçları</a>
@@ -72,6 +82,28 @@
     </div>
   </div>
 </footer>
+
+<script>
+document.getElementById("newsletter-form").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const email = document.getElementById("newsletter-email").value;
+  const msg = document.getElementById("newsletter-msg");
+  try {
+    const res = await fetch("/abone", {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-Requested-With": "fetch"},
+      body: JSON.stringify({email: email}),
+    });
+    const data = await res.json();
+    msg.textContent = data.message;
+    msg.style.color = data.ok ? "var(--accent, #6366f1)" : "#e05252";
+    if (data.ok) document.getElementById("newsletter-email").value = "";
+  } catch (err) {
+    msg.textContent = "Bir şeyler ters gitti, tekrar dene.";
+    msg.style.color = "#e05252";
+  }
+});
+</script>
 
 <button id="scroll-top" class="scroll-top" aria-label="Yukarı çık">↑</button>
 
