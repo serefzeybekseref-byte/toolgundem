@@ -8,9 +8,10 @@ import os
 import time
 from fetch_producthunt import get_latest_products
 from generate_content import generate_turkish_content
+from check_links import check_url
 from db import (
     init_db, product_exists, save_product, find_possible_duplicate,
-    log_pipeline_run, should_alert_zero_new,
+    log_pipeline_run, should_alert_zero_new, mark_link_checked, get_product_by_slug,
 )
 
 
@@ -37,6 +38,18 @@ def run():
             slug = save_product(product, ai_content)
             print(f"    -> kaydedildi: /urun/{slug}")
             new_count += 1
+
+            # Yeni eklenen urunun linkini hemen kontrol et (haftalik taramayi beklemeden)
+            try:
+                saved = get_product_by_slug(slug)
+                website = saved.get("website") or saved.get("ph_url")
+                is_up = check_url(website)
+                mark_link_checked(saved["id"], is_broken=not is_up)
+                if not is_up:
+                    print(f"    !! UYARI: {product['name']} linki kirik/erisilemiyor -> {website}")
+            except Exception as link_err:
+                print(f"    (link kontrolu atlandi: {link_err})")
+
             time.sleep(1)  # Groq rate limitine takilmamak icin kucuk bir bekleme
         except Exception as e:
             print(f"    !! HATA: {product['name']} icin icerik uretilemedi: {e}")
