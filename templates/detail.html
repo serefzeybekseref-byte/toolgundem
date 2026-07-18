@@ -24,7 +24,7 @@
         {% if product.website and 'free' in (product.tags|lower) %}<span class="badge badge-free">🆓 Ücretsiz</span>{% endif %}
       </div>
       <h1 class="detail-title">{{ product.original_name }}</h1>
-      <p class="detail-original mono" style="color: var(--accent); font-size: 1.1rem; font-weight: 500;">{{ product.title_tr }}</p>
+      <p class="detail-tagline mono">{{ product.title_tr }}</p>
       <p class="detail-summary">{{ product.summary_tr }}</p>
       <div class="detail-actions">
         {% if product.website %}
@@ -33,53 +33,53 @@
       </div>
     </div>
     {% if product.thumbnail %}
-    <div class="detail-logo-card" style="width: 200px; flex-shrink: 0; background-color: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; align-items: center; justify-content: center;">
-      <img src="{{ product.thumbnail }}" alt="{{ product.original_name }} logo" style="width: 100%; height: auto; display: block; object-fit: cover;">
+    <div class="detail-logo-card">
+      <img src="{{ product.thumbnail }}" alt="{{ product.original_name }} logo">
     </div>
     {% endif %}
   </div>
 
   <div class="detail-content">
     {% if product.why_use_it or product.key_features or product.platforms or product.pricing_type %}
-    <div class="detail-quickfacts" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:16px; margin-bottom:32px; padding:24px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+    <div class="detail-quickfacts">
       {% if product.why_use_it %}
-      <div style="grid-column: 1 / -1;">
-        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">👤 KİMLER İÇİN</div>
+      <div class="quickfact quickfact-full">
+        <div class="quickfact-label mono">👤 KİMLER İÇİN</div>
         <div>{{ product.why_use_it }}</div>
       </div>
       {% endif %}
       {% if use_cases %}
-      <div>
-        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">🎯 KULLANIM AMACI</div>
-        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+      <div class="quickfact">
+        <div class="quickfact-label mono">🎯 KULLANIM AMACI</div>
+        <div class="quickfact-tags">
           {% for u in use_cases %}<span class="tag">{{ u }}</span>{% endfor %}
         </div>
       </div>
       {% endif %}
       {% if personas %}
-      <div>
-        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">👥 SIKLIKLA TERCİH EDEN</div>
-        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+      <div class="quickfact">
+        <div class="quickfact-label mono">👥 SIKLIKLA TERCİH EDEN</div>
+        <div class="quickfact-tags">
           {% for p in personas %}<span class="tag">{{ p }}</span>{% endfor %}
         </div>
       </div>
       {% endif %}
       {% if product.platforms %}
-      <div>
-        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">💻 PLATFORM</div>
+      <div class="quickfact">
+        <div class="quickfact-label mono">💻 PLATFORM</div>
         <div>{{ product.platforms }}</div>
       </div>
       {% endif %}
       {% if product.pricing_type %}
-      <div>
-        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">💰 FİYATLANDIRMA</div>
+      <div class="quickfact">
+        <div class="quickfact-label mono">💰 FİYATLANDIRMA</div>
         <div>{{ product.pricing_type }}</div>
       </div>
       {% endif %}
       {% if product.key_features %}
-      <div style="grid-column: 1 / -1;">
-        <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-bottom:6px;">✅ ÖNE ÇIKAN ÖZELLİKLER</div>
-        <ul style="margin:0; padding-left:20px;">
+      <div class="quickfact quickfact-full">
+        <div class="quickfact-label mono">✅ ÖNE ÇIKAN ÖZELLİKLER</div>
+        <ul class="quickfact-list">
           {% for f in product.key_features.split(',') if f.strip() %}
           <li>{{ f.strip() }}</li>
           {% endfor %}
@@ -88,8 +88,8 @@
       {% endif %}
     </div>
     {% endif %}
-    <div class="detail-body" style="font-size: 1.1rem; line-height: 1.8; color: var(--text);">
-      <h3 style="margin-bottom: 16px; color: var(--accent);">Detaylı İnceleme</h3>
+    <div class="detail-body">
+      <h3 class="detail-body-title">Detaylı İnceleme</h3>
       {{ product.content_tr }}
     </div>
   </div>
@@ -111,43 +111,43 @@
   </div>
   {% endif %}
 
-  <div class="detail-meta mono" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:14px 18px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); margin: 24px 0;">
-    <span style="color: var(--text-secondary);">İçerik oluşturuldu: {{ product.created_at[:10] if product.created_at else 'Bilinmiyor' }}</span>
+  <div class="detail-meta-bar mono">
+    <span class="meta-neutral">İçerik oluşturuldu: {{ product.created_at[:10] if product.created_at else 'Bilinmiyor' }}</span>
     {% if product.last_checked_at %}
-    <span style="color: var(--border);">•</span>
+    <span class="meta-sep">•</span>
     {% if product.is_broken %}
-    <span style="color:#e5484d;">⚠ Site şu an erişilemiyor (son kontrol: {{ product.last_checked_at[:10] }})</span>
+    <span class="meta-warn">⚠ Site şu an erişilemiyor (son kontrol: {{ product.last_checked_at[:10] }})</span>
     {% else %}
-    <span style="color:#3fb950;">✓ Link doğrulandı — son kontrol: {{ product.last_checked_at[:10] }}</span>
+    <span class="meta-ok">✓ Link doğrulandı — son kontrol: {{ product.last_checked_at[:10] }}</span>
     {% endif %}
     {% endif %}
     {% if product.pricing_type and product.pricing_type != 'Bilinmiyor' %}
-    <span style="color: var(--border);">•</span>
-    <span style="color:#3fb950;">✓ Fiyat bilgisi mevcut</span>
+    <span class="meta-sep">•</span>
+    <span class="meta-ok">✓ Fiyat bilgisi mevcut</span>
     {% endif %}
     {% if product.platforms %}
-    <span style="color: var(--border);">•</span>
-    <span style="color:#3fb950;">✓ Platform bilgisi mevcut</span>
+    <span class="meta-sep">•</span>
+    <span class="meta-ok">✓ Platform bilgisi mevcut</span>
     {% endif %}
   </div>
 
   {% if related_comparisons %}
-  <div class="detail-comparisons-link" style="margin: 20px 0; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);">
-    <span class="mono" style="font-size:0.85rem; color: var(--text-secondary);">📊 Bu araç şu karşılaştırmalarda yer alıyor:</span>
-    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;">
+  <div class="detail-related-box">
+    <span class="detail-related-label mono">📊 Bu araç şu karşılaştırmalarda yer alıyor:</span>
+    <div class="detail-related-links">
       {% for c in related_comparisons %}
-      <a href="{{ url_for('comparison_detail', slug=c.slug) }}" class="btn" style="padding:6px 14px; font-size:0.88rem;">{{ c.title }} →</a>
+      <a href="{{ url_for('comparison_detail', slug=c.slug) }}" class="btn btn-sm">{{ c.title }} →</a>
       {% endfor %}
     </div>
   </div>
   {% endif %}
 
   {% if related_collections %}
-  <div class="detail-collections-link" style="margin: 20px 0; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);">
-    <span class="mono" style="font-size:0.85rem; color: var(--text-secondary);">🗂️ Bu araç şu koleksiyonlarda var:</span>
-    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;">
+  <div class="detail-related-box">
+    <span class="detail-related-label mono">🗂️ Bu araç şu koleksiyonlarda var:</span>
+    <div class="detail-related-links">
       {% for c in related_collections %}
-      <a href="{{ url_for('collection_detail', slug=c.slug) }}" class="btn" style="padding:6px 14px; font-size:0.88rem;">{{ c.title }} →</a>
+      <a href="{{ url_for('collection_detail', slug=c.slug) }}" class="btn btn-sm">{{ c.title }} →</a>
       {% endfor %}
     </div>
   </div>

@@ -155,6 +155,14 @@ const observer = new IntersectionObserver((entries) => {
 
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
+// Header: scroll sonrasi ince golge (sayfa icerigiyle ayrimi netlestirmek icin)
+const siteHeader = document.querySelector('.header');
+if (siteHeader) {
+  window.addEventListener('scroll', () => {
+    siteHeader.classList.toggle('scrolled', window.scrollY > 8);
+  }, { passive: true });
+}
+
 // AI Advisor Logic
 const advisorForm = document.getElementById('ai-advisor-form');
 if (advisorForm) {
@@ -188,16 +196,16 @@ if (advisorForm) {
       
       if (data.tools && data.tools.length > 0) {
         toolsDiv.innerHTML = data.tools.map(t => `
-          <a href="/urun/${t.slug}" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); text-decoration: none; color: inherit; transition: border-color 0.2s;">
+          <a href="/urun/${t.slug}" class="advisor-tool-item">
             <div style="flex: 1;">
-              <h4 style="color: var(--accent); margin-bottom: 4px;">${t.original_name}</h4>
-              <p style="font-size: 0.85rem; color: var(--text-secondary);">${t.summary_tr}</p>
+              <h4 class="advisor-tool-item-title">${t.original_name}</h4>
+              <p class="advisor-tool-item-summary">${t.summary_tr}</p>
             </div>
-            <div style="font-family: var(--font-mono); font-size: 0.8rem; background: var(--surface-hover); padding: 4px 8px; border-radius: var(--radius-sm);">▲ ${t.votes}</div>
+            <div class="advisor-tool-item-votes">▲ ${t.votes}</div>
           </a>
         `).join('');
       } else {
-        toolsDiv.innerHTML = '<p style="font-size: 0.9rem; color: var(--text-secondary);">Üzgünüm, bu spesifik ihtiyaca uygun bir araç bulamadım.</p>';
+        toolsDiv.innerHTML = '<p class="advisor-tool-item-summary">Üzgünüm, bu spesifik ihtiyaca uygun bir araç bulamadım.</p>';
       }
       
     } catch (err) {
