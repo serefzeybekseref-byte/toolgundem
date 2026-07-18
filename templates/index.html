@@ -18,31 +18,30 @@
 <section class="hero">
   <div class="container text-center">
     <div class="hero-badge">✨ Türkiye'nin Yapay Zeka Haritası</div>
-    <h1 class="hero-title" style="font-size: 3.5rem; line-height: 1.1; margin-bottom: 24px;">Türkiye'nin En Kapsamlı<br><span style="color: var(--accent);">AI Araç Keşif Platformu</span></h1>
-    <p class="hero-subtitle" style="font-size: 1.15rem; max-width: 650px; margin-inline: auto;">{{ total_products }}+ AI aracını sizin yerinize inceledik, karşılaştırdık ve doğru seçimi kolaylaştırdık.</p>
-    <div class="trust-checks" style="display:flex; flex-wrap:wrap; justify-content:center; gap: 10px 20px; margin-top:20px; font-size:0.92rem; color: var(--text-secondary);">
-      <span>✅ {{ total_products }}+ doğrulanmış araç</span>
-      {% if new_last_30d and new_last_30d > 0 %}<span>✅ Son 30 günde {{ new_last_30d }} yeni araç</span>{% endif %}
-      <span>✅ {{ comparisons|length }} karşılaştırma</span>
-      <span>✅ AI Danışmanı</span>
+    <h1 class="hero-title">Türkiye'nin En Kapsamlı<br><span class="gradient-text">AI Araç Keşif Platformu</span></h1>
+    <p class="hero-subtitle">{{ total_products }}+ AI aracını sizin yerinize inceledik, karşılaştırdık ve doğru seçimi kolaylaştırdık.</p>
+    <div class="trust-checks">
+      <span class="trust-chip"><span class="check-icon">✓</span> {{ total_products }}+ doğrulanmış araç</span>
+      {% if new_last_30d and new_last_30d > 0 %}<span class="trust-chip"><span class="check-icon">✓</span> Son 30 günde {{ new_last_30d }} yeni araç</span>{% endif %}
+      <span class="trust-chip"><span class="check-icon">✓</span> {{ comparisons|length }} karşılaştırma</span>
+      <span class="trust-chip"><span class="check-icon">✓</span> AI Danışmanı</span>
     </div>
     <div class="hero-stats">
       <div class="stat"><span class="stat-number">{{ total_products }}+</span><span class="stat-label">Araç</span></div>
       <div class="stat"><span class="stat-number">{{ comparisons|length }}</span><span class="stat-label">Karşılaştırma</span></div>
       <div class="stat"><span class="stat-number">{{ topics|length }}</span><span class="stat-label">Kategori</span></div>
     </div>
-    
-    <div class="ai-advisor-box fade-in" style="margin-top: 56px; max-width: 750px; margin-inline: auto; background-color: var(--surface); padding: 32px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.3); position: relative; overflow: hidden;">
-      <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent), var(--green));"></div>
-      <h3 style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; font-size: 1.5rem;"><span style="font-size: 1.8rem;">🤖</span> AI Karar Danışmanı</h3>
-      <p style="color: var(--text-secondary); font-size: 1.05rem; margin-bottom: 24px; text-align: center;">Ne yapmak istediğinizi kendi kelimelerinizle yazın, aradığınızı sizin yerinize bulup filtreleyelim.</p>
-      <form id="ai-advisor-form" style="display: flex; gap: 12px;">
-        <input type="text" id="advisor-input" placeholder="Örn: Sunum hazırlamam lazım, hangi araç işimi çözer?" style="flex: 1; padding: 16px 20px; font-size: 1.05rem; border-radius: var(--radius-md); border: 2px solid var(--border); background: var(--bg); color: var(--text); transition: border-color 0.2s;" required>
-        <button type="submit" class="btn btn-primary" id="advisor-submit" style="padding: 16px 32px; font-size: 1.05rem;">Danış</button>
+
+    <div class="advisor-box fade-in">
+      <h3 class="advisor-title"><span style="font-size: 1.8rem;">🤖</span> AI Karar Danışmanı</h3>
+      <p class="advisor-subtitle">Ne yapmak istediğinizi kendi kelimelerinizle yazın, aradığınızı sizin yerinize bulup filtreleyelim.</p>
+      <form id="ai-advisor-form" class="advisor-form">
+        <input type="text" id="advisor-input" placeholder="Örn: Sunum hazırlamam lazım, hangi araç işimi çözer?" class="advisor-input" required>
+        <button type="submit" class="btn btn-primary advisor-submit" id="advisor-submit">Danış</button>
       </form>
-      <div id="advisor-results" style="margin-top: 24px; text-align: left; display: none;">
-        <div id="advisor-message" style="margin-bottom: 16px; font-weight: 500; color: var(--accent);"></div>
-        <div id="advisor-tools" style="display: flex; flex-direction: column; gap: 12px;"></div>
+      <div id="advisor-results" class="advisor-results">
+        <div id="advisor-message" class="advisor-message"></div>
+        <div id="advisor-tools" class="advisor-tools"></div>
       </div>
     </div>
   </div>
