@@ -740,7 +740,10 @@ def get_similar_products(product_id, limit=4):
     generic_topics = {t for t, cnt in topic_freq.items() if cnt / total_count > 0.15}
     # Frekans esigi dusuk cikan ama anlamca yine de asiri genel olan topic'ler
     # (or. "Uretkenlik" hem ChatGPT'de hem ClickUp'ta var ama ikisi alakasiz arac).
-    generic_topics |= {"Uretkenlik", "Productivity", "AI", "Artificial Intelligence"}
+    generic_topics |= {
+        "Uretkenlik", "Productivity", "AI", "Artificial Intelligence",
+        "API", "Vercel Day", "Tech", "SaaS", "GitHub", "Business",
+    }
 
     product = conn.execute("SELECT * FROM products WHERE id = ?", (product_id,)).fetchone()
     if not product:

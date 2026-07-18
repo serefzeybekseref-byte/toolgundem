@@ -2,6 +2,8 @@ import os
 import json
 import logging
 import requests
+from dotenv import load_dotenv
+load_dotenv()  # local'de .env'i yukler; production'da (Vercel) zaten env var'lar hazir, zararsiz.
 from flask import Flask, render_template, abort, request, jsonify, Response
 from db import (
     init_db, get_all_products, get_product_by_slug,
@@ -59,7 +61,7 @@ TOPIC_LABELS = {
     "Games": "Oyun",
     "SaaS": "SaaS",
     "Education": "Eğitim",
-    "Marketing": "Pazarlama (EN)",
+    "Marketing": "Pazarlama",
     "Email": "E-posta",
     "Adobe": "Adobe",
     "UI": "Arayüz Tasarımı",
@@ -100,12 +102,12 @@ TOPIC_ICONS = {
     "MusteriDestegi": "🎧",
     "Avatar": "👤",
     "Veri": "📊",
-    "Vercel Day": "🚀",
+    "Vercel Day": "▲",
     "Artificial Intelligence": "🤖",
     "Google": "🔍",
     "Developer Tools": "🛠️",
     "GitHub": "🐙",
-    "Productivity": "⚡",
+    "Productivity": "📋",
     "AcikKaynak": "🔓",
     "Eposta": "📧",
     "Health & Fitness": "💪",
@@ -132,6 +134,29 @@ TOPIC_ICONS = {
 _FALLBACK_ICONS = ["✨", "🧩", "🔧", "🌐", "📦", "💡", "🎯", "🔹"]
 
 
+def get_merged_topics():
+    """
+    get_all_topics() ham PH topic'lerini (AI, Artificial Intelligence gibi ayni
+    Turkce etikete cevrilen ama farkli raw string olan ciftleri) TOPIC_LABELS
+    uzerinden aynı goruntulenen etikette birlestirip sayilarini toplar.
+    Boylece "Yapay Zeka" ayni ikonla iki kez degil, tek ve dogru sayiyla gorunur.
+    NOT: Chip href'i hala en yuksek sayili HAM topic'e gider (kategori sayfasi
+    o ham topic'e gore filtreliyor), sadece goruntu/sayim birlesiyor.
+    """
+    raw_topics = get_all_topics()  # [(raw_topic, count), ...]
+    merged = {}
+    for raw_topic, count in raw_topics:
+        label = TOPIC_LABELS.get(raw_topic, raw_topic)
+        if label not in merged:
+            merged[label] = {"raw_topic": raw_topic, "label": label, "count": 0, "_best": 0}
+        merged[label]["count"] += count
+        if count > merged[label]["_best"]:
+            merged[label]["_best"] = count
+            merged[label]["raw_topic"] = raw_topic
+    result = sorted(merged.values(), key=lambda x: x["count"], reverse=True)
+    return result
+
+
 def get_topic_icon(topic):
     if topic in TOPIC_ICONS:
         return TOPIC_ICONS[topic]
@@ -153,7 +178,7 @@ def inject_globals():
 def home():
     trending = get_trending_products(limit=6)
     recent = get_recent_products(limit=6)
-    topics = get_all_topics()
+    topics = get_merged_topics()
     comparisons = get_all_comparisons()
     
     # Get total product count for the stats section

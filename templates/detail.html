@@ -121,7 +121,7 @@
     <span style="color:#3fb950;">✓ Link doğrulandı — son kontrol: {{ product.last_checked_at[:10] }}</span>
     {% endif %}
     {% endif %}
-    {% if product.pricing_type %}
+    {% if product.pricing_type and product.pricing_type != 'Bilinmiyor' %}
     <span style="color: var(--border);">•</span>
     <span style="color:#3fb950;">✓ Fiyat bilgisi mevcut</span>
     {% endif %}
