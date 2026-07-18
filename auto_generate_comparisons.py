@@ -6,7 +6,9 @@ yapilandirilmis bir karsilastirmaya donusturur.
 """
 import json
 import os
+import re
 import time
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 load_dotenv()
 from db import (
@@ -19,6 +21,52 @@ init_db()
 
 MIN_PRODUCTS = 5   # bu sayidan az urunu olan kategori icin karsilastirma uretilmez
 MAX_ITEMS = 8       # bir karsilastirmada en fazla kac arac olsun
+MAX_PER_BRAND = 2   # ayni sirketin (domain) en fazla kac urunu ayni listede olabilir
+
+# Baslik karsilastirmasinda yok sayilacak, anlam tasimayan kelimeler (duplicate tespiti icin)
+_STOPWORDS = {
+    "en", "iyi", "ai", "yapay", "zeka", "araclari", "aracı", "araçları", "arac",
+    "araç", "icin", "için", "5", "listesi", "karsilastirmasi", "karşılaştırması",
+    "olarak", "ve", "ile", "destekli", "hazirlama", "hazırlama",
+}
+
+
+def _normalize_tokens(text: str) -> set:
+    """Turkce karakterleri sadelestirip anlamli kelime kumesi cikarir (duplicate tespiti icin)."""
+    text = text.lower()
+    replacements = {"ı": "i", "ş": "s", "ğ": "g", "ü": "u", "ö": "o", "ç": "c"}
+    for src, dst in replacements.items():
+        text = text.replace(src, dst)
+    words = re.findall(r"[a-z0-9]+", text)
+    return {w for w in words if w not in _STOPWORDS and len(w) > 2}
+
+
+def is_semantic_duplicate(candidate_title: str, existing_titles: list) -> str | None:
+    """
+    Slug ayni olmasa bile konu ortakligi varsa (ornek: 'Muzik Uretim Araclari' ile
+    'Muzik Olusturma Araclari') True doner - ayni kategori iki farkli baslikla
+    iki kez uretilmesin diye. En az 1 anlamli, ortak ve nadir (kisa stopword
+    olmayan) kelime yeterli sayilir cunku CANDIDATE_TOPICS zaten dar/spesifik konular.
+    """
+    cand_tokens = _normalize_tokens(candidate_title)
+    for existing in existing_titles:
+        existing_tokens = _normalize_tokens(existing)
+        overlap = cand_tokens & existing_tokens
+        if overlap:
+            return existing
+    return None
+
+
+def _brand_key(website: str, name: str) -> str:
+    """Urunun 'marka'sini domain'den cikarir (ornek: chat.openai.com -> openai)."""
+    try:
+        netloc = urlparse(website).netloc.lower()
+        parts = netloc.replace("www.", "").split(".")
+        if len(parts) >= 2:
+            return parts[-2]
+    except Exception:
+        pass
+    return name.lower().split()[0] if name else "?"
 
 # topic etiketi -> (baslik, slug, min_urun_ustyazi)
 CANDIDATE_TOPICS = {
@@ -40,14 +88,31 @@ CANDIDATE_TOPICS = {
 }
 
 def get_top_products_for_topic(topic: str, limit: int = MAX_ITEMS):
+    """
+    Oy sayisina gore siralar ama ayni markadan (domain) en fazla MAX_PER_BRAND
+    urun alir - yoksa ornegin OpenAI'nin ChatGPT/GPT-4o/Operator/Codex gibi
+    urunleri tek basina listenin cogunu kaplayabilir.
+    """
     conn = get_connection()
     pattern = f"%{topic}%"
     rows = conn.execute("""
         SELECT * FROM products WHERE topics LIKE ?
-        ORDER BY votes DESC LIMIT ?
-    """, (pattern, limit)).fetchall()
+        ORDER BY votes DESC
+    """, (pattern,)).fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    all_products = [dict(r) for r in rows]
+
+    brand_counts = {}
+    selected = []
+    for p in all_products:
+        brand = _brand_key(p.get("website", ""), p.get("original_name", ""))
+        if brand_counts.get(brand, 0) >= MAX_PER_BRAND:
+            continue
+        selected.append(p)
+        brand_counts[brand] = brand_counts.get(brand, 0) + 1
+        if len(selected) >= limit:
+            break
+    return selected
 
 
 def existing_comparison_slugs():
@@ -96,12 +161,19 @@ Yalnızca şu JSON formatında cevap ver:
 
 def run():
     existing = existing_comparison_slugs()
+    existing_titles = [c["title"] for c in get_all_comparisons()]
     created, skipped, rejected = 0, 0, 0
     rejection_report = []
 
     for topic, title_hint in CANDIDATE_TOPICS.items():
         slug = slugify(title_hint)
         if slug in existing:
+            skipped += 1
+            continue
+
+        dup = is_semantic_duplicate(title_hint, existing_titles)
+        if dup:
+            print(f"[atlandi] {topic}: '{title_hint}' zaten var olan '{dup}' ile konu ortakligi tasiyor (semantik duplicate)")
             skipped += 1
             continue
 
