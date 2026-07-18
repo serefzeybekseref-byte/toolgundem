@@ -27,7 +27,7 @@
       <div class="sidebar-topics">
         {% for t, count in all_topics[:20] %}
         <a href="/kategori/{{ t }}" class="sidebar-topic{% if t == topic %} active{% endif %}">
-          {{ topic_icons.get(t, '📁') }} {{ topic_labels.get(t, t) }}
+          {{ get_topic_icon(t) }} {{ topic_labels.get(t, t) }}
           <span class="sidebar-count">{{ count }}</span>
         </a>
         {% endfor %}

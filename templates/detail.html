@@ -105,7 +105,7 @@
     <span class="detail-topics-label">Kategoriler:</span>
     {% for t in product.topics.split(',') if t.strip() %}
     <a href="/kategori/{{ t.strip() }}" class="category-chip-sm">
-      {{ topic_icons.get(t.strip(), '📁') }} {{ topic_labels.get(t.strip(), t.strip()) }}
+      {{ get_topic_icon(t.strip()) }} {{ topic_labels.get(t.strip(), t.strip()) }}
     </a>
     {% endfor %}
   </div>

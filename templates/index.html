@@ -135,7 +135,7 @@
     <div class="category-grid">
       {% for topic, count in topics[:16] %}
       <a href="{{ url_for('category', topic=topic) }}" class="category-chip fade-in">
-        <span class="category-icon">{{ topic_icons.get(topic, '📁') }}</span>
+        <span class="category-icon">{{ get_topic_icon(topic) }}</span>
         <span class="category-name">{{ topic_labels.get(topic, topic) }}</span>
         <span class="category-count">{{ count }}</span>
       </a>

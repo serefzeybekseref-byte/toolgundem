@@ -47,6 +47,33 @@ TOPIC_LABELS = {
     "MusteriDestegi": "Müşteri Desteği",
     "Avatar": "Avatar & Dijital İnsan",
     "Veri": "Veri Analizi",
+    "Vercel Day": "Vercel Day",
+    "Artificial Intelligence": "Yapay Zeka",
+    "Google": "Google",
+    "Developer Tools": "Geliştirici Araçları",
+    "GitHub": "GitHub",
+    "Productivity": "Prodüktivite",
+    "AcikKaynak": "Açık Kaynak",
+    "Eposta": "E-posta",
+    "Health & Fitness": "Sağlık & Fitness",
+    "Games": "Oyun",
+    "SaaS": "SaaS",
+    "Education": "Eğitim",
+    "Marketing": "Pazarlama (EN)",
+    "Email": "E-posta",
+    "Adobe": "Adobe",
+    "UI": "Arayüz Tasarımı",
+    "Business": "İş Dünyası",
+    "Tech": "Teknoloji",
+    "News": "Haber",
+    "Sports": "Spor",
+    "Online Learning": "Online Eğitim",
+    "Investing": "Yatırım",
+    "Task Management": "Görev Yönetimi",
+    "Indie Games": "Bağımsız Oyunlar",
+    "Photo editing": "Fotoğraf Düzenleme",
+    "Medical": "Sağlık",
+    "Open Source": "Açık Kaynak",
 }
 
 TOPIC_ICONS = {
@@ -73,7 +100,43 @@ TOPIC_ICONS = {
     "MusteriDestegi": "🎧",
     "Avatar": "👤",
     "Veri": "📊",
+    "Vercel Day": "🚀",
+    "Artificial Intelligence": "🤖",
+    "Google": "🔍",
+    "Developer Tools": "🛠️",
+    "GitHub": "🐙",
+    "Productivity": "⚡",
+    "AcikKaynak": "🔓",
+    "Eposta": "📧",
+    "Health & Fitness": "💪",
+    "Games": "🎮",
+    "SaaS": "☁️",
+    "Education": "🎓",
+    "Marketing": "📣",
+    "Email": "📧",
+    "Adobe": "🖌️",
+    "UI": "🖼️",
+    "Business": "💼",
+    "Tech": "💡",
+    "News": "📰",
+    "Sports": "⚽",
+    "Online Learning": "🎓",
+    "Investing": "📈",
+    "Task Management": "✅",
+    "Indie Games": "🕹️",
+    "Photo editing": "🖼️",
+    "Medical": "⚕️",
+    "Open Source": "🔓",
 }
+
+_FALLBACK_ICONS = ["✨", "🧩", "🔧", "🌐", "📦", "💡", "🎯", "🔹"]
+
+
+def get_topic_icon(topic):
+    if topic in TOPIC_ICONS:
+        return TOPIC_ICONS[topic]
+    idx = sum(ord(c) for c in topic) % len(_FALLBACK_ICONS)
+    return _FALLBACK_ICONS[idx]
 
 
 @app.context_processor
@@ -82,6 +145,7 @@ def inject_globals():
     return {
         "topic_labels": TOPIC_LABELS,
         "topic_icons": TOPIC_ICONS,
+        "get_topic_icon": get_topic_icon,
     }
 
 
