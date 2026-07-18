@@ -28,7 +28,8 @@
       <p class="detail-summary">{{ product.summary_tr }}</p>
       <div class="detail-actions">
         {% if product.website %}
-        <a class="btn btn-primary" href="{{ product.website }}" target="_blank" rel="noopener">Siteyi Ziyaret Et →</a>
+        <a class="btn btn-primary" href="{{ get_cta_url(product) }}" target="_blank" rel="noopener{% if product.affiliate_url %} sponsored{% endif %}">{{ get_cta_label(product) }}</a>
+        {% if product.affiliate_url %}<p class="mono" style="font-size:0.7rem;color:var(--text-secondary);margin-top:6px;">Bu bağlantı üzerinden yapılan işlemlerden komisyon kazanabiliriz.</p>{% endif %}
         {% endif %}
       </div>
     </div>

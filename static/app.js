@@ -127,6 +127,21 @@ if (searchInput && searchForm) {
       searchForm.submit();
     }
   });
+
+  // Ne aradigini net gostermek icin placeholder'i donguyle degistir (CTR icin kucuk ama etkili detay)
+  const searchPlaceholders = [
+    'Araç ara...', 'Kod yazmak için AI ara...', 'Logo oluştur...',
+    'Video üret...', 'Sunum hazırla...', 'PDF özetle...', 'Müzik üret...',
+  ];
+  if (!searchInput.value) {
+    let phIndex = 0;
+    searchInput.setAttribute('placeholder', 'Araç ara...');
+    setInterval(() => {
+      if (document.activeElement === searchInput || searchInput.value) return;
+      phIndex = (phIndex + 1) % searchPlaceholders.length;
+      searchInput.setAttribute('placeholder', searchPlaceholders[phIndex]);
+    }, 2600);
+  }
 }
 
 // Scroll to top button

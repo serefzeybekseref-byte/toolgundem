@@ -145,6 +145,20 @@ TOPIC_ICONS = {
 
 _FALLBACK_ICONS = ["✨", "🧩", "🔧", "🌐", "📦", "💡", "🎯", "🔹"]
 
+# Ana sayfa "Ne yapmak istiyorsun?" CTA izgarasi - rules.json'daki ayni use_case
+# sozlugunu (rules_engine.py) referans alir, boylece rule engine ile ayni dilde konusur.
+# (etiket, ikon, hedef raw-topic)
+USE_CASE_CTA = [
+    ("Kod yazmak", "💻", "Kod"),
+    ("Görsel üretmek", "🎨", "Gorsel"),
+    ("Video üretmek", "🎬", "Video"),
+    ("Ses üretmek", "🎙️", "Ses"),
+    ("Sunum hazırlamak", "📊", "Sunum"),
+    ("Yazı yazmak", "✍️", "Yazi"),
+    ("Otomasyon kurmak", "⚡", "Otomasyon"),
+    ("Pazarlama yapmak", "📣", "Marketing"),
+]
+
 
 def get_merged_topics():
     """
@@ -199,6 +213,18 @@ def get_comparison_icon(title):
     return "🏆"
 
 
+def get_cta_url(product):
+    """Affiliate linki varsa onu, yoksa resmi siteyi dondurur (kullanici fark etmez)."""
+    return (product.get("affiliate_url") or "").strip() or product.get("website", "")
+
+
+def get_cta_label(product):
+    """Affiliate linki varsa donusumu tesvik eden bir CTA, yoksa notr 'Resmi Sitesi' etiketi."""
+    if (product.get("affiliate_url") or "").strip():
+        return "Ücretsiz Dene →"
+    return "Resmi Sitesi →"
+
+
 @app.context_processor
 def inject_globals():
     """Tum template'lerde kullanilabilecek global degiskenler."""
@@ -207,6 +233,8 @@ def inject_globals():
         "topic_icons": TOPIC_ICONS,
         "get_topic_icon": get_topic_icon,
         "get_comparison_icon": get_comparison_icon,
+        "get_cta_url": get_cta_url,
+        "get_cta_label": get_cta_label,
     }
 
 
@@ -229,6 +257,10 @@ def home():
     new_last_30d = dict(conn.execute(
         "SELECT COUNT(*) as cnt FROM products WHERE created_at >= ?", (thirty_days_ago,)
     ).fetchone())["cnt"]
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    new_today = dict(conn.execute(
+        "SELECT COUNT(*) as cnt FROM products WHERE created_at >= ?", (today_str,)
+    ).fetchone())["cnt"]
     conn.close()
     three_days_ago = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%d")
 
@@ -242,7 +274,9 @@ def home():
         comparisons=comparisons,
         total_products=total_products,
         new_last_30d=new_last_30d,
+        new_today=new_today,
         new_cutoff=three_days_ago,
+        use_case_cta=USE_CASE_CTA,
     )
 
 

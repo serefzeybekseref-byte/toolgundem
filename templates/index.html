@@ -22,9 +22,21 @@
     <p class="hero-subtitle">{{ total_products }}+ AI aracını sizin yerinize inceledik, karşılaştırdık ve doğru seçimi kolaylaştırdık.</p>
     <div class="trust-checks">
       <span class="trust-chip"><span class="check-icon">✓</span> {{ total_products }}+ doğrulanmış araç</span>
+      {% if new_today and new_today > 0 %}<span class="trust-chip"><span class="check-icon">✓</span> Bugün {{ new_today }} yeni araç eklendi</span>{% endif %}
       {% if new_last_30d and new_last_30d > 0 %}<span class="trust-chip"><span class="check-icon">✓</span> Son 30 günde {{ new_last_30d }} yeni araç</span>{% endif %}
       <span class="trust-chip"><span class="check-icon">✓</span> {{ comparisons|length }} karşılaştırma</span>
-      <span class="trust-chip"><span class="check-icon">✓</span> AI Danışmanı</span>
+      <span class="trust-chip"><span class="check-icon">✓</span> Günde 3 kez otomatik kontrol</span>
+    </div>
+
+    <div class="use-case-cta">
+      <p class="use-case-cta-label">Ne yapmak istiyorsun?</p>
+      <div class="use-case-cta-grid">
+        {% for label, icon, topic in use_case_cta %}
+        <a href="{{ url_for('category', topic=topic) }}" class="use-case-chip">
+          <span class="use-case-chip-icon">{{ icon }}</span>{{ label }}
+        </a>
+        {% endfor %}
+      </div>
     </div>
     <div class="hero-stats">
       <div class="stat"><span class="stat-number">{{ total_products }}+</span><span class="stat-label">Araç</span></div>
