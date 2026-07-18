@@ -180,7 +180,7 @@ def home():
     trending = get_trending_products(limit=6)
     recent = get_recent_products(limit=6)
     weekly_top = get_top_products_by_period(days=7, limit=6)
-    monthly_top = get_top_products_by_period(days=30, limit=6)
+    monthly_top = get_top_products_by_period(days=30, limit=6, exclude_ids=[p["id"] for p in weekly_top])
     topics = get_merged_topics()
     comparisons = get_all_comparisons()
     
@@ -349,6 +349,16 @@ def sitemap():
 def collections_list():
     from db import get_all_collections
     collections = get_all_collections()
+    icon_map = {
+        "yazilim": "💻", "yazılım": "💻", "startup": "🚀", "girisim": "🚀",
+        "sanat": "🎨", "sanatci": "🎨", "gorsel": "🎨", "tasarim": "🎨",
+        "icerik": "📝", "uretici": "🎬", "video": "🎬",
+        "pazarlama": "📣", "satis": "💰", "eticaret": "🛒",
+        "kod": "⌨️", "gelistirici": "⌨️",
+    }
+    for c in collections:
+        slug_low = c.get("slug", "").lower()
+        c["icon"] = next((v for k, v in icon_map.items() if k in slug_low), "📦")
     return render_template("collections.html", collections=collections)
 
 @app.route("/koleksiyon/<slug>")

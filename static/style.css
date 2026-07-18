@@ -1223,6 +1223,28 @@ h1, h2, h3, h4 {
   box-shadow: 0 16px 32px -12px var(--accent-glow);
 }
 
+.collection-icon {
+  font-size: 1.8rem;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--tag-bg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.collection-card-soon {
+  border-style: dashed;
+  opacity: 0.75;
+  box-shadow: none;
+}
+
+.collection-card-soon::before {
+  display: none;
+}
+
 .compare-count {
   display: inline-block;
   font-family: var(--font-mono);

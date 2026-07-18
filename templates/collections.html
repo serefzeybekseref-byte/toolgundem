@@ -14,9 +14,10 @@
     <p class="page-subtitle">İhtiyacınıza en uygun özenle seçilmiş yapay zeka araç paketleri.</p>
   </div>
 
-  <div class="card-grid">
+  <div class="card-grid collections-grid">
     {% for col in collections %}
     <a href="/koleksiyon/{{ col.slug }}" class="compare-card fade-in">
+      <div class="collection-icon">{{ col.icon }}</div>
       <h3 class="compare-title">{{ col.title }}</h3>
       {% if col.description %}
       <p class="compare-intro">{{ col.description }}</p>
@@ -27,6 +28,11 @@
       <p>Henüz koleksiyon bulunmuyor.</p>
     </div>
     {% endfor %}
+    <div class="compare-card collection-card-soon">
+      <div class="collection-icon">✨</div>
+      <h3 class="compare-title">Daha Fazlası Yolda</h3>
+      <p class="compare-intro">Her hafta yeni, özenle seçilmiş araç koleksiyonları ekliyoruz. Yakında burada.</p>
+    </div>
   </div>
 </div>
 {% endblock %}

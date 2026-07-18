@@ -666,19 +666,30 @@ def get_active_subscribers():
     return [dict(r)["email"] for r in rows]
 
 
-def get_top_products_by_period(days: int, limit: int = 10):
+def get_top_products_by_period(days: int, limit: int = 10, exclude_ids=None):
     """
     Son N gun icinde eklenen urunleri oy sayisina gore siralar (Product Hunt'in
     "Dun/Bu Hafta/Bu Ay En Iyileri" tarzi bolumleri icin). Yeni AI uretimi
     gerektirmez - mevcut votes + created_at verisiyle calisir.
     days=1 -> son 24 saat, days=7 -> son hafta, days=30 -> son ay.
+    exclude_ids: bu id'lere sahip urunler sonuca dahil edilmez (ornegin
+    "Bu Ayin En Iyileri" bolumunde "Bu Haftanin En Iyileri"nde zaten
+    gosterilen urunlerin tekrar etmemesi icin kullanilir).
     """
     conn = get_connection()
     cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
-    rows = conn.execute(
-        "SELECT * FROM products WHERE created_at >= ? ORDER BY votes DESC LIMIT ?",
-        (cutoff, limit)
-    ).fetchall()
+    exclude_ids = exclude_ids or []
+    if exclude_ids:
+        placeholders = ",".join("?" * len(exclude_ids))
+        rows = conn.execute(
+            f"SELECT * FROM products WHERE created_at >= ? AND id NOT IN ({placeholders}) ORDER BY votes DESC LIMIT ?",
+            (cutoff, *exclude_ids, limit)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM products WHERE created_at >= ? ORDER BY votes DESC LIMIT ?",
+            (cutoff, limit)
+        ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
