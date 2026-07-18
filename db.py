@@ -595,7 +595,7 @@ def get_products_by_topic(topic, limit=50):
 
 
 def search_products(query):
-    """Baslik veya ozette arama."""
+    """Baslik veya ozette arama (site ici klasik arama kutusu icin - literal alt-dize)."""
     conn = get_connection()
     pattern = f"%{query}%"
     rows = conn.execute(
@@ -604,6 +604,56 @@ def search_products(query):
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+# Turkce'de anlam tasimayan, arama sinyali olarak ise yaramayan kok kelimeler.
+# AI Danismani'na dogal dil cumleleri geldiginde ("hangi arac isimi cozer" gibi)
+# bu kelimeler filtrelenir, geriye anlamli terimler kalir.
+_ADVISOR_STOPWORDS = {
+    "bir", "bu", "şu", "o", "ve", "veya", "ile", "için", "gibi", "kadar", "de", "da",
+    "ne", "nasıl", "hangi", "mi", "mı", "mu", "mü", "var", "yok", "çok", "az",
+    "istiyorum", "istiyorsun", "istiyoruz", "lazım", "gerekiyor", "gerek",
+    "yapmak", "yapmam", "yapmalıyım", "bana", "benim", "işimi", "işim",
+}
+
+
+def search_products_advisor(query: str, limit: int = 30):
+    """
+    AI Danismani icin aday urun havuzu bulur. Klasik search_products'tan farki:
+    1) Dogal dil cumlelerini kelimelere ayirip anlamli terimlerle OR araması yapar
+       (literal tum-cumle eslesmesi yerine).
+    2) Hicbir kelime eslesmezse BOS DONMEZ - en populer urunlerden genis bir havuz
+       dondurur, boylece LLM'e her zaman uzerinde akil yurutebilecegi bir aday
+       kumesi verilir (LLM'e hic sormadan "bulunamadi" denmesi onlenir).
+    """
+    words = [w.strip(".,!?").lower() for w in query.split() if len(w.strip(".,!?")) > 2]
+    meaningful = [w for w in words if w not in _ADVISOR_STOPWORDS]
+
+    conn = get_connection()
+    results = []
+    if meaningful:
+        like_clauses = " OR ".join(
+            ["title_tr LIKE ? OR summary_tr LIKE ? OR tags LIKE ? OR topics LIKE ? OR why_use_it LIKE ?"] * len(meaningful)
+        )
+        params = []
+        for w in meaningful:
+            p = f"%{w}%"
+            params.extend([p, p, p, p, p])
+        rows = conn.execute(
+            f"SELECT * FROM products WHERE {like_clauses} ORDER BY votes DESC LIMIT ?",
+            params + [limit]
+        ).fetchall()
+        results = [dict(r) for r in rows]
+
+    if not results:
+        # Hicbir kelime eslesmedi - LLM'in secim yapabilecegi genis/populer bir havuz sun.
+        rows = conn.execute(
+            "SELECT * FROM products ORDER BY votes DESC LIMIT ?", (limit,)
+        ).fetchall()
+        results = [dict(r) for r in rows]
+
+    conn.close()
+    return results
 
 
 def get_all_topics():

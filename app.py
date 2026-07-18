@@ -7,7 +7,7 @@ from db import (
     init_db, get_all_products, get_product_by_slug,
     get_all_comparisons, get_comparison_by_slug,
     get_trending_products, get_recent_products,
-    get_products_by_topic, search_products,
+    get_products_by_topic, search_products, search_products_advisor,
     get_all_topics, get_similar_products,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
     get_admin_stats,
@@ -254,15 +254,15 @@ def api_advisor():
     if not query:
         return jsonify({"error": "Sorgu bos"}), 400
         
-    # 1. Veritabanindan basit SQL aramasi ile adaylari bul (maksimum 10 arac)
-    results = search_products(query)
+    # 1. Veritabanindan kelime-bazli arama ile aday havuzu bul (dogal dil cumlelerini de kapsar)
+    results = search_products_advisor(query, limit=30)
     if not results:
         return jsonify({
             "message": "Maalesef bu konuyla ilgili veritabanımızda henüz bir araç bulunmuyor.",
             "tools": []
         })
         
-    candidates = results[:5] # En iyi 5'i al
+    candidates = results[:15] # LLM'e daha genis bir aday havuzu sun, en iyi 15'i degerlendirsin
     candidate_text = "\\n".join([f"- {c['title_tr']}: {c['summary_tr']} (ID: {c['id']})" for c in candidates])
     
     prompt = f"""Kullanici asagidaki konuda bir yapay zeka araci ariyor:
