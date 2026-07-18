@@ -733,11 +733,13 @@ def get_products_by_topic(topic, limit=50):
 
 
 def search_products(query):
-    """Baslik veya ozette arama (site ici klasik arama kutusu icin - literal alt-dize)."""
+    """Baslik veya ozette arama (site ici klasik arama kutusu icin - literal alt-dize).
+    Buyuk/kucuk harf duyarsiz (Postgres LIKE varsayilan olarak duyarli, SQLite duyarsiz -
+    farkli davranmalarini onlemek icin ikisinde de LOWER() ile normalize ediyoruz)."""
     conn = get_connection()
-    pattern = f"%{query}%"
+    pattern = f"%{query.lower()}%"
     rows = conn.execute(
-        "SELECT * FROM products WHERE title_tr LIKE ? OR summary_tr LIKE ? OR original_name LIKE ? ORDER BY votes DESC",
+        "SELECT * FROM products WHERE LOWER(title_tr) LIKE ? OR LOWER(summary_tr) LIKE ? OR LOWER(original_name) LIKE ? ORDER BY votes DESC",
         (pattern, pattern, pattern)
     ).fetchall()
     conn.close()
@@ -771,7 +773,7 @@ def search_products_advisor(query: str, limit: int = 30):
     results = []
     if meaningful:
         like_clauses = " OR ".join(
-            ["title_tr LIKE ? OR summary_tr LIKE ? OR tags LIKE ? OR topics LIKE ? OR why_use_it LIKE ?"] * len(meaningful)
+            ["LOWER(title_tr) LIKE ? OR LOWER(summary_tr) LIKE ? OR LOWER(tags) LIKE ? OR LOWER(topics) LIKE ? OR LOWER(why_use_it) LIKE ?"] * len(meaningful)
         )
         params = []
         for w in meaningful:
