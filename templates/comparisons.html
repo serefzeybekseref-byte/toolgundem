@@ -18,6 +18,7 @@
   <div class="card-grid">
     {% for c in comparisons %}
     <a href="/karsilastirma/{{ c.slug }}" class="compare-card fade-in">
+      <div class="collection-icon">{{ get_comparison_icon(c.title) }}</div>
       <span class="compare-count">{{ c.tool_count }} araç</span>
       <h3 class="compare-title">{{ c.title }}</h3>
       {% if c.intro %}

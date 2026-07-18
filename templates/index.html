@@ -87,7 +87,7 @@
 </section>
 
 <!-- Recent -->
-<section class="section">
+<section class="section section-alt">
   <div class="container">
     <div class="section-header">
       <h2 class="section-title">🆕 Son Eklenenler</h2>
@@ -169,7 +169,7 @@
 
 <!-- Monthly Top -->
 {% if monthly_top %}
-<section class="section">
+<section class="section section-alt">
   <div class="container">
     <div class="section-header">
       <h2 class="section-title">🗓️ Bu Ayın En İyileri</h2>
@@ -228,7 +228,7 @@
 
 <!-- Comparisons -->
 {% if comparisons %}
-<section class="section">
+<section class="section section-alt">
   <div class="container">
     <div class="section-header">
       <h2 class="section-title">🏆 En İyi AI Araçları</h2>
@@ -237,6 +237,7 @@
     <div class="card-grid">
       {% for c in comparisons[:3] %}
       <a href="/karsilastirma/{{ c.slug }}" class="compare-card fade-in">
+        <div class="collection-icon">{{ get_comparison_icon(c.title) }}</div>
         <span class="compare-count">{{ c.tool_count }} araç</span>
         <h3 class="compare-title">{{ c.title }}</h3>
         <span class="compare-date mono">{{ c.updated_at[:10] }}</span>

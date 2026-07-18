@@ -165,6 +165,29 @@ def get_topic_icon(topic):
     return _FALLBACK_ICONS[idx]
 
 
+_COMPARISON_ICON_KEYWORDS = [
+    ("pdf", "📄"), ("özgeçmiş", "📋"), ("cv", "📋"),
+    ("logo", "🎨"), ("görsel", "🎨"), ("tasarım", "🎨"),
+    ("müzik", "🎵"), ("ses", "🎙️"),
+    ("toplantı", "📝"), ("transkripsiyon", "📝"), ("not", "📝"),
+    ("video", "🎬"), ("görüntü", "🖼️"),
+    ("kod", "⌨️"), ("yazılım", "⌨️"),
+    ("sohbet", "💬"), ("chatbot", "💬"), ("asistan", "💬"),
+    ("yazı", "✍️"), ("içerik", "✍️"),
+    ("sunum", "📊"), ("slayt", "📊"),
+    ("e-ticaret", "🛒"), ("satış", "💰"),
+    ("web sitesi", "🌐"), ("seo", "📈"),
+]
+
+
+def get_comparison_icon(title):
+    title_low = (title or "").lower()
+    for keyword, icon in _COMPARISON_ICON_KEYWORDS:
+        if keyword in title_low:
+            return icon
+    return "🏆"
+
+
 @app.context_processor
 def inject_globals():
     """Tum template'lerde kullanilabilecek global degiskenler."""
@@ -172,6 +195,7 @@ def inject_globals():
         "topic_labels": TOPIC_LABELS,
         "topic_icons": TOPIC_ICONS,
         "get_topic_icon": get_topic_icon,
+        "get_comparison_icon": get_comparison_icon,
     }
 
 
@@ -179,8 +203,9 @@ def inject_globals():
 def home():
     trending = get_trending_products(limit=6)
     recent = get_recent_products(limit=6)
-    weekly_top = get_top_products_by_period(days=7, limit=6)
-    monthly_top = get_top_products_by_period(days=30, limit=6, exclude_ids=[p["id"] for p in weekly_top])
+    trending_ids = [p["id"] for p in trending]
+    weekly_top = get_top_products_by_period(days=7, limit=6, exclude_ids=trending_ids)
+    monthly_top = get_top_products_by_period(days=30, limit=6, exclude_ids=trending_ids + [p["id"] for p in weekly_top])
     topics = get_merged_topics()
     comparisons = get_all_comparisons()
     

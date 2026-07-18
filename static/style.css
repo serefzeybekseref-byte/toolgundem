@@ -578,6 +578,12 @@ h1, h2, h3, h4 {
   padding: var(--space-12) 0;
 }
 
+.section-alt {
+  background-color: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
 .section-header {
   display: flex;
   align-items: center;
