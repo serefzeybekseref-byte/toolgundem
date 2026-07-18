@@ -35,12 +35,31 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Kategoriler buyudukce yeni karsilastirma listeleri uret
+        id: comparisons
         continue-on-error: true
         run: python auto_generate_comparisons.py
 
       - name: Yeni koleksiyonlar (toolkit) uret
+        id: collections
         continue-on-error: true
         run: python generate_collections.py
+
+      - name: Kalite kapisinda reddedilenler varsa issue ac
+        if: steps.comparisons.outputs.rejected_count > 0 || steps.collections.outputs.rejected_count > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const cReport = `${{ steps.comparisons.outputs.rejection_report }}`;
+            const colReport = `${{ steps.collections.outputs.rejection_report }}`;
+            let body = "Kalite kapisi bazi otomatik uretilen icerikleri reddetti, canliya cikmadilar.\n\n";
+            if (cReport.trim()) body += "## Karsilastirmalar\n" + cReport + "\n\n";
+            if (colReport.trim()) body += "## Koleksiyonlar\n" + colReport + "\n\n";
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: `Kalite kapisi bazi icerigi reddetti - ${new Date().toISOString().slice(0,10)}`,
+              body: body,
+              labels: ["kalite-kapisi"],
+            });
 
       - name: Open issue if job failed
         if: failure()

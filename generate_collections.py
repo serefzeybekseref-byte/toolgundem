@@ -6,11 +6,13 @@ db.py'nin Postgres/SQLite soyutlamasini ve Groq->NVIDIA->Gemini fallback
 zincirini kullanir (auto_generate_comparisons.py ile ayni desen).
 """
 import json
+import os
 import time
 from dotenv import load_dotenv
 load_dotenv()
 from db import init_db, get_connection, slugify, save_collection, get_all_collections
 from generate_content import _generate_with_fallback
+from quality_gate import check_collection
 
 init_db()
 
@@ -79,7 +81,9 @@ def run():
         print(f"AI cagrisi basarisiz: {e}")
         return
 
-    created, skipped = 0, 0
+    by_id = {p["id"]: p for p in products}
+    created, skipped, rejected = 0, 0, 0
+    rejection_report = []
     for col in collections:
         title = col.get("title", "").strip()
         if not title:
@@ -99,12 +103,36 @@ def run():
             print(f"[atlandi] '{title}': yeterli urun yok ({len(items)})")
             continue
 
-        save_collection(slug, title, col.get("description", ""), items)
+        description = col.get("description", "")
+        ok, problems = check_collection(title, description, items, source_products_by_id=by_id)
+        if not ok:
+            print(f"  !! KALITE KAPISI REDDETTI '{title}' ({len(problems)} sorun):")
+            for pr in problems:
+                print(f"     - {pr}")
+            rejected += 1
+            rejection_report.append({"title": title, "problems": problems})
+            continue
+
+        save_collection(slug, title, description, items)
         print(f"  -> kaydedildi: /koleksiyon/{slug} ({len(items)} urun)")
         created += 1
         time.sleep(1.5)
 
-    print(f"\nBitti. Olusturulan: {created}, Atlanan: {skipped}")
+    print(f"\nBitti. Olusturulan: {created}, Atlanan: {skipped}, Kalite kapisinda reddedilen: {rejected}")
+
+    gh_output = os.environ.get("GITHUB_OUTPUT")
+    if gh_output:
+        with open(gh_output, "a", encoding="utf-8") as f:
+            f.write(f"rejected_count={rejected}\n")
+            if rejection_report:
+                report_lines = []
+                for r in rejection_report:
+                    report_lines.append(f"### {r['title']}")
+                    for pr in r["problems"]:
+                        report_lines.append(f"- {pr}")
+                f.write("rejection_report<<EOF\n")
+                f.write("\n".join(report_lines) + "\n")
+                f.write("EOF\n")
 
 
 if __name__ == "__main__":

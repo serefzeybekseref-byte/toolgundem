@@ -5,6 +5,7 @@ elindeki title_tr/summary_tr/why_use_it/key_features bilgisini
 yapilandirilmis bir karsilastirmaya donusturur.
 """
 import json
+import os
 import time
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,6 +13,7 @@ from db import (
     init_db, get_connection, slugify, save_comparison, get_all_comparisons,
 )
 from generate_content import _generate_with_fallback
+from quality_gate import check_comparison
 
 init_db()
 
@@ -81,6 +83,8 @@ Kurallar:
 - cons: 1-2 maddelik zayıf yön listesi (verilenden çıkarım yapamıyorsan genel/makul bir sınırlama yaz, ör. "Ücretsiz planda kısıtlı kullanım").
 - intro: kategori için 2-3 cümlelik giriş metni üret.
 - title: "{topic_label}" ifadesini temel alan SEO'ya uygun bir başlık üret (60 karakteri geçmesin).
+- title ve intro içine KESİNLİKLE spesifik bir yıl (2024, 2025 gibi) YAZMA - bu içerik zamanla
+  bayatlar ve yanlış görünür, "en güncel" gibi zamana bağlı olmayan ifadeler kullan.
 
 Yalnızca şu JSON formatında cevap ver:
 {{"title": "...", "intro": "...", "items": [
@@ -92,7 +96,8 @@ Yalnızca şu JSON formatında cevap ver:
 
 def run():
     existing = existing_comparison_slugs()
-    created, skipped = 0, 0
+    created, skipped, rejected = 0, 0, 0
+    rejection_report = []
 
     for topic, title_hint in CANDIDATE_TOPICS.items():
         slug = slugify(title_hint)
@@ -123,14 +128,41 @@ def run():
             if not items:
                 print(f"  !! bos sonuc, atlandi")
                 continue
-            save_comparison(slug, ai_data.get("title", title_hint), ai_data.get("intro", ""), items)
+
+            title = ai_data.get("title", title_hint)
+            intro = ai_data.get("intro", "")
+            by_name = {p["original_name"].lower(): p for p in products}
+            ok, problems = check_comparison(title, intro, items, source_products_by_name=by_name)
+            if not ok:
+                print(f"  !! KALITE KAPISI REDDETTI ({len(problems)} sorun):")
+                for pr in problems:
+                    print(f"     - {pr}")
+                rejected += 1
+                rejection_report.append({"topic": topic, "title": title, "problems": problems})
+                continue
+
+            save_comparison(slug, title, intro, items)
             print(f"  -> kaydedildi: /karsilastirma/{slug}")
             created += 1
         except Exception as e:
             print(f"  !! HATA: {e}")
         time.sleep(2.5)
 
-    print(f"\nBitti. Olusturulan: {created}, Atlanan (zaten var/az urun): {skipped}")
+    print(f"\nBitti. Olusturulan: {created}, Atlanan (zaten var/az urun): {skipped}, Kalite kapisinda reddedilen: {rejected}")
+
+    gh_output = os.environ.get("GITHUB_OUTPUT")
+    if gh_output:
+        with open(gh_output, "a", encoding="utf-8") as f:
+            f.write(f"rejected_count={rejected}\n")
+            if rejection_report:
+                report_lines = []
+                for r in rejection_report:
+                    report_lines.append(f"### {r['title']} ({r['topic']})")
+                    for pr in r["problems"]:
+                        report_lines.append(f"- {pr}")
+                f.write("rejection_report<<EOF\n")
+                f.write("\n".join(report_lines) + "\n")
+                f.write("EOF\n")
 
 
 if __name__ == "__main__":
