@@ -122,6 +122,14 @@ def init_db():
         )
     """)
     conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS pipeline_runs (
+            id {pk},
+            ran_at TEXT,
+            new_count INTEGER,
+            error_count INTEGER
+        )
+    """)
+    conn.execute(f"""
         CREATE TABLE IF NOT EXISTS collections (
             id {pk},
             slug TEXT UNIQUE NOT NULL,
@@ -249,6 +257,40 @@ def recompute_all_quality_scores():
         update_quality_score(row["id"], row)
         updated += 1
     return updated
+
+
+def log_pipeline_run(new_count: int, error_count: int = 0):
+    """Her pipeline calistirmasinin ozetini kaydeder (saglik izleme icin)."""
+    conn = get_connection()
+    conn.execute(
+        "INSERT INTO pipeline_runs (ran_at, new_count, error_count) VALUES (?, ?, ?)",
+        (datetime.utcnow().isoformat(), new_count, error_count)
+    )
+    conn.commit()
+    conn.close()
+
+
+def should_alert_zero_new() -> bool:
+    """
+    Son 2 calistirmada da (farkli takvim gununde) 0 yeni urun eklenmisse True doner.
+    Ayni gun icindeki normal (bos gecebilen) calistirmalari yanlis alarm olarak saymamak
+    icin farkli gun kontrolu yapilir.
+    """
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT ran_at, new_count FROM pipeline_runs ORDER BY id DESC LIMIT 6"
+    ).fetchall()
+    conn.close()
+    rows = [dict(r) for r in rows]
+    if len(rows) < 2:
+        return False
+    zero_days = set()
+    for r in rows:
+        if r["new_count"] == 0:
+            zero_days.add(r["ran_at"][:10])
+        else:
+            break  # en sonuncudan geriye dogru ilk >0 bulunca dur
+    return len(zero_days) >= 2
 
 
 def slugify(text: str) -> str:

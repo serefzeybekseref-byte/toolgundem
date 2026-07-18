@@ -12,6 +12,8 @@ jobs:
   run-pipeline:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      issues: write
     env:
       PRODUCTHUNT_TOKEN: ${{ secrets.PRODUCTHUNT_TOKEN }}
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -36,7 +38,40 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run Product Hunt pipeline
+        id: pipeline
         run: python pipeline.py
 
       - name: Backfill missing quickfacts (20 products)
         run: python backfill_quickfacts.py 20
+
+      - name: Open issue if 2+ days with zero new products
+        if: steps.pipeline.outputs.zero_new_alert == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "pipeline-saglik",
+            });
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title: "Pipeline 2+ gundur hic yeni urun eklemiyor",
+                body: "Product Hunt'tan 2 veya daha fazla ardisik gunde 0 yeni urun geldi. " +
+                      "Bu, Product Hunt API'sinde bir sorun (token, rate limit, API degisikligi) " +
+                      "olabilecegine isaret ediyor. fetch_producthunt.py'yi kontrol et.",
+                labels: ["pipeline-saglik"],
+              });
+            }
+
+      - name: Open issue if pipeline job failed
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: `Pipeline calistirmasi basarisiz oldu - ${new Date().toISOString().slice(0,10)}`,
+              body: `Workflow run basarisiz oldu veya timeout'a takildi. Log: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ["pipeline-hata"],
+            });
