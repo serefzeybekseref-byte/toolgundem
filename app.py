@@ -10,7 +10,7 @@ from db import (
     get_all_comparisons, get_comparison_by_slug,
     get_trending_products, get_recent_products,
     get_products_by_topic, search_products, search_products_advisor,
-    get_all_topics, get_similar_products,
+    get_all_topics, get_similar_products, get_top_products_by_period,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
     get_admin_stats,
 )
@@ -178,6 +178,8 @@ def inject_globals():
 def home():
     trending = get_trending_products(limit=6)
     recent = get_recent_products(limit=6)
+    weekly_top = get_top_products_by_period(days=7, limit=6)
+    monthly_top = get_top_products_by_period(days=30, limit=6)
     topics = get_merged_topics()
     comparisons = get_all_comparisons()
     
@@ -197,6 +199,8 @@ def home():
         "index.html",
         trending=trending,
         recent=recent,
+        weekly_top=weekly_top,
+        monthly_top=monthly_top,
         topics=topics,
         comparisons=comparisons,
         total_products=total_products,

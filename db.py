@@ -10,7 +10,7 @@ import re
 import logging
 import sqlite3
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger("toolgundem.db")
 
@@ -623,6 +623,23 @@ def get_recent_products(limit=10):
     """Son eklenen urunler."""
     conn = get_connection()
     rows = conn.execute("SELECT * FROM products ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_top_products_by_period(days: int, limit: int = 10):
+    """
+    Son N gun icinde eklenen urunleri oy sayisina gore siralar (Product Hunt'in
+    "Dun/Bu Hafta/Bu Ay En Iyileri" tarzi bolumleri icin). Yeni AI uretimi
+    gerektirmez - mevcut votes + created_at verisiyle calisir.
+    days=1 -> son 24 saat, days=7 -> son hafta, days=30 -> son ay.
+    """
+    conn = get_connection()
+    cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+    rows = conn.execute(
+        "SELECT * FROM products WHERE created_at >= ? ORDER BY votes DESC LIMIT ?",
+        (cutoff, limit)
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 

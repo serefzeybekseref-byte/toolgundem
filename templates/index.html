@@ -126,6 +126,88 @@
   </div>
 </section>
 
+<!-- Weekly Top -->
+{% if weekly_top %}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">📅 Bu Haftanın En İyileri</h2>
+    </div>
+    <div class="card-grid">
+      {% for p in weekly_top %}
+      <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+        <div class="tool-card-img">
+          {% if p.thumbnail %}
+          <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+          {% else %}
+          <span class="tool-card-img-fallback">{{ p.original_name[0]|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="tool-card-body">
+          <div class="tool-card-badges">
+            {% if p.pricing_type == 'Ücretsiz' %}<span class="badge badge-free">🟢 Ücretsiz</span>
+            {% elif p.pricing_type == 'Freemium' %}<span class="badge badge-freemium">🟡 Freemium</span>
+            {% elif p.pricing_type == 'Ücretli' %}<span class="badge badge-paid">🔵 Ücretli</span>{% endif %}
+          </div>
+          <h3 class="tool-card-title">{{ p.original_name }}</h3>
+          <p class="tool-card-summary">{{ p.summary_tr }}</p>
+          <div class="tool-card-footer">
+            <div class="tool-card-tags">
+              {% for t in p.tags.split(',')[:2] if t %}
+              <span class="tag">{{ t.strip() }}</span>
+              {% endfor %}
+            </div>
+            <div class="tool-card-votes">▲ {{ p.votes }}</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Monthly Top -->
+{% if monthly_top %}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">🗓️ Bu Ayın En İyileri</h2>
+    </div>
+    <div class="card-grid">
+      {% for p in monthly_top %}
+      <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+        <div class="tool-card-img">
+          {% if p.thumbnail %}
+          <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+          {% else %}
+          <span class="tool-card-img-fallback">{{ p.original_name[0]|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="tool-card-body">
+          <div class="tool-card-badges">
+            {% if p.pricing_type == 'Ücretsiz' %}<span class="badge badge-free">🟢 Ücretsiz</span>
+            {% elif p.pricing_type == 'Freemium' %}<span class="badge badge-freemium">🟡 Freemium</span>
+            {% elif p.pricing_type == 'Ücretli' %}<span class="badge badge-paid">🔵 Ücretli</span>{% endif %}
+          </div>
+          <h3 class="tool-card-title">{{ p.original_name }}</h3>
+          <p class="tool-card-summary">{{ p.summary_tr }}</p>
+          <div class="tool-card-footer">
+            <div class="tool-card-tags">
+              {% for t in p.tags.split(',')[:2] if t %}
+              <span class="tag">{{ t.strip() }}</span>
+              {% endfor %}
+            </div>
+            <div class="tool-card-votes">▲ {{ p.votes }}</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
 <!-- Categories -->
 <section class="section">
   <div class="container">
