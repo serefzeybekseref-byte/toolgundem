@@ -901,6 +901,40 @@ def get_products_paginated(page=1, per_page=20, pricing_type=None):
     return [dict(r) for r in rows], dict(total)["cnt"]
 
 
+def save_collection(slug: str, title: str, description: str, items: list):
+    """
+    items: [{"product_id": int, "reason": str}, ...]
+    Ayni slug varsa once eski collection_items silinip yenisi yazilir (guncelleme).
+    """
+    conn = get_connection()
+    existing = conn.execute("SELECT id FROM collections WHERE slug = ?", (slug,)).fetchone()
+    if existing:
+        collection_id = dict(existing)["id"]
+        conn.execute("UPDATE collections SET title=?, description=? WHERE id=?",
+                     (title, description, collection_id))
+        conn.execute("DELETE FROM collection_items WHERE collection_id=?", (collection_id,))
+    else:
+        cur = conn.execute(
+            "INSERT INTO collections (slug, title, description, created_at) VALUES (?, ?, ?, ?)",
+            (slug, title, description, datetime.utcnow().isoformat())
+        )
+        collection_id = cur.lastrowid
+
+    order = 1
+    for item in items:
+        try:
+            conn.execute(
+                "INSERT INTO collection_items (collection_id, product_id, order_num, reason) VALUES (?, ?, ?, ?)",
+                (collection_id, int(item["product_id"]), order, item.get("reason", ""))
+            )
+            order += 1
+        except Exception as e:
+            logger.warning(f"collection_item eklenemedi: {e}")
+    conn.commit()
+    conn.close()
+    return collection_id
+
+
 def get_all_collections():
     """Tum koleksiyonlari dondurur."""
     conn = get_connection()

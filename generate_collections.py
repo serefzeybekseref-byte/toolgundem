@@ -1,120 +1,111 @@
-import os
+"""
+Urun sayisi arttikca otomatik "koleksiyon" (toolkit) uretir.
+Var olan gercek urun verisine dayanir - AI sadece elindeki title_tr/summary_tr
+bilgisini yapilandirilmis bir koleksiyona donusturur, yeni bilgi uydurmaz.
+db.py'nin Postgres/SQLite soyutlamasini ve Groq->NVIDIA->Gemini fallback
+zincirini kullanir (auto_generate_comparisons.py ile ayni desen).
+"""
 import json
-import sqlite3
-import requests
+import time
 from dotenv import load_dotenv
-from db import slugify
-
 load_dotenv()
+from db import init_db, get_connection, slugify, save_collection, get_all_collections
+from generate_content import _generate_with_fallback
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    print("Error: GROQ_API_KEY not found in .env")
-    exit(1)
+init_db()
 
-DB_PATH = "products.db"
+MAX_SOURCE_PRODUCTS = 60
+MIN_ITEMS_PER_COLLECTION = 4
 
-def get_all_products():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    rows = conn.execute("SELECT id, title_tr, summary_tr, topics FROM products WHERE summary_tr IS NOT NULL LIMIT 40").fetchall()
+
+def get_candidate_products(limit=MAX_SOURCE_PRODUCTS):
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT id, original_name, title_tr, summary_tr, topics FROM products "
+        "WHERE summary_tr IS NOT NULL ORDER BY votes DESC LIMIT ?",
+        (limit,)
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
-def create_collections_via_groq():
-    products = get_all_products()
-    if not products:
-        print("No products found.")
-        return
-        
-    product_list_text = ""
+
+def existing_collection_slugs():
+    return {c["slug"] for c in get_all_collections()}
+
+
+def build_collections_via_ai(products: list) -> list:
+    product_text = ""
     for p in products:
-        product_list_text += f"- ID: {p['id']} | İsim: {p['title_tr']} | Özet: {p['summary_tr']}\n"
+        product_text += f"- ID: {p['id']} | İsim: {p['original_name']} | Özet: {p.get('summary_tr', '')}\n"
 
-    prompt = f"""
-Sen ToolGündem için içerik üreten kıdemli bir editörsün.
-Aşağıdaki yapay zeka araçlarını kullanarak 3 adet "Hazır Çözüm Paketi / Koleksiyon (Toolkit)" oluştur.
-Örneğin: "Youtuber Toolkit", "Yazılımcılar İçin Başlangıç Paketi".
+    prompt = f"""Sen BulurumAI için çalışan kıdemli bir teknoloji editörüsün.
+Aşağıdaki gerçek AI araçlarını kullanarak 3 adet "Hazır Araç Paketi / Koleksiyon" oluştur
+(örnek: "Youtuber'lar İçin Başlangıç Paketi", "Girişimciler İçin Temel Araç Seti").
+YENİ ÜRÜN UYDURMA - sadece aşağıdaki listeden seç.
 
-Kesinlikle JSON formatında yanıt ver. Başka bir şey yazma. JSON formatı:
-[
-  {{
-    "title": "Koleksiyon Başlığı",
-    "description": "Bu koleksiyon neden var? (1 cümle)",
-    "items": [
-      {{
-        "product_id": (listeden ID),
-        "reason": "Neden seçtin? (1 cümle)"
-      }}
-    ]
-  }}
-]
+Araçlar:
+{product_text}
 
-Her koleksiyonda 4-6 arası araç olsun.
-İşte Araçlar:
-{product_list_text}
+Kurallar:
+- Her koleksiyonda 4-6 arası araç olsun, sadece listedeki ID'leri kullan.
+- title: kısa, çekici, SEO'ya uygun (60 karakteri geçmesin).
+- description: koleksiyonun ne işe yaradığını 1 cümlede özetle.
+- Her araç için reason: neden bu koleksiyonda olduğunu 1 cümlede açıkla.
+- Sadece Türkçe yaz.
+
+Yalnızca şu JSON formatında cevap ver:
+{{"collections": [
+  {{"title": "...", "description": "...", "items": [
+    {{"product_id": 123, "reason": "..."}}
+  ]}}
+]}}
 """
+    groq_extra = {"temperature": 0.3, "response_format": {"type": "json_object"}}
+    result = _generate_with_fallback(prompt, groq_extra)
+    return result.get("collections", [])
 
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "model": "llama-3.1-8b-instant",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.2,
-        "response_format": {"type": "json_object"}
-    }
-    
-    # We must explicitly ask for a JSON object containing a list, so we modify prompt slightly
-    payload["messages"][0]["content"] = prompt.replace("[\n  {\n", "{\n  \"collections\": [\n    {\n")
 
-    print("Groq API'ye istek gönderiliyor...")
+def run():
+    existing = existing_collection_slugs()
+    products = get_candidate_products()
+    if not products:
+        print("Uygun urun bulunamadi.")
+        return
+
+    print(f"{len(products)} urunle koleksiyon uretiliyor...")
     try:
-        resp = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
-        if resp.status_code != 200:
-            print(f"Groq error: {resp.text}")
-            return
-            
-        result = resp.json()
-        content = result['choices'][0]['message']['content']
-        data = json.loads(content)
-        
-        collections = data.get("collections", [])
-        print(f"{len(collections)} koleksiyon başarıyla üretildi. Kaydediliyor...")
-        
-        conn = sqlite3.connect(DB_PATH)
-        for col in collections:
-            slug = slugify(col["title"])
-            exists = conn.execute("SELECT id FROM collections WHERE slug = ?", (slug,)).fetchone()
-            if exists:
-                print(f"Atlanıyor, '{col['title']}' zaten var.")
-                continue
-            
-            cur = conn.execute(
-                "INSERT INTO collections (slug, title, description) VALUES (?, ?, ?)",
-                (slug, col["title"], col["description"])
-            )
-            collection_id = cur.lastrowid
-            
-            order = 1
-            for item in col.get("items", []):
-                try:
-                    conn.execute(
-                        "INSERT INTO collection_items (collection_id, product_id, order_num, reason) VALUES (?, ?, ?, ?)",
-                        (collection_id, int(item["product_id"]), order, item.get("reason", ""))
-                    )
-                    order += 1
-                except Exception as e:
-                    pass
-                    
-        conn.commit()
-        conn.close()
-        print("İşlem tamamlandı!")
-        
+        collections = build_collections_via_ai(products)
     except Exception as e:
-        print(f"Hata oluştu: {e}")
+        print(f"AI cagrisi basarisiz: {e}")
+        return
+
+    created, skipped = 0, 0
+    for col in collections:
+        title = col.get("title", "").strip()
+        if not title:
+            continue
+        slug = slugify(title)
+        if slug in existing:
+            print(f"[atlandi] '{title}' zaten var.")
+            skipped += 1
+            continue
+
+        items = [
+            {"product_id": it["product_id"], "reason": it.get("reason", "")}
+            for it in col.get("items", [])
+            if "product_id" in it
+        ]
+        if len(items) < MIN_ITEMS_PER_COLLECTION:
+            print(f"[atlandi] '{title}': yeterli urun yok ({len(items)})")
+            continue
+
+        save_collection(slug, title, col.get("description", ""), items)
+        print(f"  -> kaydedildi: /koleksiyon/{slug} ({len(items)} urun)")
+        created += 1
+        time.sleep(1.5)
+
+    print(f"\nBitti. Olusturulan: {created}, Atlanan: {skipped}")
+
 
 if __name__ == "__main__":
-    create_collections_via_groq()
+    run()
