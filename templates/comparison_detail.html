@@ -1,6 +1,26 @@
 ﻿{% extends "base.html" %}
-{% block title %}{{ comparison.title }} — BulurumAI{% endblock %}
+{% block title %}{{ comparison.title }} ({{ comparison.updated_at[:4] }}) — BulurumAI{% endblock %}
 {% block description %}{{ comparison.intro }}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": {{ comparison.title|tojson }},
+  "itemListElement": [
+    {% for item in comparison.tools %}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "name": {{ item.name|tojson }}
+      {% if item.website %},"url": {{ item.website|tojson }}{% endif %}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="container">
