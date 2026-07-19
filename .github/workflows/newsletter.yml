@@ -1,0 +1,31 @@
+name: Weekly Newsletter
+
+on:
+  schedule:
+    # Her Pazar 14:00 UTC (TR saatiyle 17:00)
+    - cron: "0 14 * * 0"
+  workflow_dispatch: {}
+
+jobs:
+  send-newsletter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM: ${{ secrets.RESEND_FROM }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send weekly newsletter
+        run: python send_newsletter.py
