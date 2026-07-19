@@ -2321,3 +2321,40 @@ h1, h2, h3, h4 {
 .guide-quick-answer strong {
   color: var(--accent);
 }
+
+.guide-tool-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin: var(--space-5) 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.guide-tool-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.guide-tool-card-titles {
+  flex: 1;
+}
+
+.guide-tool-card-name {
+  margin: 0 0 2px 0;
+  font-size: 1.15rem;
+}
+
+.guide-tool-card-bestfor {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.guide-tool-card-desc {
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: var(--space-3);
+}

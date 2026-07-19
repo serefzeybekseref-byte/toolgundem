@@ -156,7 +156,50 @@ def _tools_desc_text(tools: list) -> str:
     ])
 
 
-def generate_guide_content(topic_title: str, tools: list) -> dict:
+def _pricing_badge_html(pricing_text: str) -> str:
+    p = (pricing_text or "").lower()
+    if "ücretsiz" in p and "ücretli" not in p and "$" not in p and "/ay" not in p:
+        return "<span class='badge badge-free'>🆓 Ücretsiz</span>"
+    if "ücretsiz" in p:
+        return "<span class='badge badge-freemium'>💎 Freemium</span>"
+    return "<span class='badge badge-paid'>💰 Ücretli</span>"
+
+
+def _render_tool_card(name: str, aciklama: str, tool_meta: dict, tool_extra: dict) -> str:
+    extra = (tool_extra or {}).get(name, {})
+    slug = extra.get("slug")
+    thumbnail = extra.get("thumbnail")
+    pricing = tool_meta.get("pricing", "") if tool_meta else ""
+    best_for = tool_meta.get("best_for", "") if tool_meta else ""
+
+    icon_html = (
+        f"<img src='{thumbnail}' alt='{name}' style='width:44px;height:44px;border-radius:10px;object-fit:cover;'>"
+        if thumbnail else
+        "<div style='width:44px;height:44px;border-radius:10px;background:var(--tag-bg);"
+        "display:flex;align-items:center;justify-content:center;font-size:1.3rem;'>🛠️</div>"
+    )
+    name_html = (
+        f"<a href='/urun/{slug}' style='color:var(--text);text-decoration:none;'>{name}</a>"
+        if slug else name
+    )
+
+    return f"""
+<div class="guide-tool-card">
+  <div class="guide-tool-card-head">
+    {icon_html}
+    <div class="guide-tool-card-titles">
+      <h3 class="guide-tool-card-name">{name_html}</h3>
+      {f"<p class='guide-tool-card-bestfor'>{best_for}</p>" if best_for else ""}
+    </div>
+    {_pricing_badge_html(pricing)}
+  </div>
+  <p class="guide-tool-card-desc">{aciklama}</p>
+  {f"<a href='/urun/{slug}' class='btn btn-sm'>Detaylı incelemeyi oku →</a>" if slug else ""}
+</div>
+"""
+
+
+def generate_guide_content(topic_title: str, tools: list, tool_extra: dict = None) -> dict:
     """Tum bolumleri ayri Groq cagrilariyla uretir, birlestirip tek bir sonuc dondurur."""
     tools_desc = _tools_desc_text(tools)
 
@@ -194,9 +237,10 @@ def generate_guide_content(topic_title: str, tools: list) -> dict:
     html_parts.append("</ol>")
 
     html_parts.append("<h2>En İyi Araçlar</h2>")
+    tools_by_name = {t["name"]: t for t in tools}
     for t in tools_section["en_iyi_araclar"]:
-        html_parts.append(f"<h3>{t['isim']}</h3>")
-        html_parts.append(f"<p>{t['aciklama']}</p>")
+        tool_meta = tools_by_name.get(t["isim"])
+        html_parts.append(_render_tool_card(t["isim"], t["aciklama"], tool_meta, tool_extra))
 
     html_parts.append("<h2>Ücretsiz Alternatifler</h2>")
     html_parts.append(f"<p>{alt_mistakes['ucretsiz_alternatif_notu']}</p>")
@@ -285,18 +329,23 @@ def run_one(guide_cfg: dict):
         tools = guide_cfg.get("manual_tools", [])
         related_comparison_slugs = guide_cfg.get("related_comparisons", [])
 
-    result = generate_guide_content(title, tools)
-    print(f"  -> kelime sayisi: {result['word_count']}")
-
+    # Kart gorunumu icin gercek urun verisini (slug, thumbnail) onceden cekiyoruz -
+    # boylece "En Iyi Araclar" bolumu duz metin yerine gercek ikon+ic link iceren kart olur.
     related_tool_slugs = []
+    tool_extra = {}
     conn = get_connection()
     for t in tools:
         row = conn.execute(
-            "SELECT slug FROM products WHERE normalized_name = ?", (normalize_name(t["name"]),)
+            "SELECT slug, thumbnail FROM products WHERE normalized_name = ?", (normalize_name(t["name"]),)
         ).fetchone()
         if row:
-            related_tool_slugs.append(dict(row)["slug"])
+            row = dict(row)
+            related_tool_slugs.append(row["slug"])
+            tool_extra[t["name"]] = {"slug": row["slug"], "thumbnail": row.get("thumbnail")}
     conn.close()
+
+    result = generate_guide_content(title, tools, tool_extra)
+    print(f"  -> kelime sayisi: {result['word_count']}")
 
     save_guide(
         slug=slug,
