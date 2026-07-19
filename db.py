@@ -241,6 +241,7 @@ def init_db():
         ("is_broken", "INTEGER DEFAULT 0"),
         ("quality_score", "INTEGER DEFAULT 0"),
         ("gallery", "TEXT"),
+        ("broken_reason", "TEXT"),
     ]
     for col_name, col_type in new_columns:
         if USE_POSTGRES:
@@ -568,6 +569,19 @@ def get_all_products():
     rows = conn.execute(
         "SELECT * FROM products WHERE (is_broken IS NULL OR is_broken = 0) ORDER BY created_at DESC"
     ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_all_products_for_link_check():
+    """
+    check_links.py icin: kirik isaretli olanlar DAHIL tum urunleri dondurur.
+    get_all_products()'tan farki budur - amac, daha once kirik isaretlenmis
+    bir sitenin zamanla DUZELMIS olabilecegini de kontrol edip is_broken
+    bayragini otomatik olarak geri True'dan False'a cevirebilmek (iyilesme tespiti).
+    Aksi halde bir urun bir kez kirik isaretlendiginde sonsuza dek gizli kalirdi."""
+    conn = get_connection()
+    rows = conn.execute("SELECT * FROM products ORDER BY created_at DESC").fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -1062,12 +1076,15 @@ def get_collection_by_slug(slug):
     return col
 
 
-def mark_link_checked(product_id: int, is_broken: bool):
-    """Broken-link kontrol scripti tarafindan kullanilir (bkz. check_links.py)."""
+def mark_link_checked(product_id: int, is_broken: bool, reason: str = ""):
+    """Broken-link kontrol scripti tarafindan kullanilir (bkz. check_links.py).
+    reason: neden kirik isaretlendigini aciklar (ornek: '404', 'timeout', 'ssl_error', 'dns_error')
+    - raporlama ve gelecekte daha akilli karar almak icin (ornek: sadece timeout ise
+      daha once hemen gizlemek yerine birkac kez daha denemek gibi)."""
     conn = get_connection()
     conn.execute(
-        "UPDATE products SET last_checked_at = ?, is_broken = ? WHERE id = ?",
-        (datetime.utcnow().isoformat(), 1 if is_broken else 0, product_id)
+        "UPDATE products SET last_checked_at = ?, is_broken = ?, broken_reason = ? WHERE id = ?",
+        (datetime.utcnow().isoformat(), 1 if is_broken else 0, reason if is_broken else "", product_id)
     )
     conn.commit()
     conn.close()
