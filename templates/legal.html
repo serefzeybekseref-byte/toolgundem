@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{ page_title }}</span>
+  </nav>
+
+  <div class="page-header">
+    <h1 class="page-title">{{ page_title }}</h1>
+    {% if page_updated %}<p class="page-subtitle mono">Son güncelleme: {{ page_updated }}</p>{% endif %}
+  </div>
+
+  <div class="legal-content">
+    {% block legal_body %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

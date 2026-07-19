@@ -1956,3 +1956,35 @@ h1, h2, h3, h4 {
     grid-template-columns: 1fr;
   }
 }
+
+.legal-content {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-bottom: 64px;
+  line-height: 1.75;
+}
+.legal-content h2 {
+  font-size: 1.25rem;
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+.legal-content p, .legal-content li {
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+.legal-content ul {
+  padding-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+.legal-content a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.legal-content .contact-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-top: 24px;
+}

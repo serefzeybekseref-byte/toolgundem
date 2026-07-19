@@ -374,6 +374,26 @@ def category(topic):
     )
 
 
+@app.route("/iletisim")
+def iletisim():
+    return render_template("iletisim.html", page_title="İletişim")
+
+
+@app.route("/gizlilik")
+def gizlilik():
+    return render_template("gizlilik.html", page_title="Gizlilik Politikası", page_updated="17 Temmuz 2026")
+
+
+@app.route("/kvkk")
+def kvkk():
+    return render_template("kvkk.html", page_title="KVKK Aydınlatma Metni", page_updated="17 Temmuz 2026")
+
+
+@app.route("/kullanim-sartlari")
+def kullanim_sartlari():
+    return render_template("kullanim-sartlari.html", page_title="Kullanım Şartları", page_updated="17 Temmuz 2026")
+
+
 @app.route("/ara")
 def search():
     query = request.args.get("q", "").strip()
