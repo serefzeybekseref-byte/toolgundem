@@ -111,5 +111,16 @@
   </div>
 
   <p class="detail-meta mono">Son güncelleme: {{ comparison.updated_at[:10] }}</p>
+
+  {% if related_guides %}
+  <div class="detail-related-box" style="margin-top: 24px;">
+    <span class="detail-related-label mono">📘 İlgili rehber:</span>
+    <div class="detail-related-links">
+      {% for g in related_guides %}
+      <a href="/rehber/{{ g.slug }}" class="btn btn-sm">{{ g.title }} →</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

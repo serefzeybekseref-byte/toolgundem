@@ -209,10 +209,22 @@ def init_db():
             excerpt TEXT,
             content_html TEXT,
             related_topic TEXT,
+            related_tool_slugs TEXT,
+            related_comparison_slugs TEXT,
             created_at TEXT,
             updated_at TEXT
         )
     """)
+    # guides tablosu daha once related_tool_slugs/related_comparison_slugs olmadan
+    # olusturulmus olabilir - zaten varsa hatasiz gecilir.
+    for col_name, col_type in [("related_tool_slugs", "TEXT"), ("related_comparison_slugs", "TEXT")]:
+        if USE_POSTGRES:
+            conn.execute(f"ALTER TABLE guides ADD COLUMN IF NOT EXISTS {col_name} {col_type}")
+        else:
+            try:
+                conn.execute(f"ALTER TABLE guides ADD COLUMN {col_name} {col_type}")
+            except sqlite3.OperationalError:
+                pass
 
     # Yeni kolonlar: veri modelini genisletir (duplicate kontrolu, filtreleme,
     # affiliate ve broken-link takibi icin). Zaten varsa hatasiz gecilir.
@@ -1065,8 +1077,15 @@ def slugify_guide(text: str) -> str:
     return slugify(text)
 
 
-def save_guide(slug: str, title: str, meta_description: str, excerpt: str, content_html: str, related_topic: str = ""):
-    """Ayni slug varsa gunceller (icerik tazeleme), yoksa yeni rehber olusturur."""
+def save_guide(slug: str, title: str, meta_description: str, excerpt: str, content_html: str,
+               related_topic: str = "", related_tool_slugs=None, related_comparison_slugs=None):
+    """Ayni slug varsa gunceller (icerik tazeleme), yoksa yeni rehber olusturur.
+    related_tool_slugs / related_comparison_slugs: liste ya da virgulle ayrilmis string olabilir."""
+    if isinstance(related_tool_slugs, (list, tuple)):
+        related_tool_slugs = ",".join(related_tool_slugs)
+    if isinstance(related_comparison_slugs, (list, tuple)):
+        related_comparison_slugs = ",".join(related_comparison_slugs)
+
     conn = get_connection()
     now = datetime.utcnow().isoformat()
     existing = conn.execute("SELECT id FROM guides WHERE slug = ?", (slug,)).fetchone()
@@ -1074,13 +1093,16 @@ def save_guide(slug: str, title: str, meta_description: str, excerpt: str, conte
         guide_id = dict(existing)["id"]
         conn.execute("""
             UPDATE guides SET title=?, meta_description=?, excerpt=?, content_html=?,
-            related_topic=?, updated_at=? WHERE id=?
-        """, (title, meta_description, excerpt, content_html, related_topic, now, guide_id))
+            related_topic=?, related_tool_slugs=?, related_comparison_slugs=?, updated_at=? WHERE id=?
+        """, (title, meta_description, excerpt, content_html, related_topic,
+              related_tool_slugs or "", related_comparison_slugs or "", now, guide_id))
     else:
         conn.execute("""
-            INSERT INTO guides (slug, title, meta_description, excerpt, content_html, related_topic, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (slug, title, meta_description, excerpt, content_html, related_topic, now, now))
+            INSERT INTO guides (slug, title, meta_description, excerpt, content_html, related_topic,
+            related_tool_slugs, related_comparison_slugs, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (slug, title, meta_description, excerpt, content_html, related_topic,
+              related_tool_slugs or "", related_comparison_slugs or "", now, now))
     conn.commit()
     conn.close()
     return slug
@@ -1098,3 +1120,79 @@ def get_guide_by_slug(slug: str):
     row = conn.execute("SELECT * FROM guides WHERE slug = ?", (slug,)).fetchone()
     conn.close()
     return dict(row) if row else None
+
+
+def get_guides_for_topic(topic: str):
+    """Bir kategori sayfasinda gosterilecek ilgili rehber(ler)."""
+    if not topic:
+        return []
+    conn = get_connection()
+    rows = conn.execute("SELECT * FROM guides WHERE related_topic = ?", (topic,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_guides_for_tool_slug(slug: str):
+    """Bir urun detay sayfasinda gosterilecek ilgili rehber(ler)."""
+    if not slug:
+        return []
+    conn = get_connection()
+    pattern = f"%{slug}%"
+    rows = conn.execute("SELECT * FROM guides WHERE related_tool_slugs LIKE ?", (pattern,)).fetchall()
+    conn.close()
+    # LIKE alt-dize eslesmesi yanlis pozitif verebilir (orn. 'foo' slug'i 'foo-bar' icinde eslesir) -
+    # virgulle ayirip tam eslesme kontrolu yapiyoruz.
+    result = []
+    for r in rows:
+        r = dict(r)
+        slugs = [s.strip() for s in (r.get("related_tool_slugs") or "").split(",")]
+        if slug in slugs:
+            result.append(r)
+    return result
+
+
+def get_guides_for_comparison_slug(slug: str):
+    """Bir karsilastirma sayfasinda gosterilecek ilgili rehber(ler)."""
+    if not slug:
+        return []
+    conn = get_connection()
+    pattern = f"%{slug}%"
+    rows = conn.execute("SELECT * FROM guides WHERE related_comparison_slugs LIKE ?", (pattern,)).fetchall()
+    conn.close()
+    result = []
+    for r in rows:
+        r = dict(r)
+        slugs = [s.strip() for s in (r.get("related_comparison_slugs") or "").split(",")]
+        if slug in slugs:
+            result.append(r)
+    return result
+
+
+def get_products_by_slugs(slugs):
+    """Bir slug listesindeki urunleri, listedeki sirayla dondurur (rehberdeki
+    onerilen siralamayi korumak icin)."""
+    if not slugs:
+        return []
+    conn = get_connection()
+    placeholders = ",".join("?" * len(slugs))
+    rows = conn.execute(
+        f"SELECT * FROM products WHERE slug IN ({placeholders}) AND (is_broken IS NULL OR is_broken = 0)",
+        slugs
+    ).fetchall()
+    conn.close()
+    by_slug = {dict(r)["slug"]: dict(r) for r in rows}
+    return [by_slug[s] for s in slugs if s in by_slug]
+
+
+def get_comparisons_by_slugs(slugs):
+    """Bir slug listesindeki karsilastirmalari, listedeki sirayla dondurur."""
+    if not slugs:
+        return []
+    conn = get_connection()
+    placeholders = ",".join("?" * len(slugs))
+    rows = conn.execute(
+        f"SELECT * FROM comparisons WHERE slug IN ({placeholders})", slugs
+    ).fetchall()
+    conn.close()
+    by_slug = {dict(r)["slug"]: dict(r) for r in rows}
+    return [by_slug[s] for s in slugs if s in by_slug]

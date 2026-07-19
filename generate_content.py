@@ -21,7 +21,7 @@ NVIDIA_NIM_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 NVIDIA_NIM_MODEL = "qwen/qwen3.5-122b-a10b"
 
 
-def _call_nvidia_nim(prompt: str) -> dict:
+def _call_nvidia_nim(prompt: str, max_tokens: int = 1024) -> dict:
     """NVIDIA NIM (OpenAI-uyumlu) ile ayni prompt'u calistirir, JSON dondurur."""
     if not NVIDIA_NIM_API_KEY:
         raise ValueError("NVIDIA_NIM_API_KEY tanimli degil (.env).")
@@ -33,7 +33,7 @@ def _call_nvidia_nim(prompt: str) -> dict:
         "model": NVIDIA_NIM_MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.4,
-        "max_tokens": 1024,
+        "max_tokens": max_tokens,
     }
     resp = requests.post(NVIDIA_NIM_URL, headers=headers, json=payload, timeout=60)
     resp.raise_for_status()
@@ -94,10 +94,14 @@ def _call_gemini_raw(prompt: str) -> dict:
     raise last_err
 
 
-def _generate_with_fallback(prompt: str, groq_payload_extra: dict) -> dict:
+def _generate_with_fallback(prompt: str, groq_payload_extra: dict, max_tokens: int = 1024) -> dict:
     """
-    Groq -> Gemini -> NVIDIA NIM sirasiyla dener. Ilk basarili olan sonucu dondurur.
+    Groq -> Gemini (5 key rotasyonlu) -> NVIDIA NIM sirasiyla dener. Ilk basarili olan sonucu dondurur.
+    Gemini ikinci sirada cunku 5 ayri key'in rotasyonu, tek key'li NIM'e gore cok daha yuksek
+    toplam kota/dayaniklilik sagliyor.
     groq_payload_extra: Groq'a ozel ek payload alanlari (temperature, response_format vb.)
+    max_tokens: NVIDIA NIM cagrisina iletilir (Groq kendi max_tokens'ini groq_payload_extra
+    icinde tasir, Gemini icin ayrica bir token limiti verilmiyor - varsayilan genis).
     """
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -119,17 +123,17 @@ def _generate_with_fallback(prompt: str, groq_payload_extra: dict) -> dict:
         except Exception as e:
             errors.append(f"Groq: {e}")
 
-    if NVIDIA_NIM_API_KEY:
-        try:
-            return _call_nvidia_nim(prompt)
-        except Exception as e:
-            errors.append(f"NVIDIA NIM: {e}")
-
     if GEMINI_KEYS:
         try:
             return _call_gemini_raw(prompt)
         except Exception as e:
             errors.append(f"Gemini: {e}")
+
+    if NVIDIA_NIM_API_KEY:
+        try:
+            return _call_nvidia_nim(prompt, max_tokens=max_tokens)
+        except Exception as e:
+            errors.append(f"NVIDIA NIM: {e}")
 
     raise RuntimeError("Tum saglayicilar basarisiz oldu -> " + " | ".join(errors))
 

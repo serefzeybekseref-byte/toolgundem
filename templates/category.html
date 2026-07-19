@@ -13,6 +13,16 @@
   <div class="page-header">
     <h1 class="page-title">{{ topic_icon }} {{ topic_label }} Araçları</h1>
     <p class="page-subtitle">{{ products|length }} araç listeleniyor</p>
+    {% if related_guides %}
+    <div class="detail-related-box" style="margin: 16px 0;">
+      <span class="detail-related-label mono">📘 İlgili Rehber:</span>
+      <div class="detail-related-links">
+        {% for g in related_guides %}
+        <a href="/rehber/{{ g.slug }}" class="btn btn-sm">{{ g.title }} →</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
     <div class="price-filter-bar">
       <a href="{{ url_for('category', topic=topic) }}" class="price-filter-chip{% if not request.args.get('fiyat') %} active{% endif %}">Tümü</a>
       <a href="{{ url_for('category', topic=topic, fiyat='Ücretsiz') }}" class="price-filter-chip price-free{% if request.args.get('fiyat') == 'Ücretsiz' %} active{% endif %}">🟢 Ücretsiz</a>

@@ -185,6 +185,17 @@
   </div>
   {% endif %}
 
+  {% if related_guides %}
+  <div class="detail-related-box">
+    <span class="detail-related-label mono">📘 Bu aracı şu rehberlerde bulabilirsin:</span>
+    <div class="detail-related-links">
+      {% for g in related_guides %}
+      <a href="/rehber/{{ g.slug }}" class="btn btn-sm">{{ g.title }} →</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   {% if similar %}
   <section class="section similar-section">
     <div class="section-header">

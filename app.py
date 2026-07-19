@@ -14,6 +14,8 @@ from db import (
     subscribe_email, unsubscribe_email,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
     get_admin_stats, get_all_guides, get_guide_by_slug,
+    get_guides_for_topic, get_guides_for_tool_slug, get_guides_for_comparison_slug,
+    get_products_by_slugs, get_comparisons_by_slugs,
 )
 import os
 from rules_engine import derive_use_cases_and_personas
@@ -307,11 +309,13 @@ def detail(slug):
     similar = get_similar_products(product["id"], limit=4)
     related_comparisons = get_comparisons_for_product(product.get("normalized_name"))
     related_collections = get_collections_for_product(product.get("id"))
+    related_guides = get_guides_for_tool_slug(product.get("slug"))
     tags = derive_use_cases_and_personas(product.get("topics", ""), product.get("tags", ""))
     return render_template(
         "detail.html", product=product, similar=similar,
         related_comparisons=related_comparisons,
         related_collections=related_collections,
+        related_guides=related_guides,
         use_cases=tags["use_cases"], personas=tags["personas"],
     )
 
@@ -333,7 +337,18 @@ def guide_detail(slug):
     guide = get_guide_by_slug(slug)
     if not guide:
         abort(404)
-    return render_template("guide_detail.html", guide=guide)
+    related_tools = get_products_by_slugs(
+        [s.strip() for s in (guide.get("related_tool_slugs") or "").split(",") if s.strip()]
+    )
+    related_comparisons = get_comparisons_by_slugs(
+        [s.strip() for s in (guide.get("related_comparison_slugs") or "").split(",") if s.strip()]
+    )
+    return render_template(
+        "guide_detail.html",
+        guide=guide,
+        related_tools=related_tools,
+        related_comparisons=related_comparisons,
+    )
 
 
 @app.route("/abone/iptal")
@@ -379,7 +394,8 @@ def comparison_detail(slug):
     comparison = get_comparison_by_slug(slug)
     if not comparison:
         abort(404)
-    return render_template("comparison_detail.html", comparison=comparison)
+    related_guides = get_guides_for_comparison_slug(slug)
+    return render_template("comparison_detail.html", comparison=comparison, related_guides=related_guides)
 
 
 @app.route("/kategori/<topic>")
@@ -397,6 +413,7 @@ def category(topic):
     label = TOPIC_LABELS.get(topic, topic)
     icon = TOPIC_ICONS.get(topic, "📁")
     all_topics = get_merged_topics()
+    related_guides = get_guides_for_topic(topic)
     return render_template(
         "category.html",
         topic=topic,
@@ -404,6 +421,7 @@ def category(topic):
         topic_icon=icon,
         products=products,
         all_topics=all_topics,
+        related_guides=related_guides,
     )
 
 

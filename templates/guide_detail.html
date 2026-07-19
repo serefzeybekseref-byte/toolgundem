@@ -30,17 +30,55 @@
   <div class="page-header">
     <h1 class="page-title">{{ guide.title }}</h1>
     {% if guide.excerpt %}<p class="page-subtitle">{{ guide.excerpt }}</p>{% endif %}
-    <p class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-top:8px;">Güncellendi: {{ guide.updated_at[:10] }}</p>
+    <div class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
+      {% if guide.updated_at and guide.updated_at[:10] != guide.created_at[:10] %}
+      <span>Son güncelleme: {{ guide.updated_at[:10] }}</span>
+      {% else %}
+      <span>Yayınlanma: {{ guide.created_at[:10] }}</span>
+      {% endif %}
+      {% if guide.content_html %}<span>📖 {{ ((guide.content_html.split()|length) / 200)|round(0, 'ceil')|int }} dk okuma</span>{% endif %}
+    </div>
   </div>
 
   <div class="detail-body guide-body">
     {{ guide.content_html|safe }}
   </div>
 
+  {% if related_tools %}
   <div class="detail-related-box" style="margin-top: 32px;">
-    <span class="detail-related-label mono">🔎 İlgili araçları keşfet:</span>
+    <span class="detail-related-label mono">🛠️ Bu rehberde geçen araçlar:</span>
     <div class="detail-related-links">
-      <a href="/karsilastirma" class="btn btn-sm">En İyi AI Araçları →</a>
+      {% for t in related_tools %}
+      <a href="{{ url_for('detail', slug=t.slug) }}" class="btn btn-sm">{{ t.original_name }} →</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if related_comparisons %}
+  <div class="detail-related-box" style="margin-top: 16px;">
+    <span class="detail-related-label mono">📊 İlgili karşılaştırma:</span>
+    <div class="detail-related-links">
+      {% for c in related_comparisons %}
+      <a href="{{ url_for('comparison_detail', slug=c.slug) }}" class="btn btn-sm">{{ c.title }} →</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if guide.related_topic %}
+  <div class="detail-related-box" style="margin-top: 16px;">
+    <span class="detail-related-label mono">📁 İlgili kategori:</span>
+    <div class="detail-related-links">
+      <a href="{{ url_for('category', topic=guide.related_topic) }}" class="btn btn-sm">{{ topic_labels.get(guide.related_topic, guide.related_topic) }} Araçları →</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="detail-related-box" style="margin-top: 16px;">
+    <span class="detail-related-label mono">🔎 Daha fazla keşfet:</span>
+    <div class="detail-related-links">
+      <a href="/karsilastirma" class="btn btn-sm">Tüm Karşılaştırmalar →</a>
       <a href="/" class="btn btn-sm">Tüm Araçları Keşfet →</a>
     </div>
   </div>

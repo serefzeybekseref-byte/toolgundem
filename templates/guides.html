@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 {% block title %}AI Rehberleri — Kullanım Kılavuzları ve Karşılaştırmalar — BulurumAI{% endblock %}
-{% block description %}Yapay zeka araçlarını nasıl kullanacağınızı, hangisini seçmeniz gerektiğini anlatan detaylı Türkçe rehberler.{% endblock %}
+{% block description %}Yapay zeka araçlarını seçmek, karşılaştırmak ve verimli kullanmak için hazırlanan kapsamlı, düzenli güncellenen Türkçe rehberler.{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -12,7 +12,7 @@
 
   <div class="page-header">
     <h1 class="page-title">📚 AI Rehberleri</h1>
-    <p class="page-subtitle">Yapay zeka araçlarını nasıl kullanacağınızı, hangisini seçmeniz gerektiğini anlatan detaylı rehberler.</p>
+    <p class="page-subtitle">Yapay zeka araçlarını seçmek, karşılaştırmak ve verimli kullanmak için hazırlanan kapsamlı rehberler. Düzenli olarak güncellenen içerikler ve gerçek araç önerileriyle doğru seçimi yapın.</p>
   </div>
 
   <div class="card-grid">
@@ -23,7 +23,10 @@
       {% if g.excerpt %}
       <p class="compare-intro">{{ g.excerpt[:120] }}{% if g.excerpt|length > 120 %}...{% endif %}</p>
       {% endif %}
-      <span class="compare-date mono">{{ g.created_at[:10] }}</span>
+      <div style="display:flex; gap:12px; align-items:center;">
+        <span class="compare-date mono">{{ g.created_at[:10] }}</span>
+        {% if g.content_html %}<span class="mono" style="font-size:0.8rem; color: var(--text-secondary);">📖 {{ ((g.content_html.split()|length) / 200)|round(0, 'ceil')|int }} dk okuma</span>{% endif %}
+      </div>
     </a>
     {% else %}
     <div class="empty-state">
