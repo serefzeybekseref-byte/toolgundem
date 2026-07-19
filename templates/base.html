@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/style.css?v={{ asset_version }}">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -99,45 +99,55 @@
       </form>
     </div>
     <div class="footer-links-grid">
-      <div class="footer-col">
-        <div class="footer-col-title">Site</div>
-        <a href="/">Ana Sayfa</a>
-        <a href="/karsilastirma">En İyi AI Araçları</a>
-        <a href="/rehber">Rehberler</a>
-        <a href="/koleksiyonlar">Koleksiyonlar</a>
-        <a href="/hakkimizda">Hakkımızda</a>
-        <a href="/iletisim">İletişim</a>
-      </div>
+      <details class="footer-col" open>
+        <summary class="footer-col-title">Site</summary>
+        <div class="footer-col-links">
+          <a href="/">Ana Sayfa</a>
+          <a href="/karsilastirma">En İyi AI Araçları</a>
+          <a href="/rehber">Rehberler</a>
+          <a href="/koleksiyonlar">Koleksiyonlar</a>
+          <a href="/hakkimizda">Hakkımızda</a>
+          <a href="/iletisim">İletişim</a>
+        </div>
+      </details>
       {% if footer_guides %}
-      <div class="footer-col">
-        <div class="footer-col-title">Popüler Rehberler</div>
-        {% for g in footer_guides %}
-        <a href="{{ url_for('guide_detail', slug=g.slug) }}">{{ g.title[:40] }}{% if g.title|length > 40 %}…{% endif %}</a>
-        {% endfor %}
-      </div>
+      <details class="footer-col">
+        <summary class="footer-col-title">Popüler Rehberler</summary>
+        <div class="footer-col-links">
+          {% for g in footer_guides %}
+          <a href="{{ url_for('guide_detail', slug=g.slug) }}">{{ g.title[:40] }}{% if g.title|length > 40 %}…{% endif %}</a>
+          {% endfor %}
+        </div>
+      </details>
       {% endif %}
       {% if footer_comparisons %}
-      <div class="footer-col">
-        <div class="footer-col-title">Son Karşılaştırmalar</div>
-        {% for c in footer_comparisons %}
-        <a href="{{ url_for('comparison_detail', slug=c.slug) }}">{{ c.title[:40] }}{% if c.title|length > 40 %}…{% endif %}</a>
-        {% endfor %}
-      </div>
+      <details class="footer-col">
+        <summary class="footer-col-title">Son Karşılaştırmalar</summary>
+        <div class="footer-col-links">
+          {% for c in footer_comparisons %}
+          <a href="{{ url_for('comparison_detail', slug=c.slug) }}">{{ c.title[:40] }}{% if c.title|length > 40 %}…{% endif %}</a>
+          {% endfor %}
+        </div>
+      </details>
       {% endif %}
       {% if footer_topics %}
-      <div class="footer-col">
-        <div class="footer-col-title">Popüler Kategoriler</div>
-        {% for topic, count in footer_topics %}
-        <a href="{{ url_for('category', topic=topic) }}">{{ topic_labels.get(topic, topic) }}</a>
-        {% endfor %}
-      </div>
+      <details class="footer-col">
+        <summary class="footer-col-title">Popüler Kategoriler</summary>
+        <div class="footer-col-links">
+          {% for topic, count in footer_topics %}
+          <a href="{{ url_for('category', topic=topic) }}">{{ topic_labels.get(topic, topic) }}</a>
+          {% endfor %}
+        </div>
+      </details>
       {% endif %}
-      <div class="footer-col">
-        <div class="footer-col-title">Yasal</div>
-        <a href="/kvkk">KVKK</a>
-        <a href="/gizlilik">Gizlilik Politikası</a>
-        <a href="/kullanim-sartlari">Kullanım Şartları</a>
-      </div>
+      <details class="footer-col">
+        <summary class="footer-col-title">Yasal</summary>
+        <div class="footer-col-links">
+          <a href="/kvkk">KVKK</a>
+          <a href="/gizlilik">Gizlilik Politikası</a>
+          <a href="/kullanim-sartlari">Kullanım Şartları</a>
+        </div>
+      </details>
     </div>
     <div class="footer-copy">
       Yapay zeka ekosisteminden günlük verilerle güncellenir.

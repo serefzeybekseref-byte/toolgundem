@@ -2080,6 +2080,18 @@ h1, h2, h3, h4 {
   gap: 8px;
 }
 
+.footer-col-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Masaustunde <details> kapali/acik farketmeksizin icerik her zaman gorunur
+   (native tarayici davranisini eziyoruz) - akordiyon sadece mobilde aktif */
+.footer-col:not([open]) > .footer-col-links {
+  display: flex;
+}
+
 .footer-col-title {
   font-weight: 700;
   font-size: 0.8rem;
@@ -2087,6 +2099,12 @@ h1, h2, h3, h4 {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-bottom: 4px;
+  cursor: default;
+  list-style: none;
+}
+
+.footer-col-title::-webkit-details-marker {
+  display: none;
 }
 
 .footer-col a {
@@ -2106,12 +2124,41 @@ h1, h2, h3, h4 {
 
 @media (max-width: 640px) {
   .footer-links-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-4) var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     text-align: left;
   }
   .footer-col {
-    gap: 6px;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+  }
+  .footer-col:first-child {
+    padding-top: 0;
+  }
+  .footer-col-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    margin-bottom: 0;
+    padding: 4px 0;
+  }
+  .footer-col-title::after {
+    content: "+";
+    font-size: 1rem;
+    color: var(--text-secondary);
+    transition: transform 0.2s ease;
+  }
+  .footer-col[open] > .footer-col-title::after {
+    content: "−";
+  }
+  .footer-col-links {
+    padding-top: 10px;
+    gap: 10px;
+  }
+  .footer-col:not([open]) > .footer-col-links {
+    display: none;
   }
 }
 

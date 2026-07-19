@@ -255,7 +255,12 @@ def inject_globals():
     # etikete cevrilen farkli ham topic'ler (AI/Artificial Intelligence gibi)
     # footer'da iki kez gorunmesin diye birlestirilir.
     footer_topics = [(t["raw_topic"], t["count"]) for t in get_merged_topics()[:6]]
+    try:
+        asset_version = int(os.path.getmtime(os.path.join(app.static_folder, "style.css")))
+    except OSError:
+        asset_version = 1
     return {
+        "asset_version": asset_version,
         "topic_labels": TOPIC_LABELS,
         "topic_icons": TOPIC_ICONS,
         "get_topic_icon": get_topic_icon,
