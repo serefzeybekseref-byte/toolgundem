@@ -432,6 +432,8 @@ def api_products():
 
 @app.route("/sitemap.xml")
 def sitemap():
+    from xml.sax.saxutils import escape
+    from urllib.parse import quote
     products = get_all_products()
     comparisons = get_all_comparisons()
     topics = get_all_topics()
@@ -439,23 +441,28 @@ def sitemap():
     collections = get_all_collections()
     base = "https://" + request.host
 
+    def loc(path):
+        # Ozel karakterler (&, <, >, ', ") hem URL hem XML acisindan escape edilir,
+        # boylece sitemap "cozumleme hatasi" (parse error) vermez.
+        return escape(f"{base}{path}")
+
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     # Home
-    xml += f'  <url><loc>{base}/</loc><priority>1.0</priority></url>\n'
+    xml += f'  <url><loc>{loc("/")}</loc><priority>1.0</priority></url>\n'
     # Products
     for p in products:
-        xml += f'  <url><loc>{base}/urun/{p["slug"]}</loc></url>\n'
+        xml += f'  <url><loc>{loc("/urun/" + quote(str(p["slug"])))}</loc></url>\n'
     # Comparisons
-    xml += f'  <url><loc>{base}/karsilastirma</loc><priority>0.8</priority></url>\n'
+    xml += f'  <url><loc>{loc("/karsilastirma")}</loc><priority>0.8</priority></url>\n'
     for c in comparisons:
-        xml += f'  <url><loc>{base}/karsilastirma/{c["slug"]}</loc></url>\n'
+        xml += f'  <url><loc>{loc("/karsilastirma/" + quote(str(c["slug"])))}</loc></url>\n'
     # Categories
     for topic, count in topics:
-        xml += f'  <url><loc>{base}/kategori/{topic}</loc></url>\n'
+        xml += f'  <url><loc>{loc("/kategori/" + quote(str(topic)))}</loc></url>\n'
     # Collections
     for col in collections:
-        xml += f'  <url><loc>{base}/koleksiyon/{col["slug"]}</loc></url>\n'
+        xml += f'  <url><loc>{loc("/koleksiyon/" + quote(str(col["slug"])))}</loc></url>\n'
 
     xml += '</urlset>'
     return Response(xml, mimetype="application/xml")
