@@ -251,7 +251,10 @@ def inject_globals():
     """Tum template'lerde kullanilabilecek global degiskenler."""
     footer_guides = get_all_guides()[:5]
     footer_comparisons = get_all_comparisons()[:5]
-    footer_topics = get_all_topics()[:6]
+    # get_all_topics() yerine get_merged_topics() kullanilir: ayni Turkce
+    # etikete cevrilen farkli ham topic'ler (AI/Artificial Intelligence gibi)
+    # footer'da iki kez gorunmesin diye birlestirilir.
+    footer_topics = [(t["raw_topic"], t["count"]) for t in get_merged_topics()[:6]]
     return {
         "topic_labels": TOPIC_LABELS,
         "topic_icons": TOPIC_ICONS,
