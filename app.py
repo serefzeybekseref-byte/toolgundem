@@ -447,6 +447,11 @@ def iletisim():
     return render_template("iletisim.html", page_title="İletişim")
 
 
+@app.route("/hakkimizda")
+def hakkimizda():
+    return render_template("hakkimizda.html", page_title="Hakkımızda")
+
+
 @app.route("/gizlilik")
 def gizlilik():
     return render_template("gizlilik.html", page_title="Gizlilik Politikası", page_updated="17 Temmuz 2026")

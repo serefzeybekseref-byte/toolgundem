@@ -2104,6 +2104,17 @@ h1, h2, h3, h4 {
   opacity: 0.5;
 }
 
+@media (max-width: 640px) {
+  .footer-links-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4) var(--space-3);
+    text-align: left;
+  }
+  .footer-col {
+    gap: 6px;
+  }
+}
+
 /* Scroll to top button */
 .scroll-top {
   position: fixed;
