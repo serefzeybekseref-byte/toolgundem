@@ -48,9 +48,9 @@
   </div>
 
   {% if product.gallery %}
-  <div class="detail-gallery">
+  <div class="detail-gallery" id="gallery-root">
     {% for img in product.gallery.split(',')[:4] if img %}
-    <a href="{{ img }}" target="_blank" rel="noopener" class="detail-gallery-item">
+    <a href="{{ img }}" class="detail-gallery-item" data-lightbox-index="{{ loop.index0 }}">
       <img src="{{ img }}" alt="{{ product.original_name }} ekran görüntüsü" loading="lazy">
     </a>
     {% endfor %}

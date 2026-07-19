@@ -782,6 +782,25 @@ def search_products(query):
     return [dict(r) for r in rows]
 
 
+def search_products_suggest(query: str, limit: int = 6):
+    """
+    Ust bardaki arama kutusu icin hafif/hizli oneri listesi (canli dropdown).
+    search_products ile ayni mantik ama sadece dropdown'da gosterilecek
+    minimal alanlari ceker ve sonuc sayisini kucuk tutar (performans icin).
+    """
+    conn = get_connection()
+    pattern = f"%{query.lower()}%"
+    rows = conn.execute(
+        """SELECT slug, original_name, summary_tr, thumbnail, votes FROM products
+           WHERE (LOWER(title_tr) LIKE ? OR LOWER(summary_tr) LIKE ? OR LOWER(original_name) LIKE ?)
+           AND (is_broken IS NULL OR is_broken = 0)
+           ORDER BY votes DESC LIMIT ?""",
+        (pattern, pattern, pattern, limit)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 # Turkce'de anlam tasimayan, arama sinyali olarak ise yaramayan kok kelimeler.
 # AI Danismani'na dogal dil cumleleri geldiginde ("hangi arac isimi cozer" gibi)
 # bu kelimeler filtrelenir, geriye anlamli terimler kalir.

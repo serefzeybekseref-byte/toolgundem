@@ -117,14 +117,80 @@ function createProductCard(p) {
   `;
 }
 
-// Search - debounced input
+// Search - debounced input + canli oneri dropdown'u
 const searchInput = document.getElementById('search-input');
 const searchForm = document.getElementById('search-form');
+const searchSuggest = document.getElementById('search-suggest');
 
 if (searchInput && searchForm) {
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       searchForm.submit();
+    } else if (e.key === 'Escape') {
+      hideSuggest();
+    }
+  });
+
+  function hideSuggest() {
+    if (searchSuggest) {
+      searchSuggest.innerHTML = '';
+      searchSuggest.classList.remove('active');
+    }
+  }
+
+  function renderSuggest(results) {
+    if (!searchSuggest) return;
+    if (!results.length) {
+      hideSuggest();
+      return;
+    }
+    searchSuggest.innerHTML = results.map(p => `
+      <a href="/urun/${p.slug}" class="search-suggest-item">
+        ${p.thumbnail ? `<img src="${p.thumbnail}" alt="" class="search-suggest-thumb" loading="lazy">` : '<div class="search-suggest-thumb search-suggest-thumb-fallback">' + p.original_name[0].toUpperCase() + '</div>'}
+        <div class="search-suggest-text">
+          <div class="search-suggest-name">${p.original_name}</div>
+          <div class="search-suggest-summary">${(p.summary_tr || '').slice(0, 70)}</div>
+        </div>
+      </a>
+    `).join('');
+    searchSuggest.classList.add('active');
+  }
+
+  let debounceTimer = null;
+  let latestQuery = '';
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim();
+    latestQuery = q;
+    if (q.length < 2) {
+      hideSuggest();
+      return;
+    }
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      try {
+        const resp = await fetch(`/api/search-suggest?q=${encodeURIComponent(q)}`);
+        const data = await resp.json();
+        // Kullanici yazmaya devam ettiyse eski sonucu gosterme (race condition onlemi)
+        if (q === latestQuery) {
+          renderSuggest(data.results || []);
+        }
+      } catch (err) {
+        hideSuggest();
+      }
+    }, 200);
+  });
+
+  // Kutu disina tiklaninca kapat
+  document.addEventListener('click', (e) => {
+    if (!searchForm.contains(e.target)) {
+      hideSuggest();
+    }
+  });
+
+  // Odaklaninca (ve zaten yazi varsa) tekrar goster
+  searchInput.addEventListener('focus', () => {
+    if (searchInput.value.trim().length >= 2 && searchSuggest.innerHTML) {
+      searchSuggest.classList.add('active');
     }
   });
 
@@ -142,6 +208,70 @@ if (searchInput && searchForm) {
       searchInput.setAttribute('placeholder', searchPlaceholders[phIndex]);
     }, 2600);
   }
+}
+
+// Gallery Lightbox (Product Hunt tarzi - ayri sayfaya gitmeden buyuk gorsel goster)
+const galleryRoot = document.getElementById('gallery-root');
+const lightboxOverlay = document.getElementById('lightbox-overlay');
+const lightboxImg = document.getElementById('lightbox-img');
+const lightboxClose = document.getElementById('lightbox-close');
+const lightboxPrev = document.getElementById('lightbox-prev');
+const lightboxNext = document.getElementById('lightbox-next');
+
+if (galleryRoot && lightboxOverlay && lightboxImg) {
+  const galleryLinks = Array.from(galleryRoot.querySelectorAll('.detail-gallery-item'));
+  let currentIndex = 0;
+
+  function openLightbox(index) {
+    currentIndex = index;
+    lightboxImg.src = galleryLinks[currentIndex].getAttribute('href');
+    lightboxOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    updateNavVisibility();
+  }
+
+  function closeLightbox() {
+    lightboxOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function updateNavVisibility() {
+    lightboxPrev.style.display = galleryLinks.length > 1 ? '' : 'none';
+    lightboxNext.style.display = galleryLinks.length > 1 ? '' : 'none';
+  }
+
+  function showNext() {
+    currentIndex = (currentIndex + 1) % galleryLinks.length;
+    lightboxImg.src = galleryLinks[currentIndex].getAttribute('href');
+  }
+
+  function showPrev() {
+    currentIndex = (currentIndex - 1 + galleryLinks.length) % galleryLinks.length;
+    lightboxImg.src = galleryLinks[currentIndex].getAttribute('href');
+  }
+
+  galleryLinks.forEach((link, i) => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      openLightbox(i);
+    });
+  });
+
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightboxNext.addEventListener('click', showNext);
+  lightboxPrev.addEventListener('click', showPrev);
+
+  // Arka plana (gorselin disina) tiklaninca da kapat
+  lightboxOverlay.addEventListener('click', (e) => {
+    if (e.target === lightboxOverlay) closeLightbox();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!lightboxOverlay.classList.contains('active')) return;
+    if (e.key === 'Escape') closeLightbox();
+    else if (e.key === 'ArrowRight') showNext();
+    else if (e.key === 'ArrowLeft') showPrev();
+  });
 }
 
 // Scroll to top button

@@ -39,9 +39,10 @@
       <a href="/karsilastirma" class="nav-link">En İyi AI Araçları</a>
     </nav>
     <div class="header-actions">
-      <form id="search-form" action="/ara" method="GET" class="search-form">
+      <form id="search-form" action="/ara" method="GET" class="search-form" autocomplete="off">
         <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <input type="text" id="search-input" name="q" placeholder="Araç ara..." class="search-input" autocomplete="off" value="{{ request.args.get('q', '') }}">
+        <div id="search-suggest" class="search-suggest"></div>
       </form>
       <div style="display: flex; align-items: center; gap: 8px;">
         <span class="theme-hint">Modu Değiştir</span>
@@ -110,6 +111,13 @@ document.getElementById("newsletter-form").addEventListener("submit", async func
 </script>
 
 <button id="scroll-top" class="scroll-top" aria-label="Yukarı çık">↑</button>
+
+<div id="lightbox-overlay" class="lightbox-overlay">
+  <button id="lightbox-close" class="lightbox-close" aria-label="Kapat">✕</button>
+  <button id="lightbox-prev" class="lightbox-nav lightbox-prev" aria-label="Önceki">‹</button>
+  <img id="lightbox-img" class="lightbox-img" src="" alt="">
+  <button id="lightbox-next" class="lightbox-nav lightbox-next" aria-label="Sonraki">›</button>
+</div>
 
 <script src="/static/app.js"></script>
 <script>

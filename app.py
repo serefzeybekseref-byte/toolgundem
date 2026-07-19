@@ -9,7 +9,7 @@ from db import (
     init_db, get_all_products, get_product_by_slug,
     get_all_comparisons, get_comparison_by_slug,
     get_trending_products, get_recent_products,
-    get_products_by_topic, search_products, search_products_advisor,
+    get_products_by_topic, search_products, search_products_advisor, search_products_suggest,
     get_all_topics, get_similar_products, get_top_products_by_period,
     subscribe_email, unsubscribe_email,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
@@ -420,6 +420,16 @@ def search():
     if query:
         results = search_products(query)
     return render_template("search.html", query=query, results=results)
+
+
+@app.route("/api/search-suggest")
+def api_search_suggest():
+    """Ust bardaki arama kutusu icin canli/anlik oneri dropdown'u besler."""
+    query = request.args.get("q", "").strip()
+    if len(query) < 2:
+        return jsonify({"results": []})
+    results = search_products_suggest(query, limit=6)
+    return jsonify({"results": results})
 
 
 @app.route("/api/products")
