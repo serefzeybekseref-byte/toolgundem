@@ -16,6 +16,7 @@ from db import (
     get_admin_stats, get_all_guides, get_guide_by_slug, get_related_guides,
     get_guides_for_topic, get_guides_for_tool_slug, get_guides_for_comparison_slug,
     get_products_by_slugs, get_comparisons_by_slugs,
+    BEST_FOR_TYPES,
 )
 import os
 from rules_engine import derive_use_cases_and_personas
@@ -257,6 +258,7 @@ def inject_globals():
         "get_topic_icon": get_topic_icon,
         "get_comparison_icon": get_comparison_icon,
         "get_cta_url": get_cta_url,
+        "best_for_types": BEST_FOR_TYPES,
         "get_cta_label": get_cta_label,
         "turkce_tarih": turkce_tarih,
         "footer_guides": footer_guides,

@@ -252,8 +252,66 @@ def init_db():
             except sqlite3.OperationalError:
                 pass
 
+    # comparison_items icin best_for_type enum kolonu (bkz. classify_best_for).
+    if USE_POSTGRES:
+        conn.execute("ALTER TABLE comparison_items ADD COLUMN IF NOT EXISTS best_for_type TEXT")
+    else:
+        try:
+            conn.execute("ALTER TABLE comparison_items ADD COLUMN best_for_type TEXT")
+        except sqlite3.OperationalError:
+            pass
+
     conn.commit()
     conn.close()
+
+
+# Karsilastirma kartlarindaki "Kim icin?" rozeti icin sabit enum.
+# Onceki surumde bu siniflandirma template icinde (Jinja) satir satir
+# anahtar kelime eslestirmesiyle yapiliyordu - bu kirilgan (ör. "ücretsiz"
+# yerine "bedava"/"free" gecerse eslesmiyordu) ve her render'da tekrar
+# hesaplaniyordu. Artik tek yerde (burada) siniflandirilip veritabaninda
+# saklaniyor; template sadece enum -> rozet eslemesi yapar.
+BEST_FOR_TYPES = {
+    "general":     ("🏆", "En iyi genel kullanım"),
+    "free":        ("💰", "En uygun fiyat"),
+    "developer":   ("👨‍💻", "Geliştiriciler için"),
+    "designer":    ("🎨", "Tasarımcılar için"),
+    "beginner":    ("🚀", "Yeni başlayanlar için"),
+    "enterprise":  ("🏢", "Kurumsal kullanım"),
+    "education":   ("🎓", "Eğitim için"),
+    "marketing":   ("📣", "Pazarlama için"),
+    "video":       ("🎬", "Video için"),
+    "audio":       ("🎙️", "Ses için"),
+}
+
+_BEST_FOR_KEYWORDS = {
+    "free": ["ucret", "ücret", "fiyat", "uygun", "bedava", "free", "ekonomik"],
+    "beginner": ["baslang", "başlang", "yeni baslayan", "kolay", "basit", "acemi"],
+    "developer": ["gelistir", "geliştir", "kod", "developer", "yazilim", "yazılım", "api"],
+    "designer": ["tasarim", "tasarım", "gorsel", "görsel", "design", "grafik"],
+    "enterprise": ["kurumsal", "sirket", "şirket", "enterprise", "ekip", "takim", "takım"],
+    "education": ["egitim", "eğitim", "ogrenci", "öğrenci", "akademik", "okul"],
+    "marketing": ["pazarlama", "marketing", "reklam", "sosyal medya"],
+    "video": ["video", "film", "montaj"],
+    "audio": ["ses ", "muzik", "müzik", "podcast", "seslendirme"],
+}
+
+
+def classify_best_for(text: str, is_first_rank: bool = False) -> str:
+    """
+    best_for aciklama metnini BEST_FOR_TYPES anahtarlarindan birine esler.
+    Hicbir kelime eslesmezse: ilk sirada ise 'general', degilse None doner
+    (template rozet gostermez, sadece metni gosterir - hatali/uydurma rozet
+    vermektense rozetsiz birakmak tercih edilir).
+    """
+    if not text:
+        return "general" if is_first_rank else None
+    t = text.lower()
+    for type_key, keywords in _BEST_FOR_KEYWORDS.items():
+        if any(kw in t for kw in keywords):
+            return type_key
+    return "general" if is_first_rank else None
+
 
 def compute_quality_score(row: dict) -> int:
     """
@@ -616,13 +674,14 @@ def save_comparison(slug: str, title: str, intro: str, items: list):
     for item in items:
         conn.execute("""
             INSERT INTO comparison_items
-            (comparison_id, rank, name, score, pricing, best_for, pros, cons, website)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (comparison_id, rank, name, score, pricing, best_for, pros, cons, website, best_for_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             comparison_id, item["rank"], item["name"], item["score"],
             item.get("pricing", ""), item.get("best_for", ""),
             "|".join(item.get("pros", [])), "|".join(item.get("cons", [])),
             item.get("website", ""),
+            item.get("best_for_type") or classify_best_for(item.get("best_for", ""), item["rank"] == 1),
         ))
     conn.commit()
     conn.close()
