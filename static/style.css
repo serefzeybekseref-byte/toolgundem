@@ -2358,3 +2358,30 @@ h1, h2, h3, h4 {
   line-height: 1.7;
   margin-bottom: var(--space-3);
 }
+
+/* Rehber kartlarindaki rozet, standart .badge'den farkli olarak metin
+   agirlikli bir yuzeyde (gorsel uzerine binmiyor) oturuyor - o yuzden
+   0.65rem/yari saydam varsayilan stil burada kayboluyordu. Daha buyuk,
+   opak ve renkli arka planla belirginlestirildi (taranabilirlik icin). */
+.guide-tool-card-head .badge {
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  flex-shrink: 0;
+}
+.guide-tool-card-head .badge-free {
+  background-color: rgba(63,185,80,0.16);
+  border-color: rgba(63,185,80,0.4);
+  color: #3fb950;
+}
+.guide-tool-card-head .badge-paid {
+  background-color: rgba(229,72,77,0.16);
+  border-color: rgba(229,72,77,0.4);
+  color: #e5484d;
+}
+.guide-tool-card-head .badge-freemium {
+  background-color: rgba(234,179,8,0.16);
+  border-color: rgba(234,179,8,0.4);
+  color: #eab308;
+}
