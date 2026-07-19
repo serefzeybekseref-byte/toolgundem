@@ -67,7 +67,9 @@ def get_latest_products(max_products: int = MAX_PRODUCTS):
 
     while len(products) < max_products:
         variables = {"cursor": cursor}
-        response = requests.post(API_URL, json={"query": QUERY, "variables": variables}, headers=headers)
+        response = requests.post(
+            API_URL, json={"query": QUERY, "variables": variables}, headers=headers, timeout=30
+        )
         response.raise_for_status()
         data = response.json()
 

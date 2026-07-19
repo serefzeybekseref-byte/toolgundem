@@ -96,7 +96,7 @@ class _ConnWrapper:
 
 def _open_raw_connection(shared):
     if USE_POSTGRES:
-        raw = psycopg2.connect(DATABASE_URL)
+        raw = psycopg2.connect(DATABASE_URL, connect_timeout=15)
         return _ConnWrapper(raw, is_pg=True, shared=shared)
     raw = sqlite3.connect(DB_PATH)
     raw.row_factory = sqlite3.Row
@@ -218,7 +218,7 @@ def init_db():
     """)
     # guides tablosu daha once related_tool_slugs/related_comparison_slugs olmadan
     # olusturulmus olabilir - zaten varsa hatasiz gecilir.
-    for col_name, col_type in [("related_tool_slugs", "TEXT"), ("related_comparison_slugs", "TEXT"), ("faq_json", "TEXT")]:
+    for col_name, col_type in [("related_tool_slugs", "TEXT"), ("related_comparison_slugs", "TEXT"), ("faq_json", "TEXT"), ("tools_json", "TEXT")]:
         if USE_POSTGRES:
             conn.execute(f"ALTER TABLE guides ADD COLUMN IF NOT EXISTS {col_name} {col_type}")
         else:
