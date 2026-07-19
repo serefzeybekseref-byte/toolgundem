@@ -403,6 +403,14 @@ def save_product(product: dict, ai_content: dict) -> str:
 
     normalized = normalize_name(product.get("name") or ai_content["title"])
 
+    # PH bu urun icin ayri galeri gorseli sunmuyorsa (media alani bos/video vb.),
+    # detay sayfasindaki "ekran goruntusu" bolumu bomboş kalmasin diye gercek
+    # thumbnail'i (favicon degilse) tek bir galeri ogesi olarak kullaniriz.
+    gallery_list = list(product.get("gallery", []) or [])
+    thumb = product.get("thumbnail")
+    if not gallery_list and thumb and "google.com/s2/favicons" not in thumb:
+        gallery_list = [thumb]
+
     conn.execute("""
         INSERT INTO products
         (ph_id, slug, original_name, title_tr, summary_tr, content_tr, tags,
@@ -432,7 +440,7 @@ def save_product(product: dict, ai_content: dict) -> str:
             "thumbnail": product.get("thumbnail"),
             "website": product.get("website", ""),
         }),
-        ",".join(product.get("gallery", [])),
+        ",".join(gallery_list),
     ))
     conn.commit()
     conn.close()
