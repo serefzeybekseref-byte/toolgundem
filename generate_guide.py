@@ -34,7 +34,10 @@ KURALLAR (cok onemli, kesinlikle uy):
 - Sadece asagida verilen araclardan bahset, baska arac ismi UYDURMA veya ekleme.
 - Fiyat bilgisi olarak SADECE verilen bilgiyi kullan, uydurma rakam verme.
 - Dogal, akici, samimi ama profesyonel bir uslup kullan (reklam gibi degil, tekrar eden cumleler kurma).
-- Belirtilen kelime sayisi hedeflerine gercekten uy - kisa/yuzeysel yazma, her cumle yeni bilgi tasisin.
+- KISA VE OZ YAZ: kullanici bu sayfayi OKUMAYACAK, TARAYACAK. Uzun paragraf yerine kisa,
+  carpici cumleler kullan. Belirtilen kelime sayisi hedefleri UST SINIRDIR, hedefin altinda
+  kalman sorun degil - onemli olan her cumlenin gercekten yeni bilgi tasimasi, doldurma
+  cumle KESINLIKLE yazma.
 """
 
 
@@ -53,8 +56,9 @@ Su JSON formatinda cevap ver (baska hicbir sey yazma):
   "meta_description": "Google sonuclarinda gorunecek 150-160 karakterlik ozet",
   "excerpt": "Sayfa basinda gorunecek 1-2 cumlelik giris ozeti",
   "hizli_ozet": "TAM OLARAK 2-3 cumlelik DOGRUDAN cevap. Kullanici sayfaya gelir gelmez 'Kisa cevap: ...' diye baslayan bu kutuyu okuyup en onemli tavsiyeyi hemen alsin (hangi arac/yaklasim one cikiyor, neden). Google'in AI/featured snippet sonuclarina uygun, oz ve net olsun.",
-  "giris": "TAM OLARAK 200-250 kelimelik giris paragrafi. Okuyucunun sorununu/ihtiyacini tanimla, bu rehberde ne bulacagini soyle.",
-  "neden_ai": "TAM OLARAK 200-250 kelimelik 'Neden yapay zeka kullanmalisiniz' bolumu. Somut faydalar, zaman/para tasarrufu, geleneksel yontemle karsilastirma."
+  "ogrenecekleriniz": ["Bu rehberde ogrenilecek 4 kisa madde (her biri 4-8 kelime, fiil ile baslasin, ornek: 'Hangi aracin size uygun oldugunu' gibi)", "madde 2", "madde 3", "madde 4"],
+  "giris": "EN FAZLA 60-80 kelimelik giris paragrafi. Okuyucunun sorununu/ihtiyacini tek cumlede tanimla, bu rehberde ne bulacagini kisaca soyle. Uzatma.",
+  "neden_ai": ["Yapay zeka kullanmanin faydasi 1 - TEK CUMLE, somut (zaman/para/kalite)", "fayda 2 - tek cumle", "fayda 3 - tek cumle", "fayda 4 - tek cumle (3-4 madde, HER biri EN FAZLA 20 kelime)"]
 }}
 """
 
@@ -72,7 +76,7 @@ Bahsedilecek araclar (baglam icin, adimlarda genel gecer/arac-bagimsiz bir surec
 Su JSON formatinda cevap ver (baska hicbir sey yazma):
 {{
   "adimlar_baslik": "Bu bolumun kisa (1 cumle) giris cumlesi",
-  "adimlar": ["TEK BIR STRING icinde 'Kisa Baslik: Ayrintili aciklama (70-100 kelime)' formatinda - basligi ve aciklamayi AYRI array elemanlari yapma, TEK string olarak birlestir", "Adim 2 - ayni format, TEK string", "Adim 3 - ayni format, TEK string", "Adim 4 - ayni format, TEK string", "Adim 5 - ayni format, TEK string (5-6 adim arasi olsun, HER adim kendi icinde baslik+aciklama birlesik TEK string olmali, array'de sadece 5-6 eleman olmali)"]
+  "adimlar": ["TEK BIR STRING icinde 'Kisa Baslik: Ayrintili aciklama (EN FAZLA 30-40 kelime)' formatinda - basligi ve aciklamayi AYRI array elemanlari yapma, TEK string olarak birlestir", "Adim 2 - ayni format, TEK string", "Adim 3 - ayni format, TEK string", "Adim 4 - ayni format, TEK string (4-5 adim arasi olsun, HER adim kendi icinde baslik+aciklama birlesik TEK string olmali, KISA tut)"]
 }}
 """
 
@@ -83,7 +87,7 @@ def build_tools_prompt(topic_title: str, tools: list) -> str:
         for i, t in enumerate(tools)
     ])
     return f"""Sen deneyimli bir Turkce teknoloji editorusun. Asagidaki konu icin bir SEO
-rehberinin "EN IYI ARAÇLAR" bolumunu yaz. Her arac icin AYRI ve DETAYLI bir tanitim yaz.
+rehberinin "EN IYI ARAÇLAR" bolumunu yaz. Her arac icin AYRI ve KISA bir tanitim yaz.
 
 KONU: {topic_title}
 
@@ -91,13 +95,14 @@ Tanitilacak araclar (bu SIRAYLA, hepsi icin yaz, baska arac ekleme):
 {tools_list_text}
 {_COMMON_RULES}
 
-Her arac aciklamasi TAM OLARAK 120-160 kelime olsun: ne ise yarar, one cikan ozelligi,
-kimler icin ideal, fiyati (verilen bilgiyi kullanarak) ve kucuk bir kullanim ipucu icersin.
+Her arac aciklamasi EN FAZLA 50-70 kelime olsun: ne ise yaradigini ve one cikan TEK
+ozelligini soyle, uzun anlatima girme - kullanici zaten "Detayli incelemeyi oku" linkinden
+tam sayfaya gidebilir, burasi sadece hizli tanitim.
 
 Su JSON formatinda cevap ver (baska hicbir sey yazma, tam olarak {len(tools)} tane eleman olsun, SIRAYI KORU):
 {{
   "en_iyi_araclar": [
-    {{"isim": "arac ismi (yukaridaki listeden BIREBIR ayni)", "aciklama": "120-160 kelimelik detayli aciklama"}}
+    {{"isim": "arac ismi (yukaridaki listeden BIREBIR ayni)", "aciklama": "EN FAZLA 50-70 kelimelik kisa aciklama"}}
   ]
 }}
 """
@@ -115,8 +120,8 @@ Baglam (bahsedilen araclar):
 
 Su JSON formatinda cevap ver (baska hicbir sey yazma):
 {{
-  "ucretsiz_alternatif_notu": "TAM OLARAK 180-220 kelimelik, ucretsiz/dusuk butceli secenekler hakkinda bir paragraf. Hangi araclarin ucretsiz katmani oldugunu, nelerden feragat edildigini anlat.",
-  "hatalar": ["Sik yapilan hata 1 - TAM OLARAK 40-60 kelime aciklamali", "Hata 2 - 40-60 kelime", "Hata 3 - 40-60 kelime", "Hata 4 - 40-60 kelime", "Hata 5 - 40-60 kelime (4-5 hata arasi)"]
+  "ucretsiz_alternatif_notu": "EN FAZLA 70-90 kelimelik, ucretsiz/dusuk butceli secenekler hakkinda kisa bir not. Hangi araclarin ucretsiz katmani oldugunu kisaca soyle.",
+  "hatalar": ["Sik yapilan hata 1 - EN FAZLA 20-30 kelime aciklamali", "Hata 2 - 20-30 kelime", "Hata 3 - 20-30 kelime", "Hata 4 - 20-30 kelime (3-4 hata arasi, kisa tut)"]
 }}
 """
 
@@ -131,19 +136,18 @@ KONU: {topic_title}
 Baglam (bahsedilen araclar):
 {tools_desc}
 {_COMMON_RULES}
-- 5 SORU BIRBIRINDEN TAMAMEN FARKLI olmali, hicbiri ayni seyi baska kelimelerle sormamali
+- 4 SORU BIRBIRINDEN TAMAMEN FARKLI olmali, hicbiri ayni seyi baska kelimelerle sormamali
   (orn. "hangi araclari kullanabilirim" ve "en iyi araclar hangileri" gibi benzer sorulari
   TEKRAR ETME, her soru farkli bir acidan yaklassin: fiyat, guvenlik, baslangic seviyesi,
   profesyonel kullanim, ozel bir senaryo gibi).
 
-Su JSON formatinda cevap ver (baska hicbir sey yazma, tam olarak 5 soru-cevap):
+Su JSON formatinda cevap ver (baska hicbir sey yazma, tam olarak 4 soru-cevap):
 {{
   "sss": [
-    {{"soru": "Soru 1 (dogal, Google'da aranacak turden)", "cevap": "TAM OLARAK 80-110 kelimelik detayli cevap"}},
-    {{"soru": "Soru 2", "cevap": "80-110 kelime"}},
-    {{"soru": "Soru 3", "cevap": "80-110 kelime"}},
-    {{"soru": "Soru 4", "cevap": "80-110 kelime"}},
-    {{"soru": "Soru 5", "cevap": "80-110 kelime"}}
+    {{"soru": "Soru 1 (dogal, Google'da aranacak turden)", "cevap": "EN FAZLA 40-60 kelimelik net cevap, direkt cevapla, uzatma"}},
+    {{"soru": "Soru 2", "cevap": "EN FAZLA 40-60 kelime"}},
+    {{"soru": "Soru 3", "cevap": "EN FAZLA 40-60 kelime"}},
+    {{"soru": "Soru 4", "cevap": "EN FAZLA 40-60 kelime"}}
   ]
 }}
 """
@@ -226,9 +230,17 @@ def generate_guide_content(topic_title: str, tools: list, tool_extra: dict = Non
     html_parts = []
     if intro.get("hizli_ozet"):
         html_parts.append(f"<div class='guide-quick-answer'><strong>⚡ Kısa cevap:</strong> {intro['hizli_ozet']}</div>")
+    if intro.get("ogrenecekleriniz"):
+        html_parts.append("<div class='guide-learn-box'><div class='guide-learn-title'>📋 Bu rehberde öğrenecekleriniz</div><ul>")
+        for madde in intro["ogrenecekleriniz"]:
+            html_parts.append(f"<li>{madde}</li>")
+        html_parts.append("</ul></div>")
     html_parts.append(f"<p>{intro['giris']}</p>")
     html_parts.append("<h2>Neden Yapay Zeka Kullanmalısınız?</h2>")
-    html_parts.append(f"<p>{intro['neden_ai']}</p>")
+    html_parts.append("<ul class='guide-benefits'>")
+    for fayda in intro.get("neden_ai", []):
+        html_parts.append(f"<li>{fayda}</li>")
+    html_parts.append("</ul>")
 
     html_parts.append(f"<h2>{steps.get('adimlar_baslik', 'Adım Adım Nasıl Yapılır?')}</h2>")
     html_parts.append("<ol class='guide-steps'>")

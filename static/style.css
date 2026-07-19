@@ -2322,6 +2322,40 @@ h1, h2, h3, h4 {
   color: var(--accent);
 }
 
+.guide-learn-box {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  margin-bottom: 24px;
+}
+.guide-learn-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.guide-learn-box ul {
+  margin: 0;
+  padding-left: 20px;
+  columns: 2;
+  column-gap: 24px;
+}
+.guide-learn-box li {
+  margin-bottom: 6px;
+  break-inside: avoid;
+}
+@media (max-width: 640px) {
+  .guide-learn-box ul { columns: 1; }
+}
+
+.guide-benefits {
+  padding-left: 20px;
+  margin: 12px 0 20px;
+}
+.guide-benefits li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
 .guide-tool-card {
   background-color: var(--surface);
   border: 1px solid var(--border);
