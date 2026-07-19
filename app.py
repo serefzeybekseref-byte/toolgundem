@@ -11,7 +11,7 @@ from db import (
     get_trending_products, get_recent_products,
     get_products_by_topic, search_products, search_products_advisor,
     get_all_topics, get_similar_products, get_top_products_by_period,
-    subscribe_email,
+    subscribe_email, unsubscribe_email,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
     get_admin_stats,
 )
@@ -320,6 +320,25 @@ def detail(slug):
 def comparisons_list():
     comparisons = get_all_comparisons()
     return render_template("comparisons.html", comparisons=comparisons)
+
+
+@app.route("/abone/iptal")
+def unsubscribe():
+    """
+    Bulten mailindeki 'abonelikten cik' linki. Token, e-postanin ADMIN_TOKEN ile
+    imzalanmis kisa bir hash'i - baskasinin e-postasini token'sizi tahmin edip
+    iptal edememesi icin (guvenlik degil, kotu niyetli spam-iptal engeli).
+    """
+    import hashlib
+    email = (request.args.get("e") or "").strip().lower()
+    token = request.args.get("t", "")
+    expected = hashlib.sha256((email + os.environ.get("ADMIN_TOKEN", "")).encode()).hexdigest()[:16]
+    if not email or token != expected:
+        return render_template("message.html", title="Geçersiz bağlantı",
+                                message="Bu abonelikten çıkma bağlantısı geçersiz veya süresi dolmuş."), 400
+    unsubscribe_email(email)
+    return render_template("message.html", title="Abonelikten çıktın",
+                            message=f"{email} adresi bülten listemizden çıkarıldı. Fikrini değiştirirsen ana sayfadan tekrar abone olabilirsin.")
 
 
 @app.route("/abone", methods=["POST"])

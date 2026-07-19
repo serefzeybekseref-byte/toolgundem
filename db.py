@@ -710,6 +710,16 @@ def get_active_subscribers():
     return [dict(r)["email"] for r in rows]
 
 
+def unsubscribe_email(email: str) -> bool:
+    """Abonelikten cikar (is_active=0). Kaydi silmez, gecmis icin tutar."""
+    email = (email or "").strip().lower()
+    conn = get_connection()
+    conn.execute("UPDATE subscribers SET is_active = 0 WHERE email = ?", (email,))
+    conn.commit()
+    conn.close()
+    return True
+
+
 def get_top_products_by_period(days: int, limit: int = 10, exclude_ids=None):
     """
     Son N gun icinde eklenen urunleri oy sayisina gore siralar (Product Hunt'in
