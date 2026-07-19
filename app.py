@@ -13,7 +13,7 @@ from db import (
     get_all_topics, get_similar_products, get_top_products_by_period,
     subscribe_email, unsubscribe_email,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
-    get_admin_stats, get_all_guides, get_guide_by_slug,
+    get_admin_stats, get_all_guides, get_guide_by_slug, get_related_guides,
     get_guides_for_topic, get_guides_for_tool_slug, get_guides_for_comparison_slug,
     get_products_by_slugs, get_comparisons_by_slugs,
 )
@@ -343,11 +343,20 @@ def guide_detail(slug):
     related_comparisons = get_comparisons_by_slugs(
         [s.strip() for s in (guide.get("related_comparison_slugs") or "").split(",") if s.strip()]
     )
+    related_guides = get_related_guides(slug, guide.get("related_topic") or "", limit=3)
+    faq_list = []
+    if guide.get("faq_json"):
+        try:
+            faq_list = json.loads(guide["faq_json"])
+        except (json.JSONDecodeError, TypeError):
+            faq_list = []
     return render_template(
         "guide_detail.html",
         guide=guide,
         related_tools=related_tools,
         related_comparisons=related_comparisons,
+        related_guides=related_guides,
+        faq_list=faq_list,
     )
 
 

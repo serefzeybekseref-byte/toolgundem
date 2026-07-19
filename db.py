@@ -7,6 +7,7 @@ serverless ortamlarda calisabilir hale gelir.
 """
 import os
 import re
+import json
 import logging
 import sqlite3
 import unicodedata
@@ -217,7 +218,7 @@ def init_db():
     """)
     # guides tablosu daha once related_tool_slugs/related_comparison_slugs olmadan
     # olusturulmus olabilir - zaten varsa hatasiz gecilir.
-    for col_name, col_type in [("related_tool_slugs", "TEXT"), ("related_comparison_slugs", "TEXT")]:
+    for col_name, col_type in [("related_tool_slugs", "TEXT"), ("related_comparison_slugs", "TEXT"), ("faq_json", "TEXT")]:
         if USE_POSTGRES:
             conn.execute(f"ALTER TABLE guides ADD COLUMN IF NOT EXISTS {col_name} {col_type}")
         else:
@@ -1078,13 +1079,17 @@ def slugify_guide(text: str) -> str:
 
 
 def save_guide(slug: str, title: str, meta_description: str, excerpt: str, content_html: str,
-               related_topic: str = "", related_tool_slugs=None, related_comparison_slugs=None):
+               related_topic: str = "", related_tool_slugs=None, related_comparison_slugs=None,
+               faq_json: str = None):
     """Ayni slug varsa gunceller (icerik tazeleme), yoksa yeni rehber olusturur.
-    related_tool_slugs / related_comparison_slugs: liste ya da virgulle ayrilmis string olabilir."""
+    related_tool_slugs / related_comparison_slugs: liste ya da virgulle ayrilmis string olabilir.
+    faq_json: [{"soru":..,"cevap":..}, ...] listesinin JSON string hali - FAQPage schema.org icin."""
     if isinstance(related_tool_slugs, (list, tuple)):
         related_tool_slugs = ",".join(related_tool_slugs)
     if isinstance(related_comparison_slugs, (list, tuple)):
         related_comparison_slugs = ",".join(related_comparison_slugs)
+    if isinstance(faq_json, (list, tuple)):
+        faq_json = json.dumps(faq_json, ensure_ascii=False)
 
     conn = get_connection()
     now = datetime.utcnow().isoformat()
@@ -1093,19 +1098,41 @@ def save_guide(slug: str, title: str, meta_description: str, excerpt: str, conte
         guide_id = dict(existing)["id"]
         conn.execute("""
             UPDATE guides SET title=?, meta_description=?, excerpt=?, content_html=?,
-            related_topic=?, related_tool_slugs=?, related_comparison_slugs=?, updated_at=? WHERE id=?
+            related_topic=?, related_tool_slugs=?, related_comparison_slugs=?, faq_json=?, updated_at=? WHERE id=?
         """, (title, meta_description, excerpt, content_html, related_topic,
-              related_tool_slugs or "", related_comparison_slugs or "", now, guide_id))
+              related_tool_slugs or "", related_comparison_slugs or "", faq_json or "", now, guide_id))
     else:
         conn.execute("""
             INSERT INTO guides (slug, title, meta_description, excerpt, content_html, related_topic,
-            related_tool_slugs, related_comparison_slugs, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            related_tool_slugs, related_comparison_slugs, faq_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (slug, title, meta_description, excerpt, content_html, related_topic,
-              related_tool_slugs or "", related_comparison_slugs or "", now, now))
+              related_tool_slugs or "", related_comparison_slugs or "", faq_json or "", now, now))
     conn.commit()
     conn.close()
     return slug
+
+
+def get_related_guides(current_slug: str, related_topic: str = "", limit: int = 3):
+    """Baska rehberleri onerir (once ayni related_topic, sonra en yeniler ile tamamlar)."""
+    conn = get_connection()
+    result = []
+    if related_topic:
+        rows = conn.execute(
+            "SELECT * FROM guides WHERE related_topic = ? AND slug != ? ORDER BY created_at DESC LIMIT ?",
+            (related_topic, current_slug, limit)
+        ).fetchall()
+        result = [dict(r) for r in rows]
+    if len(result) < limit:
+        exclude_slugs = [g["slug"] for g in result] + [current_slug]
+        placeholders = ",".join("?" * len(exclude_slugs))
+        rows = conn.execute(
+            f"SELECT * FROM guides WHERE slug NOT IN ({placeholders}) ORDER BY created_at DESC LIMIT ?",
+            (*exclude_slugs, limit - len(result))
+        ).fetchall()
+        result += [dict(r) for r in rows]
+    conn.close()
+    return result
 
 
 def get_all_guides():

@@ -15,6 +15,23 @@
   "publisher": {"@type": "Organization", "name": "BulurumAI"}
 }
 </script>
+{% if faq_list %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for qa in faq_list %}
+    {
+      "@type": "Question",
+      "name": {{ qa.soru|tojson }},
+      "acceptedAnswer": {"@type": "Answer", "text": {{ qa.cevap|tojson }}}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -40,9 +57,29 @@
     </div>
   </div>
 
-  <div class="detail-body guide-body">
+  <div id="guide-toc" class="guide-toc"></div>
+
+  <div class="detail-body guide-body" id="guide-content">
     {{ guide.content_html|safe }}
   </div>
+
+  <script>
+  (function() {
+    var content = document.getElementById('guide-content');
+    var toc = document.getElementById('guide-toc');
+    if (!content || !toc) return;
+    var headings = content.querySelectorAll('h2');
+    if (headings.length < 2) { toc.style.display = 'none'; return; }
+    var html = '<div class="guide-toc-title">👇 İçindekiler</div><ol class="guide-toc-list">';
+    headings.forEach(function(h, i) {
+      var id = 'section-' + i;
+      h.id = id;
+      html += '<li><a href="#' + id + '">' + h.textContent + '</a></li>';
+    });
+    html += '</ol>';
+    toc.innerHTML = html;
+  })();
+  </script>
 
   {% if related_tools %}
   <div class="detail-related-box" style="margin-top: 32px;">
@@ -71,6 +108,17 @@
     <span class="detail-related-label mono">📁 İlgili kategori:</span>
     <div class="detail-related-links">
       <a href="{{ url_for('category', topic=guide.related_topic) }}" class="btn btn-sm">{{ topic_labels.get(guide.related_topic, guide.related_topic) }} Araçları →</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if related_guides %}
+  <div class="detail-related-box" style="margin-top: 16px;">
+    <span class="detail-related-label mono">📚 İlgili rehberler:</span>
+    <div class="detail-related-links">
+      {% for g in related_guides %}
+      <a href="{{ url_for('guide_detail', slug=g.slug) }}" class="btn btn-sm">{{ g.title }} →</a>
+      {% endfor %}
     </div>
   </div>
   {% endif %}

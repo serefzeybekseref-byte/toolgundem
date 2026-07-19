@@ -52,6 +52,7 @@ Su JSON formatinda cevap ver (baska hicbir sey yazma):
 {{
   "meta_description": "Google sonuclarinda gorunecek 150-160 karakterlik ozet",
   "excerpt": "Sayfa basinda gorunecek 1-2 cumlelik giris ozeti",
+  "hizli_ozet": "TAM OLARAK 2-3 cumlelik DOGRUDAN cevap. Kullanici sayfaya gelir gelmez 'Kisa cevap: ...' diye baslayan bu kutuyu okuyup en onemli tavsiyeyi hemen alsin (hangi arac/yaklasim one cikiyor, neden). Google'in AI/featured snippet sonuclarina uygun, oz ve net olsun.",
   "giris": "TAM OLARAK 200-250 kelimelik giris paragrafi. Okuyucunun sorununu/ihtiyacini tanimla, bu rehberde ne bulacagini soyle.",
   "neden_ai": "TAM OLARAK 200-250 kelimelik 'Neden yapay zeka kullanmalisiniz' bolumu. Somut faydalar, zaman/para tasarrufu, geleneksel yontemle karsilastirma."
 }}
@@ -180,6 +181,8 @@ def generate_guide_content(topic_title: str, tools: list) -> dict:
     time.sleep(1)
 
     html_parts = []
+    if intro.get("hizli_ozet"):
+        html_parts.append(f"<div class='guide-quick-answer'><strong>⚡ Kısa cevap:</strong> {intro['hizli_ozet']}</div>")
     html_parts.append(f"<p>{intro['giris']}</p>")
     html_parts.append("<h2>Neden Yapay Zeka Kullanmalısınız?</h2>")
     html_parts.append(f"<p>{intro['neden_ai']}</p>")
@@ -217,6 +220,7 @@ def generate_guide_content(topic_title: str, tools: list) -> dict:
         "excerpt": intro["excerpt"],
         "content_html": content_html,
         "word_count": word_count,
+        "faq_qa": faq["sss"],
     }
 
 
@@ -303,6 +307,7 @@ def run_one(guide_cfg: dict):
         related_topic=guide_cfg.get("related_topic", ""),
         related_tool_slugs=related_tool_slugs,
         related_comparison_slugs=related_comparison_slugs,
+        faq_json=result.get("faq_qa"),
     )
     print(f"  -> kaydedildi: /rehber/{slug}")
 
