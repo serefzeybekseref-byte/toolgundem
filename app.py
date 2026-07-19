@@ -225,6 +225,24 @@ def get_cta_label(product):
     return "Resmi Sitesi →"
 
 
+_TR_AYLAR = [
+    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
+]
+
+
+def turkce_tarih(date_str):
+    """'2026-07-16T...' formatindaki bir tarihi '16 Temmuz 2026' seklinde gosterir.
+    Bos/gecersiz girdi icin None doner (template'te kosullu gizlemek icin)."""
+    if not date_str:
+        return None
+    try:
+        y, m, d = date_str[:10].split("-")
+        return f"{int(d)} {_TR_AYLAR[int(m) - 1]} {y}"
+    except (ValueError, IndexError):
+        return None
+
+
 @app.context_processor
 def inject_globals():
     """Tum template'lerde kullanilabilecek global degiskenler."""
@@ -235,6 +253,7 @@ def inject_globals():
         "get_comparison_icon": get_comparison_icon,
         "get_cta_url": get_cta_url,
         "get_cta_label": get_cta_label,
+        "turkce_tarih": turkce_tarih,
     }
 
 

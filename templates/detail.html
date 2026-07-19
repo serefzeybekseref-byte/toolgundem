@@ -17,6 +17,13 @@
     <span>{{ product.original_name }}</span>
   </nav>
 
+  {% set olusturma_tarihi = turkce_tarih(product.created_at) %}
+  {% if olusturma_tarihi %}
+  <p class="detail-byline mono">
+    {{ olusturma_tarihi }}{% if product.is_broken %} · <span class="meta-warn">bağlantı şu anda erişilemiyor olabilir</span>{% endif %}
+  </p>
+  {% endif %}
+
   <div class="detail-hero">
     <div class="detail-info">
       <div class="detail-badges">
@@ -121,26 +128,6 @@
     {% endfor %}
   </div>
   {% endif %}
-
-  <div class="detail-meta-bar mono">
-    <span class="meta-neutral">İçerik oluşturuldu: {{ product.created_at[:10] if product.created_at else 'Bilinmiyor' }}</span>
-    {% if product.last_checked_at %}
-    <span class="meta-sep">•</span>
-    {% if product.is_broken %}
-    <span class="meta-warn">⚠ Site şu an erişilemiyor (son kontrol: {{ product.last_checked_at[:10] }})</span>
-    {% else %}
-    <span class="meta-ok">✓ Link doğrulandı — son kontrol: {{ product.last_checked_at[:10] }}</span>
-    {% endif %}
-    {% endif %}
-    {% if product.pricing_type and product.pricing_type != 'Bilinmiyor' %}
-    <span class="meta-sep">•</span>
-    <span class="meta-ok">✓ Fiyat bilgisi mevcut</span>
-    {% endif %}
-    {% if product.platforms %}
-    <span class="meta-sep">•</span>
-    <span class="meta-ok">✓ Platform bilgisi mevcut</span>
-    {% endif %}
-  </div>
 
   {% if related_comparisons %}
   <div class="detail-related-box">

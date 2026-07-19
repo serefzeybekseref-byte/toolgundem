@@ -528,9 +528,12 @@ def get_admin_stats():
 
 
 def get_all_products():
-    """Tum urunleri en yeniden en eskiye siralar."""
+    """Tum urunleri en yeniden en eskiye siralar (ornegin sitemap.xml icin -
+    kirik link isaretli urunler haric, boylece Google olu sayfalari indexlemez)."""
     conn = get_connection()
-    rows = conn.execute("SELECT * FROM products ORDER BY created_at DESC").fetchall()
+    rows = conn.execute(
+        "SELECT * FROM products WHERE (is_broken IS NULL OR is_broken = 0) ORDER BY created_at DESC"
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -610,9 +613,15 @@ def get_comparison_by_slug(slug: str):
         # Ic sayfa cross-link: bu urunumuzde varsa slug'ini bul (normalized_name eslesmesi)
         norm = normalize_name(it["name"])
         match = conn.execute(
-            "SELECT slug FROM products WHERE normalized_name = ?", (norm,)
+            "SELECT slug, is_broken FROM products WHERE normalized_name = ?", (norm,)
         ).fetchone()
-        it["internal_slug"] = dict(match)["slug"] if match else None
+        match = dict(match) if match else None
+        # Eslesen urun kendi kataloğumuzda kirik isaretliyse, bu karsilastirmada gosterilmez
+        # (comparison_items ayri/bagimsiz bir tablo oldugu icin websitesi kendi basina
+        # kontrol edilmiyor - sadece katalogda eslesen urunler icin bu koruma calisir).
+        if match and match.get("is_broken"):
+            continue
+        it["internal_slug"] = match["slug"] if match else None
         comp["tools"].append(it)
     conn.close()
     return comp
@@ -649,17 +658,23 @@ def get_collections_for_product(product_id: int, limit: int = 3):
     return [dict(r) for r in rows]
 
 def get_trending_products(limit=5):
-    """En cok oy alan urunler."""
+    """En cok oy alan urunler. Kirik link isaretli urunler kesif yuzeylerinde gosterilmez."""
     conn = get_connection()
-    rows = conn.execute("SELECT * FROM products ORDER BY votes DESC LIMIT ?", (limit,)).fetchall()
+    rows = conn.execute(
+        "SELECT * FROM products WHERE (is_broken IS NULL OR is_broken = 0) ORDER BY votes DESC LIMIT ?",
+        (limit,)
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
 def get_recent_products(limit=10):
-    """Son eklenen urunler."""
+    """Son eklenen urunler. Kirik link isaretli urunler kesif yuzeylerinde gosterilmez."""
     conn = get_connection()
-    rows = conn.execute("SELECT * FROM products ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+    rows = conn.execute(
+        "SELECT * FROM products WHERE (is_broken IS NULL OR is_broken = 0) ORDER BY created_at DESC LIMIT ?",
+        (limit,)
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -711,12 +726,12 @@ def get_top_products_by_period(days: int, limit: int = 10, exclude_ids=None):
     if exclude_ids:
         placeholders = ",".join("?" * len(exclude_ids))
         rows = conn.execute(
-            f"SELECT * FROM products WHERE created_at >= ? AND id NOT IN ({placeholders}) ORDER BY votes DESC LIMIT ?",
+            f"SELECT * FROM products WHERE created_at >= ? AND id NOT IN ({placeholders}) AND (is_broken IS NULL OR is_broken = 0) ORDER BY votes DESC LIMIT ?",
             (cutoff, *exclude_ids, limit)
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT * FROM products WHERE created_at >= ? ORDER BY votes DESC LIMIT ?",
+            "SELECT * FROM products WHERE created_at >= ? AND (is_broken IS NULL OR is_broken = 0) ORDER BY votes DESC LIMIT ?",
             (cutoff, limit)
         ).fetchall()
     conn.close()
@@ -724,10 +739,13 @@ def get_top_products_by_period(days: int, limit: int = 10, exclude_ids=None):
 
 
 def get_products_by_topic(topic, limit=50):
-    """Belirli bir kategorideki urunler."""
+    """Belirli bir kategorideki urunler. Kirik link isaretli urunler gosterilmez."""
     conn = get_connection()
     pattern = f"%{topic}%"
-    rows = conn.execute("SELECT * FROM products WHERE topics LIKE ? ORDER BY votes DESC LIMIT ?", (pattern, limit)).fetchall()
+    rows = conn.execute(
+        "SELECT * FROM products WHERE topics LIKE ? AND (is_broken IS NULL OR is_broken = 0) ORDER BY votes DESC LIMIT ?",
+        (pattern, limit)
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -735,11 +753,12 @@ def get_products_by_topic(topic, limit=50):
 def search_products(query):
     """Baslik veya ozette arama (site ici klasik arama kutusu icin - literal alt-dize).
     Buyuk/kucuk harf duyarsiz (Postgres LIKE varsayilan olarak duyarli, SQLite duyarsiz -
-    farkli davranmalarini onlemek icin ikisinde de LOWER() ile normalize ediyoruz)."""
+    farkli davranmalarini onlemek icin ikisinde de LOWER() ile normalize ediyoruz).
+    Kirik link isaretli urunler sonuclara dahil edilmez."""
     conn = get_connection()
     pattern = f"%{query.lower()}%"
     rows = conn.execute(
-        "SELECT * FROM products WHERE LOWER(title_tr) LIKE ? OR LOWER(summary_tr) LIKE ? OR LOWER(original_name) LIKE ? ORDER BY votes DESC",
+        "SELECT * FROM products WHERE (LOWER(title_tr) LIKE ? OR LOWER(summary_tr) LIKE ? OR LOWER(original_name) LIKE ?) AND (is_broken IS NULL OR is_broken = 0) ORDER BY votes DESC",
         (pattern, pattern, pattern)
     ).fetchall()
     conn.close()
@@ -780,7 +799,7 @@ def search_products_advisor(query: str, limit: int = 30):
             p = f"%{w}%"
             params.extend([p, p, p, p, p])
         rows = conn.execute(
-            f"SELECT * FROM products WHERE {like_clauses} ORDER BY votes DESC LIMIT ?",
+            f"SELECT * FROM products WHERE ({like_clauses}) AND (is_broken IS NULL OR is_broken = 0) ORDER BY votes DESC LIMIT ?",
             params + [limit]
         ).fetchall()
         results = [dict(r) for r in rows]
@@ -788,7 +807,7 @@ def search_products_advisor(query: str, limit: int = 30):
     if not results:
         # Hicbir kelime eslesmedi - LLM'in secim yapabilecegi genis/populer bir havuz sun.
         rows = conn.execute(
-            "SELECT * FROM products ORDER BY votes DESC LIMIT ?", (limit,)
+            "SELECT * FROM products WHERE (is_broken IS NULL OR is_broken = 0) ORDER BY votes DESC LIMIT ?", (limit,)
         ).fetchall()
         results = [dict(r) for r in rows]
 
@@ -860,7 +879,7 @@ def get_similar_products(product_id, limit=4):
     like_clauses = " OR ".join(["topics LIKE ?"] * len(topics))
     params = [f"%{t}%" for t in topics] + [product_id]
     rows = conn.execute(
-        f"SELECT * FROM products WHERE ({like_clauses}) AND id != ?",
+        f"SELECT * FROM products WHERE ({like_clauses}) AND id != ? AND (is_broken IS NULL OR is_broken = 0)",
         params
     ).fetchall()
     conn.close()
@@ -892,15 +911,18 @@ def get_products_paginated(page=1, per_page=20, pricing_type=None):
     offset = (page - 1) * per_page
     if pricing_type:
         rows = conn.execute(
-            "SELECT * FROM products WHERE pricing_type = ? ORDER BY votes DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM products WHERE pricing_type = ? AND (is_broken IS NULL OR is_broken = 0) ORDER BY votes DESC LIMIT ? OFFSET ?",
             (pricing_type, per_page, offset)
         ).fetchall()
         total = conn.execute(
-            "SELECT COUNT(*) as cnt FROM products WHERE pricing_type = ?", (pricing_type,)
+            "SELECT COUNT(*) as cnt FROM products WHERE pricing_type = ? AND (is_broken IS NULL OR is_broken = 0)", (pricing_type,)
         ).fetchone()
     else:
-        rows = conn.execute("SELECT * FROM products ORDER BY votes DESC LIMIT ? OFFSET ?", (per_page, offset)).fetchall()
-        total = conn.execute("SELECT COUNT(*) as cnt FROM products").fetchone()
+        rows = conn.execute(
+            "SELECT * FROM products WHERE (is_broken IS NULL OR is_broken = 0) ORDER BY votes DESC LIMIT ? OFFSET ?",
+            (per_page, offset)
+        ).fetchall()
+        total = conn.execute("SELECT COUNT(*) as cnt FROM products WHERE (is_broken IS NULL OR is_broken = 0)").fetchone()
     conn.close()
     return [dict(r) for r in rows], dict(total)["cnt"]
 
@@ -956,11 +978,12 @@ def get_collection_by_slug(slug):
         return None
     col = dict(col)
 
+    # Kirik link isaretli urunler koleksiyon listesinden gizlenir.
     items = conn.execute("""
         SELECT p.*, ci.reason
         FROM collection_items ci
         JOIN products p ON p.id = ci.product_id
-        WHERE ci.collection_id = ?
+        WHERE ci.collection_id = ? AND (p.is_broken IS NULL OR p.is_broken = 0)
         ORDER BY ci.order_num ASC
     """, (col["id"],)).fetchall()
 

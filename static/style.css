@@ -1399,18 +1399,10 @@ h1, h2, h3, h4 {
   color: var(--accent);
 }
 
-.detail-meta-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  padding: 14px 18px;
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  margin: var(--space-6) 0;
-  box-shadow: var(--shadow-sm);
-  font-size: 0.85rem;
+.detail-byline {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: var(--space-2) 0 var(--space-4);
 }
 
 .meta-neutral { color: var(--text-secondary); }
