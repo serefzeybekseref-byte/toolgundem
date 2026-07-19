@@ -689,10 +689,17 @@ def subscribe_email(email: str) -> str:
     if not email or "@" not in email or "." not in email.split("@")[-1]:
         return "gecersiz"
     conn = get_connection()
-    existing = conn.execute("SELECT 1 FROM subscribers WHERE email = ?", (email,)).fetchone()
+    existing = conn.execute("SELECT is_active FROM subscribers WHERE email = ?", (email,)).fetchone()
     if existing:
+        if dict(existing)["is_active"]:
+            conn.close()
+            return "zaten_var"
+        # Daha once abonelikten cikmis - tekrar aktiflestir (yeni satir eklemeye gerek yok)
+        conn.execute("UPDATE subscribers SET is_active = 1, subscribed_at = ? WHERE email = ?",
+                     (datetime.utcnow().isoformat(), email))
+        conn.commit()
         conn.close()
-        return "zaten_var"
+        return "yeni"
     conn.execute(
         "INSERT INTO subscribers (email, subscribed_at, is_active) VALUES (?, ?, 1)",
         (email, datetime.utcnow().isoformat())
