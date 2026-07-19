@@ -9,6 +9,11 @@ Kullanim:
 """
 import sys
 import time
+from dotenv import load_dotenv
+load_dotenv()
+from db_target import print_db_target, guard_postgres
+print_db_target()
+guard_postgres()
 from db import init_db, get_products_missing_quickfacts, update_product_quickfacts
 from generate_content import generate_quickfacts
 
@@ -43,5 +48,6 @@ def run(limit: int = 20):
 
 
 if __name__ == "__main__":
-    limit = int(sys.argv[1]) if len(sys.argv) > 1 else 20
+    positional = [a for a in sys.argv[1:] if not a.startswith("--")]
+    limit = int(positional[0]) if positional else 20
     run(limit)

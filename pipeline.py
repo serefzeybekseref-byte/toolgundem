@@ -6,6 +6,11 @@ Bu script GitHub Actions ile zamanlanip calistirilacak (ASAMA 7).
 """
 import os
 import time
+from dotenv import load_dotenv
+load_dotenv()
+from db_target import print_db_target, guard_postgres
+print_db_target()
+guard_postgres()
 from fetch_producthunt import get_latest_products
 from generate_content import generate_turkish_content
 from check_links import check_url

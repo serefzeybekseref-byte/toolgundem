@@ -6,6 +6,11 @@ eklenmis olanlari) guncellemek icindir.
 
 Kullanim: python backfill_quality_score.py
 """
+from dotenv import load_dotenv
+load_dotenv()
+from db_target import print_db_target, guard_postgres
+print_db_target()
+guard_postgres()
 from db import init_db, recompute_all_quality_scores
 
 if __name__ == "__main__":

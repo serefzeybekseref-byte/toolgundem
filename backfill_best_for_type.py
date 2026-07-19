@@ -4,6 +4,11 @@ classify_best_for() ile doldurur (enum'a gecis oncesi eklenmis kayitlar icin).
 
 Kullanim: python backfill_best_for_type.py
 """
+from dotenv import load_dotenv
+load_dotenv()
+from db_target import print_db_target, guard_postgres
+print_db_target()
+guard_postgres()
 from db import init_db, get_connection, classify_best_for
 
 if __name__ == "__main__":

@@ -18,6 +18,10 @@ bir insanin (veya web-search'lu bir Claude oturumunun) gozden gecirmesi
 gereken bir karar - kor otomasyon burada yanlis bilgi riski tasir.
 """
 import os
+from dotenv import load_dotenv
+load_dotenv()
+from db_target import print_db_target
+print_db_target()
 from datetime import datetime, timezone, timedelta
 from db import init_db, get_all_comparisons, get_comparison_by_slug, get_all_products
 
