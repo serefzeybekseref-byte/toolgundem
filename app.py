@@ -585,6 +585,11 @@ Sitemap: {base}/sitemap.xml
     return Response(txt, mimetype="text/plain")
 
 
+@app.route("/googlef4ed50b2ea173e10.html")
+def google_site_verification():
+    return Response("google-site-verification: googlef4ed50b2ea173e10.html", mimetype="text/html")
+
+
 @app.route("/admin")
 def admin():
     token = request.args.get("token", "")
