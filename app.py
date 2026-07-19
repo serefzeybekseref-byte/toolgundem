@@ -351,6 +351,12 @@ def comparison_detail(slug):
 
 @app.route("/kategori/<topic>")
 def category(topic):
+    # Vercel'in Python WSGI adaptoru bazi durumlarda path segmentini decode etmeden
+    # iletiyor (yerel Flask dev server'dan farkli davraniyor) - bu yuzden topic
+    # literal "%20" gibi encode edilmis karakterler icerebiliyor. unquote() zaten
+    # decode edilmis bir deger icin no-op'tur, guvenli.
+    from urllib.parse import unquote
+    topic = unquote(topic)
     products = get_products_by_topic(topic)
     fiyat = request.args.get("fiyat", "").strip()
     if fiyat:
