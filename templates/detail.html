@@ -67,6 +67,11 @@
       <h1 class="detail-title">{{ product.original_name }}</h1>
       <p class="detail-tagline mono">{{ product.title_tr }}</p>
       <p class="detail-summary">{{ product.summary_tr }}</p>
+      {% if product.why_use_it %}
+      <p class="detail-value-prop" style="margin: 4px 0 18px; padding: 12px 16px; background: rgba(99,102,241,0.08); border-left: 3px solid var(--accent); border-radius: 6px; font-size: 0.95rem;">
+        <strong>Neden kullanmalısın:</strong> {{ product.why_use_it }}
+      </p>
+      {% endif %}
       <div class="detail-actions">
         {% if product.website %}
         <a class="btn btn-primary" href="{{ get_cta_url(product) }}" target="_blank" rel="noopener{% if product.affiliate_url %} sponsored{% endif %}">{{ get_cta_label(product) }}</a>
@@ -94,12 +99,6 @@
   <div class="detail-content">
     {% if product.why_use_it or product.key_features or product.platforms or product.pricing_type %}
     <div class="detail-quickfacts">
-      {% if product.why_use_it %}
-      <div class="quickfact quickfact-full">
-        <div class="quickfact-label mono">👤 KİMLER İÇİN</div>
-        <div>{{ product.why_use_it }}</div>
-      </div>
-      {% endif %}
       {% if use_cases %}
       <div class="quickfact">
         <div class="quickfact-label mono">🎯 KULLANIM AMACI</div>

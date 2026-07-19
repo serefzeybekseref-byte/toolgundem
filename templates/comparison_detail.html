@@ -38,6 +38,17 @@
     <p class="mono" style="font-size:0.8rem; color: var(--green); margin-top:8px;">🟢 Son değerlendirme: {{ comparison.updated_at[:10] }} — bu liste düzenli olarak kontrol edilir</p>
   </div>
 
+  {% if comparison.tools %}
+  {% set winner = comparison.tools[0] %}
+  <div class="quick-verdict" style="display:flex; align-items:center; gap:16px; padding:20px 24px; margin-bottom:28px; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(99,102,241,0.03)); border:1px solid var(--accent); border-radius: var(--radius-lg);">
+    <span style="font-size:2rem; line-height:1;">🥇</span>
+    <div>
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary); letter-spacing:0.05em; margin-bottom:4px;">HIZLI KARAR</div>
+      <div style="font-size:1.05rem;"><strong>{{ winner.name }}</strong>{% if winner.best_for %} — {{ winner.best_for }}{% endif %}</div>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="comparison-list">
     {% for item in comparison.tools %}
     <div class="comparison-item fade-in{% if loop.index == 1 %} comparison-winner{% endif %}">
