@@ -14,10 +14,10 @@
     <h1 class="page-title">{{ topic_icon }} {{ topic_label }} Araçları</h1>
     <p class="page-subtitle">{{ products|length }} araç listeleniyor</p>
     <div class="price-filter-bar">
-      <a href="/kategori/{{ topic }}" class="price-filter-chip{% if not request.args.get('fiyat') %} active{% endif %}">Tümü</a>
-      <a href="/kategori/{{ topic }}?fiyat=Ücretsiz" class="price-filter-chip price-free{% if request.args.get('fiyat') == 'Ücretsiz' %} active{% endif %}">🟢 Ücretsiz</a>
-      <a href="/kategori/{{ topic }}?fiyat=Freemium" class="price-filter-chip price-freemium{% if request.args.get('fiyat') == 'Freemium' %} active{% endif %}">🟡 Freemium</a>
-      <a href="/kategori/{{ topic }}?fiyat=Ücretli" class="price-filter-chip price-paid{% if request.args.get('fiyat') == 'Ücretli' %} active{% endif %}">🔵 Ücretli</a>
+      <a href="{{ url_for('category', topic=topic) }}" class="price-filter-chip{% if not request.args.get('fiyat') %} active{% endif %}">Tümü</a>
+      <a href="{{ url_for('category', topic=topic, fiyat='Ücretsiz') }}" class="price-filter-chip price-free{% if request.args.get('fiyat') == 'Ücretsiz' %} active{% endif %}">🟢 Ücretsiz</a>
+      <a href="{{ url_for('category', topic=topic, fiyat='Freemium') }}" class="price-filter-chip price-freemium{% if request.args.get('fiyat') == 'Freemium' %} active{% endif %}">🟡 Freemium</a>
+      <a href="{{ url_for('category', topic=topic, fiyat='Ücretli') }}" class="price-filter-chip price-paid{% if request.args.get('fiyat') == 'Ücretli' %} active{% endif %}">🔵 Ücretli</a>
     </div>
   </div>
 
@@ -25,10 +25,10 @@
     <aside class="category-sidebar">
       <h3 class="sidebar-title">Kategoriler</h3>
       <div class="sidebar-topics">
-        {% for t, count in all_topics[:20] %}
-        <a href="/kategori/{{ t }}" class="sidebar-topic{% if t == topic %} active{% endif %}">
-          {{ get_topic_icon(t) }} {{ topic_labels.get(t, t) }}
-          <span class="sidebar-count">{{ count }}</span>
+        {% for t in all_topics[:20] %}
+        <a href="{{ url_for('category', topic=t.raw_topic) }}" class="sidebar-topic{% if t.raw_topic == topic %} active{% endif %}">
+          {{ get_topic_icon(t.raw_topic) }} {{ t.label }}
+          <span class="sidebar-count">{{ t.count }}</span>
         </a>
         {% endfor %}
       </div>

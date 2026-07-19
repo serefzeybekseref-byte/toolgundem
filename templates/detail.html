@@ -11,7 +11,7 @@
     <span class="breadcrumb-sep">/</span>
     {% if product.topics %}
     {% set first_topic = product.topics.split(',')[0].strip() %}
-    <a href="/kategori/{{ first_topic }}">{{ topic_labels.get(first_topic, first_topic) }}</a>
+    <a href="{{ url_for('category', topic=first_topic) }}">{{ topic_labels.get(first_topic, first_topic) }}</a>
     <span class="breadcrumb-sep">/</span>
     {% endif %}
     <span>{{ product.original_name }}</span>
@@ -122,7 +122,7 @@
   <div class="detail-topics">
     <span class="detail-topics-label">Kategoriler:</span>
     {% for t in product.topics.split(',') if t.strip() %}
-    <a href="/kategori/{{ t.strip() }}" class="category-chip-sm">
+    <a href="{{ url_for('category', topic=t.strip()) }}" class="category-chip-sm">
       {{ get_topic_icon(t.strip()) }} {{ topic_labels.get(t.strip(), t.strip()) }}
     </a>
     {% endfor %}

@@ -357,7 +357,7 @@ def category(topic):
         products = [p for p in products if p.get("pricing_type") == fiyat]
     label = TOPIC_LABELS.get(topic, topic)
     icon = TOPIC_ICONS.get(topic, "📁")
-    all_topics = get_all_topics()
+    all_topics = get_merged_topics()
     return render_template(
         "category.html",
         topic=topic,
