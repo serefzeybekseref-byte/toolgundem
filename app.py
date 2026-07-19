@@ -248,6 +248,9 @@ def turkce_tarih(date_str):
 @app.context_processor
 def inject_globals():
     """Tum template'lerde kullanilabilecek global degiskenler."""
+    footer_guides = get_all_guides()[:5]
+    footer_comparisons = get_all_comparisons()[:5]
+    footer_topics = get_all_topics()[:6]
     return {
         "topic_labels": TOPIC_LABELS,
         "topic_icons": TOPIC_ICONS,
@@ -256,6 +259,9 @@ def inject_globals():
         "get_cta_url": get_cta_url,
         "get_cta_label": get_cta_label,
         "turkce_tarih": turkce_tarih,
+        "footer_guides": footer_guides,
+        "footer_comparisons": footer_comparisons,
+        "footer_topics": footer_topics,
     }
 
 

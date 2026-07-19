@@ -98,14 +98,45 @@
         <p class="newsletter-msg" id="newsletter-msg"></p>
       </form>
     </div>
-    <div class="footer-links">
-      <a href="/">Ana Sayfa</a>
-      <a href="/karsilastirma">En İyi AI Araçları</a>
-      <a href="/rehber">Rehberler</a>
-      <a href="/iletisim">İletişim</a>
-      <a href="/kvkk">KVKK</a>
-      <a href="/gizlilik">Gizlilik Politikası</a>
-      <a href="/kullanim-sartlari">Kullanım Şartları</a>
+    <div class="footer-links-grid">
+      <div class="footer-col">
+        <div class="footer-col-title">Site</div>
+        <a href="/">Ana Sayfa</a>
+        <a href="/karsilastirma">En İyi AI Araçları</a>
+        <a href="/rehber">Rehberler</a>
+        <a href="/koleksiyonlar">Koleksiyonlar</a>
+        <a href="/iletisim">İletişim</a>
+      </div>
+      {% if footer_guides %}
+      <div class="footer-col">
+        <div class="footer-col-title">Popüler Rehberler</div>
+        {% for g in footer_guides %}
+        <a href="{{ url_for('guide_detail', slug=g.slug) }}">{{ g.title[:40] }}{% if g.title|length > 40 %}…{% endif %}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if footer_comparisons %}
+      <div class="footer-col">
+        <div class="footer-col-title">Son Karşılaştırmalar</div>
+        {% for c in footer_comparisons %}
+        <a href="{{ url_for('comparison_detail', slug=c.slug) }}">{{ c.title[:40] }}{% if c.title|length > 40 %}…{% endif %}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if footer_topics %}
+      <div class="footer-col">
+        <div class="footer-col-title">Popüler Kategoriler</div>
+        {% for topic, count in footer_topics %}
+        <a href="{{ url_for('category', topic=topic) }}">{{ topic_labels.get(topic, topic) }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="footer-col">
+        <div class="footer-col-title">Yasal</div>
+        <a href="/kvkk">KVKK</a>
+        <a href="/gizlilik">Gizlilik Politikası</a>
+        <a href="/kullanim-sartlari">Kullanım Şartları</a>
+      </div>
     </div>
     <div class="footer-copy">
       Yapay zeka ekosisteminden günlük verilerle güncellenir.
