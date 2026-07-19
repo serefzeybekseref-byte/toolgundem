@@ -4,6 +4,40 @@
 {% block og_title %}{{ product.original_name }}{% endblock %}
 {% block og_desc %}{{ product.summary_tr }}{% endblock %}
 
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": {{ product.original_name|tojson }},
+  "description": {{ product.summary_tr|tojson }},
+  "applicationCategory": "AI Application",
+  "url": {{ product.website|tojson }},
+  {% if product.thumbnail %}"image": {{ product.thumbnail|tojson }},{% endif %}
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "TRY",
+    "category": {{ (product.pricing_type or "Bilinmiyor")|tojson }}
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://{{ request.host }}/"}
+    {% if product.topics %}
+    {% set first_topic = product.topics.split(',')[0].strip() %}
+    ,{"@type": "ListItem", "position": 2, "name": {{ topic_labels.get(first_topic, first_topic)|tojson }}, "item": "https://{{ request.host }}{{ url_for('category', topic=first_topic) }}"}
+    ,{"@type": "ListItem", "position": 3, "name": {{ product.original_name|tojson }}, "item": "https://{{ request.host }}{{ url_for('detail', slug=product.slug) }}"}
+    {% endif %}
+  ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container">
   <nav class="breadcrumb">
