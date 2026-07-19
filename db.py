@@ -200,6 +200,19 @@ def init_db():
             FOREIGN KEY (comparison_id) REFERENCES comparisons (id)
         )
     """)
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS guides (
+            id {pk},
+            slug TEXT UNIQUE NOT NULL,
+            title TEXT NOT NULL,
+            meta_description TEXT,
+            excerpt TEXT,
+            content_html TEXT,
+            related_topic TEXT,
+            created_at TEXT,
+            updated_at TEXT
+        )
+    """)
 
     # Yeni kolonlar: veri modelini genisletir (duplicate kontrolu, filtreleme,
     # affiliate ve broken-link takibi icin). Zaten varsa hatasiz gecilir.
@@ -1046,3 +1059,42 @@ def mark_link_checked(product_id: int, is_broken: bool):
     conn.commit()
     conn.close()
     update_quality_score(product_id)
+
+
+def slugify_guide(text: str) -> str:
+    return slugify(text)
+
+
+def save_guide(slug: str, title: str, meta_description: str, excerpt: str, content_html: str, related_topic: str = ""):
+    """Ayni slug varsa gunceller (icerik tazeleme), yoksa yeni rehber olusturur."""
+    conn = get_connection()
+    now = datetime.utcnow().isoformat()
+    existing = conn.execute("SELECT id FROM guides WHERE slug = ?", (slug,)).fetchone()
+    if existing:
+        guide_id = dict(existing)["id"]
+        conn.execute("""
+            UPDATE guides SET title=?, meta_description=?, excerpt=?, content_html=?,
+            related_topic=?, updated_at=? WHERE id=?
+        """, (title, meta_description, excerpt, content_html, related_topic, now, guide_id))
+    else:
+        conn.execute("""
+            INSERT INTO guides (slug, title, meta_description, excerpt, content_html, related_topic, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (slug, title, meta_description, excerpt, content_html, related_topic, now, now))
+    conn.commit()
+    conn.close()
+    return slug
+
+
+def get_all_guides():
+    conn = get_connection()
+    rows = conn.execute("SELECT * FROM guides ORDER BY created_at DESC").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_guide_by_slug(slug: str):
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM guides WHERE slug = ?", (slug,)).fetchone()
+    conn.close()
+    return dict(row) if row else None

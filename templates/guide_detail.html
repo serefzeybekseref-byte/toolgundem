@@ -1,0 +1,48 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ guide.title }} — BulurumAI{% endblock %}
+{% block description %}{{ guide.meta_description or guide.excerpt }}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": {{ guide.title|tojson }},
+  "description": {{ (guide.meta_description or guide.excerpt or "")|tojson }},
+  "datePublished": {{ guide.created_at[:10]|tojson }},
+  "dateModified": {{ guide.updated_at[:10]|tojson }},
+  "author": {"@type": "Organization", "name": "BulurumAI"},
+  "publisher": {"@type": "Organization", "name": "BulurumAI"}
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="/rehber">Rehberler</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{ guide.title }}</span>
+  </nav>
+
+  <div class="page-header">
+    <h1 class="page-title">{{ guide.title }}</h1>
+    {% if guide.excerpt %}<p class="page-subtitle">{{ guide.excerpt }}</p>{% endif %}
+    <p class="mono" style="font-size:0.8rem; color: var(--text-secondary); margin-top:8px;">Güncellendi: {{ guide.updated_at[:10] }}</p>
+  </div>
+
+  <div class="detail-body guide-body">
+    {{ guide.content_html|safe }}
+  </div>
+
+  <div class="detail-related-box" style="margin-top: 32px;">
+    <span class="detail-related-label mono">🔎 İlgili araçları keşfet:</span>
+    <div class="detail-related-links">
+      <a href="/karsilastirma" class="btn btn-sm">En İyi AI Araçları →</a>
+      <a href="/" class="btn btn-sm">Tüm Araçları Keşfet →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

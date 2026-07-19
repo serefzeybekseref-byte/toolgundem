@@ -1,0 +1,35 @@
+﻿{% extends "base.html" %}
+{% block title %}AI Rehberleri — Kullanım Kılavuzları ve Karşılaştırmalar — BulurumAI{% endblock %}
+{% block description %}Yapay zeka araçlarını nasıl kullanacağınızı, hangisini seçmeniz gerektiğini anlatan detaylı Türkçe rehberler.{% endblock %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>Rehberler</span>
+  </nav>
+
+  <div class="page-header">
+    <h1 class="page-title">📚 AI Rehberleri</h1>
+    <p class="page-subtitle">Yapay zeka araçlarını nasıl kullanacağınızı, hangisini seçmeniz gerektiğini anlatan detaylı rehberler.</p>
+  </div>
+
+  <div class="card-grid">
+    {% for g in guides %}
+    <a href="/rehber/{{ g.slug }}" class="compare-card fade-in">
+      <div class="collection-icon">📖</div>
+      <h3 class="compare-title">{{ g.title }}</h3>
+      {% if g.excerpt %}
+      <p class="compare-intro">{{ g.excerpt[:120] }}{% if g.excerpt|length > 120 %}...{% endif %}</p>
+      {% endif %}
+      <span class="compare-date mono">{{ g.created_at[:10] }}</span>
+    </a>
+    {% else %}
+    <div class="empty-state">
+      <p>Henüz eklenmiş bir rehber yok.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

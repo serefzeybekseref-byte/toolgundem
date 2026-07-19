@@ -219,6 +219,47 @@
 </section>
 {% endif %}
 
+<!-- Newsletter banner -->
+<section class="section">
+  <div class="container">
+    <div class="newsletter-banner">
+      <div class="newsletter-banner-glow"></div>
+      <div class="newsletter-banner-content">
+        <div class="newsletter-banner-icon">📬</div>
+        <h2 class="newsletter-banner-title">Yeni AI araçlarını kaçırma</h2>
+        <p class="newsletter-banner-sub">Her Pazar, o haftanın en çok oy alan ve yeni eklenen AI araçlarını tek maille özetliyoruz. Spam yok, istediğin an çıkabilirsin.</p>
+        <form class="newsletter-banner-form" action="/abone" method="POST" id="newsletter-banner-form">
+          <input type="email" id="newsletter-banner-email" name="email" placeholder="eposta@ornek.com" required>
+          <button type="submit">Ücretsiz Abone Ol →</button>
+        </form>
+        <p class="newsletter-banner-msg" id="newsletter-banner-msg"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+document.getElementById("newsletter-banner-form").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const email = document.getElementById("newsletter-banner-email").value;
+  const msg = document.getElementById("newsletter-banner-msg");
+  try {
+    const res = await fetch("/abone", {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-Requested-With": "fetch"},
+      body: JSON.stringify({email: email}),
+    });
+    const data = await res.json();
+    msg.textContent = data.message;
+    msg.style.color = data.ok ? "#a5b4fc" : "#f8b4b4";
+    if (data.ok) document.getElementById("newsletter-banner-email").value = "";
+  } catch (err) {
+    msg.textContent = "Bir şeyler ters gitti, tekrar dene.";
+    msg.style.color = "#f8b4b4";
+  }
+});
+</script>
+
 <!-- Categories -->
 <section class="section">
   <div class="container">

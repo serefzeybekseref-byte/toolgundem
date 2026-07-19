@@ -13,7 +13,7 @@ from db import (
     get_all_topics, get_similar_products, get_top_products_by_period,
     subscribe_email, unsubscribe_email,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
-    get_admin_stats,
+    get_admin_stats, get_all_guides, get_guide_by_slug,
 )
 import os
 from rules_engine import derive_use_cases_and_personas
@@ -322,6 +322,20 @@ def comparisons_list():
     return render_template("comparisons.html", comparisons=comparisons)
 
 
+@app.route("/rehber")
+def guides_list():
+    guides = get_all_guides()
+    return render_template("guides.html", guides=guides)
+
+
+@app.route("/rehber/<slug>")
+def guide_detail(slug):
+    guide = get_guide_by_slug(slug)
+    if not guide:
+        abort(404)
+    return render_template("guide_detail.html", guide=guide)
+
+
 @app.route("/abone/iptal")
 def unsubscribe():
     """
@@ -492,6 +506,10 @@ def sitemap():
     # Collections
     for col in collections:
         xml += f'  <url><loc>{loc("/koleksiyon/" + quote(str(col["slug"])))}</loc></url>\n'
+    # Guides
+    xml += f'  <url><loc>{loc("/rehber")}</loc><priority>0.7</priority></url>\n'
+    for guide in get_all_guides():
+        xml += f'  <url><loc>{loc("/rehber/" + quote(str(guide["slug"])))}</loc></url>\n'
 
     xml += '</urlset>'
     return Response(xml, mimetype="application/xml")
