@@ -73,6 +73,18 @@
             <a href="{{ url_for('detail', slug=item.internal_slug) }}" class="mono" style="font-size:0.82rem; color: var(--accent);">Detaylı incelemeyi oku →</a>
             {% endif %}
             {% if item.best_for %}
+            {% set bf = item.best_for|lower %}
+            {% if 'ucret' in bf or 'ücret' in bf or 'fiyat' in bf or 'uygun' in bf %}
+            <span class="badge" style="background: rgba(63,185,80,0.12); color:#3fb950; border:1px solid rgba(63,185,80,0.3);">💰 En uygun fiyat</span>
+            {% elif 'baslang' in bf or 'başlang' in bf or 'yeni' in bf or 'kolay' in bf %}
+            <span class="badge" style="background: rgba(99,102,241,0.12); color:var(--accent); border:1px solid rgba(99,102,241,0.3);">🚀 Yeni başlayanlar için</span>
+            {% elif 'gelistir' in bf or 'geliştir' in bf or 'kod' in bf or 'developer' in bf %}
+            <span class="badge" style="background: rgba(99,102,241,0.12); color:var(--accent); border:1px solid rgba(99,102,241,0.3);">👨‍💻 Geliştiriciler için</span>
+            {% elif 'tasarim' in bf or 'tasarım' in bf or 'gorsel' in bf or 'görsel' in bf or 'design' in bf %}
+            <span class="badge" style="background: rgba(236,72,153,0.12); color:#ec4899; border:1px solid rgba(236,72,153,0.3);">🎨 Tasarımcılar için</span>
+            {% elif loop.index == 1 %}
+            <span class="badge" style="background: rgba(250,204,21,0.12); color:#eab308; border:1px solid rgba(250,204,21,0.3);">🏆 En iyi genel kullanım</span>
+            {% endif %}
             <p class="comparison-best-for">{{ item.best_for }}</p>
             {% endif %}
           </div>

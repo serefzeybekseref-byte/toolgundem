@@ -59,6 +59,17 @@
 
   <div id="guide-toc" class="guide-toc"></div>
 
+  {% if related_tools %}
+  <div class="detail-related-box" style="margin-bottom: 24px;">
+    <span class="detail-related-label mono">🛠️ Bu rehberde geçen araçlar:</span>
+    <div class="detail-related-links">
+      {% for t in related_tools %}
+      <a href="{{ url_for('detail', slug=t.slug) }}" class="btn btn-sm">{{ t.original_name }} →</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="detail-body guide-body" id="guide-content">
     {{ guide.content_html|safe }}
   </div>
@@ -80,17 +91,6 @@
     toc.innerHTML = html;
   })();
   </script>
-
-  {% if related_tools %}
-  <div class="detail-related-box" style="margin-top: 32px;">
-    <span class="detail-related-label mono">🛠️ Bu rehberde geçen araçlar:</span>
-    <div class="detail-related-links">
-      {% for t in related_tools %}
-      <a href="{{ url_for('detail', slug=t.slug) }}" class="btn btn-sm">{{ t.original_name }} →</a>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
 
   {% if related_comparisons %}
   <div class="detail-related-box" style="margin-top: 16px;">
