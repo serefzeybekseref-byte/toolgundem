@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container" style="max-width: 1200px;">
   
-  <!-- Header Block with Title & Filters -->
+  <!-- Başlık & Filtreler -->
   <div style="display:flex; justify-content:space-between; align-items:flex-end; margin: 24px 0 32px; flex-wrap:wrap; gap:16px;">
     <div>
       <h1 class="detail-title" style="margin: 0 0 8px;">📊 Admin Panel & Analitik</h1>
@@ -32,12 +32,12 @@
         </select>
       </form>
       <a href="/admin/export/clicks?token={{ admin_token }}" class="btn btn-outline" style="display:inline-flex; align-items:center; gap:8px; border-color:var(--accent); color:var(--accent); padding:8px 16px;">
-        📥 CSV
+        📥 CSV İndir
       </a>
     </div>
   </div>
 
-  <!-- ÜST BÖLÜM: Metrikler -->
+  <!-- ÜST BÖLÜM: Özet Metrikler -->
   {% set total_period_clicks = ref_dist|sum(attribute='count') %}
   {% set affiliate_clicks = entry_exit|selectattr('destination_type', 'equalto', 'affiliate')|sum(attribute='cnt') %}
   <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:32px;">
@@ -48,34 +48,34 @@
     </div>
     
     <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">AFFILIATE TIKLAMA</div>
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">AFFİLİATE TIKLAMA</div>
       <div style="font-size:2rem; font-weight:700; color: var(--green);">{{ affiliate_clicks }}</div>
     </div>
     
     <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">AVG TIME TO FIRST CLICK</div>
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">ORT. İLK TIKLAMA SÜRESİ</div>
       <div style="font-size:2rem; font-weight:700; color: var(--accent);">{% if avg_time > 0 %}{{ avg_time }} sn{% else %}-{% endif %}</div>
     </div>
     
     <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">MULTI-CLICK SESSIONS</div>
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">ÇOKLU TIKLAMA OTURUMLARI</div>
       <div style="font-size:2rem; font-weight:700; color: var(--text);">{{ multi_clicks|length }}</div>
     </div>
   </div>
 
-  <!-- TRAFİK -->
-  <h2 style="font-size:1.15rem; margin-bottom:16px;">Trafik Kaynakları & Akış</h2>
+  <!-- TRAFİK KAYNAKLARI -->
+  <h2 style="font-size:1.15rem; margin-bottom:16px;">📡 Trafik Kaynakları & Akış</h2>
   <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap:24px; margin-bottom:32px;">
     
-    <!-- Referrer Distribution -->
+    <!-- Yönlendiren Sayfa Dağılımı -->
     <div style="padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
-      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">Referrer Distribution</h3>
+      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">📊 Yönlendiren Sayfa Dağılımı</h3>
       <div style="display:flex; flex-direction:column; gap:12px;">
         {% for r in ref_dist %}
         <div>
           <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
             <span style="font-weight:600;">{{ r.referrer|title }}</span>
-            <span class="mono" style="color:var(--text-secondary);">{{ r.count }} ({{ r.percent }}%)</span>
+            <span class="mono" style="color:var(--text-secondary);">{{ r.count }} (%{{ r.percent }})</span>
           </div>
           <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
             <div style="height:100%; width:{{ r.percent }}%; background:var(--accent); border-radius:3px;"></div>
@@ -87,15 +87,15 @@
       </div>
     </div>
     
-    <!-- Entry -> Exit Matrix -->
+    <!-- Giriş → Çıkış Matrisi -->
     <div style="padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
-      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">Entry ➔ Exit Matrix</h3>
+      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">🔀 Giriş ➔ Çıkış Matrisi</h3>
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
         <thead>
           <tr style="border-bottom:1px solid var(--border); color:var(--text-secondary); text-align:left;">
-            <th style="padding:6px 0;">Entry (Referrer)</th>
-            <th style="padding:6px 0;">Exit (Dest)</th>
-            <th style="padding:6px 0; text-align:right;">Clicks</th>
+            <th style="padding:6px 0;">Giriş Sayfası</th>
+            <th style="padding:6px 0;">Çıkış Hedefi</th>
+            <th style="padding:6px 0; text-align:right;">Tıklama</th>
           </tr>
         </thead>
         <tbody>
@@ -116,31 +116,31 @@
   </div>
 
   <!-- KULLANICI DAVRANIŞI -->
-  <h2 style="font-size:1.15rem; margin-bottom:16px;">Kullanıcı Davranışı & Yolculuklar</h2>
+  <h2 style="font-size:1.15rem; margin-bottom:16px;">🧭 Kullanıcı Davranışı & Yolculuklar</h2>
   <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap:24px; margin-bottom:32px;">
     
-    <!-- Recent Journeys -->
+    <!-- Canlı Tıklama Yolculukları -->
     <div style="padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
-      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">Canlı Tıklama Yolculukları (Live Journeys)</h3>
+      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">🗺️ Canlı Tıklama Yolculukları</h3>
       <div style="display:flex; flex-direction:column; gap:20px; max-height:500px; overflow-y:auto; padding-right:8px;">
         {% for j in recent_journeys %}
         <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-md); padding:16px;">
-          <!-- Meta Info -->
+          <!-- Üst Bilgi -->
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <div style="display:flex; gap:8px; align-items:center;">
-              <span class="mono" style="font-size:0.75rem; color:var(--text-secondary);">{{ j.country }}</span>
-              <span class="mono" style="font-size:0.75rem; color:var(--text-secondary);">{{ j.device }}</span>
+              <span class="mono" style="font-size:0.75rem; color:var(--text-secondary);">🌍 {{ j.country }}</span>
+              <span class="mono" style="font-size:0.75rem; color:var(--text-secondary);">💻 {{ j.device }}</span>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
               {% if j.time_to_first_click %}
-              <span class="badge" style="background:rgba(99,102,241,0.1); color:var(--accent); border:1px solid rgba(99,102,241,0.2); font-size:0.7rem;">🕒 {{ j.time_to_first_click }}sn</span>
+              <span class="badge" style="background:rgba(99,102,241,0.1); color:var(--accent); border:1px solid rgba(99,102,241,0.2); font-size:0.7rem;">🕒 {{ j.time_to_first_click }} sn</span>
               {% endif %}
               <span class="badge" style="background:{% if j.intent_val == 3 %}rgba(63,185,80,0.1);color:#3fb950;{% elif j.intent_val == 2 %}rgba(227,179,65,0.1);color:#e3b341;{% else %}rgba(255,255,255,0.05);color:var(--text-secondary);{% endif %} border:1px solid rgba(255,255,255,0.1); font-size:0.7rem;">
-                Intent: {{ j.intent }}
+                Niyet: {{ j.intent }}
               </span>
             </div>
           </div>
-          <!-- Click Path -->
+          <!-- Tıklama Yolu -->
           <div style="font-size:0.85rem; line-height:1.6; font-family:'JetBrains Mono', monospace;">
             {% for c in j.clicks %}
               <span style="color:var(--text-secondary);">[{{ c.referrer|title }}]</span> ➔ <strong style="color:var(--text);">{{ c.original_name }}</strong> ➔ <span style="color:var(--accent);">[{{ c.destination_type }}]</span>
@@ -149,20 +149,20 @@
           </div>
         </div>
         {% else %}
-        <p style="color:var(--text-secondary); font-size:0.85rem;">Tıklama bulunamadı.</p>
+        <p style="color:var(--text-secondary); font-size:0.85rem;">Henüz tıklama yolculuğu bulunamadı.</p>
         {% endfor %}
       </div>
     </div>
 
-    <!-- Multi Click Sessions -->
+    <!-- Çoklu Tıklama Oturumları -->
     <div style="padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
-      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">Karşılaştırma Yapanlar (Multi-click)</h3>
+      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">🔄 Karşılaştırma Yapanlar (Çoklu Tıklama)</h3>
       <div style="display:flex; flex-direction:column; gap:20px; max-height:500px; overflow-y:auto; padding-right:8px;">
         {% for mc in multi_clicks %}
         <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-md); padding:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <span class="mono" style="font-size:0.75rem; color:var(--text-secondary);">Session: {{ mc.session_id }}</span>
-            <span class="badge" style="background:rgba(63,185,80,0.1); color:#3fb950; border:1px solid rgba(63,185,80,0.2); font-size:0.7rem;">{{ mc.click_count }} Clicks</span>
+            <span class="mono" style="font-size:0.75rem; color:var(--text-secondary);">Oturum: {{ mc.session_id }}</span>
+            <span class="badge" style="background:rgba(63,185,80,0.1); color:#3fb950; border:1px solid rgba(63,185,80,0.2); font-size:0.7rem;">{{ mc.click_count }} Tıklama</span>
           </div>
           <div style="font-size:0.85rem; line-height:1.6; font-family:'JetBrains Mono', monospace;">
             {% for c in mc.clicks %}
@@ -172,7 +172,7 @@
           </div>
         </div>
         {% else %}
-        <p style="color:var(--text-secondary); font-size:0.85rem;">Çoklu tıklama bulunamadı.</p>
+        <p style="color:var(--text-secondary); font-size:0.85rem;">Çoklu tıklama oturumu bulunamadı.</p>
         {% endfor %}
       </div>
     </div>
@@ -180,22 +180,22 @@
   </div>
 
   <!-- GELİR -->
-  <h2 style="font-size:1.15rem; margin-bottom:16px;">Gelir Fırsatları & Araç Performansı</h2>
+  <h2 style="font-size:1.15rem; margin-bottom:16px;">💰 Gelir Fırsatları & Araç Performansı</h2>
   <div style="display:grid; grid-template-columns: 1fr; gap:24px; margin-bottom:32px;">
     
-    <!-- Top Clicked Tools -->
+    <!-- En Çok Tıklanan Araçlar -->
     <div style="padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
       <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">🔥 En Çok Tıklanan Araçlar</h3>
       <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; text-align:left;">
           <thead>
             <tr style="border-bottom:1px solid var(--border); color:var(--text-secondary); font-size:0.78rem;">
-              <th style="padding:10px; width:50px;">Rank</th>
+              <th style="padding:10px; width:50px;">Sıra</th>
               <th style="padding:10px;">Araç</th>
-              <th style="padding:10px; text-align:right;">Clicks</th>
+              <th style="padding:10px; text-align:right;">Tıklama</th>
               <th style="padding:10px; text-align:center;">Trend (7g)</th>
               <th style="padding:10px; text-align:center;">Affiliate Durumu</th>
-              <th style="padding:10px; text-align:right;">Est. Revenue</th>
+              <th style="padding:10px; text-align:right;">Tah. Gelir</th>
             </tr>
           </thead>
            <tbody>
@@ -238,49 +238,49 @@
       </div>
     </div>
 
-    <!-- Revenue Simulator settings -->
+    <!-- Gelir Simülatörü -->
     <div style="padding:24px; background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(99,102,241,0.01)); border:1px solid var(--accent); border-radius:var(--radius-lg);">
-      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px; color:var(--text);">⚙️ Gelir Simülatörü Ayarları (Top 10 için)</h3>
+      <h3 style="font-size:1rem; margin-top:0; margin-bottom:4px; color:var(--text);">⚙️ Gelir Simülatörü</h3>
+      <p style="font-size:0.78rem; color:var(--text-secondary); margin-top:0; margin-bottom:16px;">Yukarıdaki en çok tıklanan 10 aracın tıklama verisine göre tahmini aylık affiliate gelirini hesaplar. Dönüşüm oranı ve ortalama komisyon değerlerini değiştirerek farklı senaryoları test edebilirsiniz.</p>
       <form method="GET" action="/admin" style="display:flex; gap:24px; align-items:flex-end; flex-wrap:wrap;">
         <input type="hidden" name="token" value="{{ admin_token }}">
         <input type="hidden" name="days" value="{{ filter_days }}">
         <input type="hidden" name="country" value="{{ filter_country }}">
         <input type="hidden" name="device" value="{{ filter_device }}">
         <div style="flex:1; min-width:200px;">
-          <label style="display:block; font-size:0.8rem; color: var(--text-secondary); margin-bottom:4px;">Dönüşüm Oranı (Conversion):</label>
+          <label style="display:block; font-size:0.8rem; color: var(--text-secondary); margin-bottom:4px;">Dönüşüm Oranı (tıklayanlardan kaçı satın alır?):</label>
           <div style="display:flex; align-items:center; gap:8px;">
-            <input type="range" name="conv" min="0.5" max="10.0" step="0.5" value="{{ conv_rate }}" oninput="document.getElementById('conv-val').innerText = this.value + '%'" style="flex:1;">
-            <span id="conv-val" class="mono" style="font-size:0.85rem; font-weight:600; width:45px; text-align:right;">{{ conv_rate }}%</span>
+            <input type="range" name="conv" min="0.5" max="10.0" step="0.5" value="{{ conv_rate }}" oninput="document.getElementById('conv-val').innerText = '%' + this.value" style="flex:1;">
+            <span id="conv-val" class="mono" style="font-size:0.85rem; font-weight:600; width:45px; text-align:right;">%{{ conv_rate }}</span>
           </div>
         </div>
         <div style="flex:1; min-width:200px;">
-          <label style="display:block; font-size:0.8rem; color: var(--text-secondary); margin-bottom:4px;">Ortalama Komisyon ($):</label>
+          <label style="display:block; font-size:0.8rem; color: var(--text-secondary); margin-bottom:4px;">Ortalama Komisyon (satış başına kazanç):</label>
           <div style="display:flex; align-items:center; gap:8px;">
             <input type="range" name="comm" min="5" max="100" step="1" value="{{ avg_comm }}" oninput="document.getElementById('comm-val').innerText = '$' + this.value" style="flex:1;">
             <span id="comm-val" class="mono" style="font-size:0.85rem; font-weight:600; width:45px; text-align:right;">${{ avg_comm|int }}</span>
           </div>
         </div>
-        <button type="submit" class="btn btn-outline" style="padding:6px 12px; border-radius:var(--radius-sm); font-size:0.82rem;">Simülasyonu Güncelle</button>
+        <button type="submit" class="btn btn-outline" style="padding:6px 12px; border-radius:var(--radius-sm); font-size:0.82rem;">Güncelle</button>
       </form>
     </div>
     
   </div>
 
   <div style="border-top:1px solid var(--border); padding-top:32px;">
-    <!-- Diğer eski ekranlar / Yedek -->
-    <h2 style="font-size:1.15rem; margin-bottom:16px;">Diğer Araçlar & İçerik Uyarıları</h2>
+    <h2 style="font-size:1.15rem; margin-bottom:16px;">📋 Diğer Araçlar & İçerik Uyarıları</h2>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:24px; margin-bottom:32px;">
       
-      <!-- Orphan Opportunity (Missing content) -->
+      <!-- İçerik Fırsat Raporu -->
       <div style="padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
-        <h3 style="font-size:1rem; margin-top:0; margin-bottom:12px;">💡 İçerik Öncelik (Orphan) Raporu</h3>
-        <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:16px;">Çok tıklanan ama kendine ait rehber/karşılaştırma dosyası eksik olan fırsatlar.</p>
+        <h3 style="font-size:1rem; margin-top:0; margin-bottom:12px;">💡 İçerik Öncelik Raporu</h3>
+        <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:16px;">Çok tıklanan ama kendine ait rehber veya karşılaştırma dosyası eksik olan fırsatlar.</p>
         <div style="display:flex; flex-direction:column; gap:12px;">
           {% for o in orphans %}
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:8px;">
             <div>
               <span style="font-weight:600;">{{ o.original_name }}</span>
-              <span class="mono" style="font-size:0.72rem; color:var(--text-secondary); display:block;">{{ o.clicks }} click</span>
+              <span class="mono" style="font-size:0.72rem; color:var(--text-secondary); display:block;">{{ o.clicks }} tıklama</span>
             </div>
             <div style="display:flex; gap:6px;">
               {% if not o.has_guide %}<span style="background:rgba(229,72,77,0.1); color:#e5484d; border:1px solid rgba(229,72,77,0.3); font-size:0.68rem; padding:2px 6px; border-radius:4px;">Rehber Yok</span>{% endif %}
@@ -288,19 +288,19 @@
             </div>
           </div>
           {% else %}
-          <p style="font-size:0.85rem; color:var(--text-secondary); text-align:center;">Orphan fırsatı bulunamadı.</p>
+          <p style="font-size:0.85rem; color:var(--text-secondary); text-align:center;">Fırsat bulunamadı — harika!</p>
           {% endfor %}
         </div>
       </div>
       
-      <!-- Search Intent -->
+      <!-- Arama Terimleri -->
       <div style="padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
         <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">🔍 Arama Terimleri Performansı</h3>
         <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
           <thead>
             <tr style="border-bottom:1px solid var(--border); color:var(--text-secondary); text-align:left;">
               <th style="padding:6px 0;">Terim</th>
-              <th style="padding:6px 0; text-align:right;">Clicks</th>
+              <th style="padding:6px 0; text-align:right;">Tıklama</th>
             </tr>
           </thead>
           <tbody>
