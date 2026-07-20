@@ -65,6 +65,30 @@ except ImportError:
         return False
 
 
+_TABLES_WITH_ID_COLUMN = None  # lazy-loaded cache: {"PRODUCTS", "COMPARISONS", ...} - sadece gercekten 'id' kolonu olan tablolar
+
+
+def _load_tables_with_id_column(raw_pg_conn):
+    """
+    information_schema'dan gercekte 'id' kolonu olan tablolarin listesini ceker ve modul
+    seviyesinde onbelleğe alir. Bu, INSERT sonrasi 'RETURNING id' eklerken hangi tablolarin
+    id'siz oldugunu ELLE listelemek zorunda kalmamizi onler (ornegin daily_visits gibi
+    birincil anahtari baska bir alan olan yeni bir tablo eklendiginde, elle whitelist
+    guncellemeyi unutup ayni "column id does not exist" hatasina tekrar dusme riskini
+    ortadan kaldirir - bkz. 20 Temmuz 2026 record_visit bug'i).
+    """
+    global _TABLES_WITH_ID_COLUMN
+    try:
+        cur = raw_pg_conn.cursor()
+        cur.execute("SELECT table_name FROM information_schema.columns WHERE column_name = 'id' AND table_schema = 'public'")
+        _TABLES_WITH_ID_COLUMN = {row[0].upper() for row in cur.fetchall()}
+        cur.close()
+    except Exception:
+        # Sema okunamazsa guvenli varsayilan: bos kume -> RETURNING id hic eklenmez
+        # (id donmemesi, "column id does not exist" ile istegi patlatmaktan daha az kotu).
+        _TABLES_WITH_ID_COLUMN = set()
+
+
 class _ConnWrapper:
     """SQLite ve Postgres baglantilarini tek bir arayuz (execute/commit/close) altinda birlestirir."""
 
@@ -79,13 +103,28 @@ class _ConnWrapper:
             converted = _pg_sql(sql)
             stripped = converted.strip().upper()
             if stripped.startswith("INSERT") and "RETURNING" not in stripped:
-                converted += " RETURNING id"
+                global _TABLES_WITH_ID_COLUMN
+                if _TABLES_WITH_ID_COLUMN is None:
+                    _load_tables_with_id_column(self.raw)
+                match = re.search(r"INTO\s+(\w+)", stripped)
+                table_name = match.group(1) if match else None
+                if table_name and table_name in _TABLES_WITH_ID_COLUMN:
+                    converted += " RETURNING id"
             cur.execute(converted, params)
             return _PGCursorWrapper(cur)
         return self.raw.execute(sql, params)
 
     def commit(self):
         self.raw.commit()
+
+    def rollback(self):
+        """Bir sorgu hata verdiginde (ozellikle Postgres'te) transaction'i temizler -
+        aksi halde paylasilan istek-baglantisi 'bozuk transaction' durumunda kalir ve
+        o istekteki SONRAKI TUM sorgular da patlar (bkz. 20 Temmuz 2026 record_visit bug'i)."""
+        try:
+            self.raw.rollback()
+        except Exception:
+            pass
 
     def close(self):
         # Istek-basi paylasilan baglantilar tek tek kapatilmaz;
@@ -684,22 +723,31 @@ def mark_queue_item(queue_id: int, status: str):
 
 def record_visit():
     """Her sayfa istegi icin bugunun ziyaret sayacini bir artirir (UPSERT).
-    Agir olmasin diye tek satirlik bir counter - detayli per-page log tutmuyor."""
+    Agir olmasin diye tek satirlik bir counter - detayli per-page log tutmuyor.
+    Bu fonksiyon KESINLIKLE sayfa isteğini bozmamali (analytics kritik degil) - hata
+    olursa yutulur, AMA once conn.rollback() cagrilir. Aksi halde paylasilan istek-baglantisi
+    "bozuk transaction" durumunda kalir ve ayni istekteki SONRAKI TUM sorgular da patlar
+    (bkz. 20 Temmuz 2026 record_visit bug'i - sadece exception yutmak yeterli degildi)."""
     from datetime import date
     today = date.today().isoformat()
     conn = get_connection()
-    if USE_POSTGRES:
-        conn.execute("""
-            INSERT INTO daily_visits (visit_date, count) VALUES (?, 1)
-            ON CONFLICT (visit_date) DO UPDATE SET count = daily_visits.count + 1
-        """, (today,))
-    else:
-        conn.execute("""
-            INSERT INTO daily_visits (visit_date, count) VALUES (?, 1)
-            ON CONFLICT(visit_date) DO UPDATE SET count = count + 1
-        """, (today,))
-    conn.commit()
-    conn.close()
+    try:
+        if USE_POSTGRES:
+            conn.execute("""
+                INSERT INTO daily_visits (visit_date, count) VALUES (?, 1)
+                ON CONFLICT (visit_date) DO UPDATE SET count = daily_visits.count + 1
+            """, (today,))
+        else:
+            conn.execute("""
+                INSERT INTO daily_visits (visit_date, count) VALUES (?, 1)
+                ON CONFLICT(visit_date) DO UPDATE SET count = count + 1
+            """, (today,))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        logger.exception("record_visit basarisiz oldu, transaction geri alindi")
+    finally:
+        conn.close()
 
 
 def get_visit_stats():
