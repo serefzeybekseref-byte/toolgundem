@@ -309,6 +309,7 @@ def inject_globals():
         "footer_guides": footer_guides,
         "footer_comparisons": footer_comparisons,
         "footer_topics": footer_topics,
+        "adsense_publisher_id": os.getenv("ADSENSE_PUBLISHER_ID", ""),
     }
 
 

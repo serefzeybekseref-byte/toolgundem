@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr" data-theme="dark">
 <head>
 <meta charset="UTF-8">
@@ -47,6 +47,9 @@
 }
 </script>
 {% block extra_head %}{% endblock %}
+{% if adsense_publisher_id %}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_publisher_id }}" crossorigin="anonymous"></script>
+{% endif %}
 </head>
 <body>
 

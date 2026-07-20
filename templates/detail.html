@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}{{ product.original_name }} — BulurumAI{% endblock %}
 {% block description %}{{ product.summary_tr }}{% endblock %}
 {% block og_title %}{{ product.original_name }}{% endblock %}
@@ -144,6 +144,21 @@
       {{ product.content_tr }}
     </div>
   </div>
+
+  {% if adsense_publisher_id %}
+  <div class="adsense-banner-container" style="margin: 32px auto 16px; max-width: 728px; text-align: center; border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); padding: 16px 0; overflow: hidden;">
+    <span style="display: block; font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Sponsorlu Bağlantı</span>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="{{ adsense_publisher_id }}"
+         data-ad-slot="9988223311"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+  {% endif %}
 
   <div class="detail-tags">
     {% for t in product.tags.split(',') if t %}
