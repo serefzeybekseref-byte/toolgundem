@@ -266,6 +266,7 @@ def init_db():
         ("quality_score", "INTEGER DEFAULT 0"),
         ("gallery", "TEXT"),
         ("broken_reason", "TEXT"),
+        ("broken_streak", "INTEGER DEFAULT 0"),
     ]
     for col_name, col_type in new_columns:
         if USE_POSTGRES:
@@ -1263,12 +1264,29 @@ def get_collection_by_slug(slug):
 def mark_link_checked(product_id: int, is_broken: bool, reason: str = ""):
     """Broken-link kontrol scripti tarafindan kullanilir (bkz. check_links.py).
     reason: neden kirik isaretlendigini aciklar (ornek: '404', 'timeout', 'ssl_error', 'dns_error')
-    - raporlama ve gelecekte daha akilli karar almak icin (ornek: sadece timeout ise
-      daha once hemen gizlemek yerine birkac kez daha denemek gibi)."""
+
+    ONEMLI: is_broken (kullaniciya gosterilen/gizleyen bayrak) TEK BIR basarisiz kontrolde
+    hemen True olmaz. GitHub Actions runner'indan (veya hedef sitenin CDN'inden) kaynaklanan
+    tek seferlik/gecici ag hatalari yuzunden yanlis pozitif riski var (ornek: Play.ht, Hour One -
+    gercekte canli ama bir kontrolde ag hatasi aldi). Bunun icin bir 'streak' (art arda
+    basarisizlik) sayaci tutulur: bir site YALNIZCA art arda en az 2 FARKLI calistirmada
+    (haftalik workflow, yani gunler arayla) basarisiz olursa kullaniciya gizlenir.
+    Tek seferlik basarisizlik sessizce sayaci artirir ama gizlemez."""
+    BROKEN_STREAK_THRESHOLD = 2
     conn = get_connection()
+    row = conn.execute("SELECT broken_streak FROM products WHERE id = ?", (product_id,)).fetchone()
+    prev_streak = dict(row).get("broken_streak") or 0 if row else 0
+
+    if is_broken:
+        streak = prev_streak + 1
+    else:
+        streak = 0
+
+    publicly_broken = streak >= BROKEN_STREAK_THRESHOLD
     conn.execute(
-        "UPDATE products SET last_checked_at = ?, is_broken = ?, broken_reason = ? WHERE id = ?",
-        (datetime.utcnow().isoformat(), 1 if is_broken else 0, reason if is_broken else "", product_id)
+        "UPDATE products SET last_checked_at = ?, is_broken = ?, broken_reason = ?, broken_streak = ? WHERE id = ?",
+        (datetime.utcnow().isoformat(), 1 if publicly_broken else 0,
+         reason if publicly_broken else "", streak, product_id)
     )
     conn.commit()
     conn.close()
