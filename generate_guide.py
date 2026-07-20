@@ -55,7 +55,7 @@ Su JSON formatinda cevap ver (baska hicbir sey yazma):
 {{
   "meta_description": "Google sonuclarinda gorunecek 150-160 karakterlik ozet",
   "excerpt": "Sayfa basinda gorunecek 1-2 cumlelik giris ozeti",
-  "hizli_ozet": "TAM OLARAK 2-3 cumlelik DOGRUDAN cevap. Kullanici sayfaya gelir gelmez 'Kisa cevap: ...' diye baslayan bu kutuyu okuyup en onemli tavsiyeyi hemen alsin (hangi arac/yaklasim one cikiyor, neden). Google'in AI/featured snippet sonuclarina uygun, oz ve net olsun.",
+  "hizli_ozet": "TAM OLARAK 2-3 cumlelik DOGRUDAN cevap. Kullanici sayfaya gelir gelmez en onemli tavsiyeyi hemen alsin (hangi arac/yaklasim one cikiyor, neden). Google'in AI/featured snippet sonuclarina uygun, oz ve net olsun. ONEMLI: 'Kisa cevap:' ifadesiyle BASLAMA, bu ifade zaten otomatik ekleniyor - direkt cevapla basla.",
   "ogrenecekleriniz": ["Bu rehberde ogrenilecek 4 kisa madde (her biri 4-8 kelime, fiil ile baslasin, ornek: 'Hangi aracin size uygun oldugunu' gibi)", "madde 2", "madde 3", "madde 4"],
   "giris": "EN FAZLA 60-80 kelimelik giris paragrafi. Okuyucunun sorununu/ihtiyacini tek cumlede tanimla, bu rehberde ne bulacagini kisaca soyle. Uzatma.",
   "neden_ai": ["Yapay zeka kullanmanin faydasi 1 - TEK CUMLE, somut (zaman/para/kalite)", "fayda 2 - tek cumle", "fayda 3 - tek cumle", "fayda 4 - tek cumle (3-4 madde, HER biri EN FAZLA 20 kelime)"]
