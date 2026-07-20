@@ -367,20 +367,144 @@ def discover_candidate_guides(max_candidates: int = 3) -> list:
     return candidates
 
 
+def discover_orphan_guides(max_candidates: int = 2, min_clicks: int = 2):
+    """
+    Admin paneldeki 'Orphan Firsat Raporu'nun otomasyonu.
+    En cok tiklanan ama hic rehberi olmayan araclari bulur ve
+    onlar icin otomatik rehber uretim konfigurasyonu dondurur.
+    
+    Mantik:
+    1. outbound_click_events tablosundan en cok tiklanan urunleri cek
+    2. Zaten bir rehberde gecen urunleri filtrele
+    3. Kalan urunlerin ayni kategorisindeki (topic) diger urunleri bul
+    4. Bu urunlerle bir rehber konfigurasyonu olustur
+    """
+    from db import get_connection, init_db
+    from datetime import datetime, timedelta
+    init_db()
+    conn = get_connection()
+    
+    # 1. Son 30 gundeki en cok tiklanan urunler
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    top_clicked = conn.execute("""
+        SELECT p.id, p.original_name, p.slug, p.topics, p.summary_tr,
+               p.pricing_type, COUNT(e.id) as clicks
+        FROM products p
+        JOIN outbound_click_events e ON p.id = e.product_id
+        WHERE e.clicked_at >= ?
+        GROUP BY p.id, p.original_name, p.slug, p.topics, p.summary_tr, p.pricing_type
+        HAVING COUNT(e.id) >= ?
+        ORDER BY COUNT(e.id) DESC
+        LIMIT 20
+    """, (t_start, min_clicks)).fetchall()
+    
+    # 2. Rehberlerde zaten gecen slug'lari bul
+    guides_rows = conn.execute("SELECT related_tool_slugs FROM guides").fetchall()
+    covered_slugs = set()
+    for g in guides_rows:
+        for s in (g["related_tool_slugs"] or "").split(","):
+            s = s.strip()
+            if s:
+                covered_slugs.add(s)
+    
+    # 3. Orphan olanlari filtrele
+    candidates = []
+    for row in top_clicked:
+        product = dict(row)
+        if product["slug"] in covered_slugs:
+            continue
+        
+        # Ayni topic'teki diger urunleri bul (rehber icin en az 3 arac lazim)
+        topics = (product["topics"] or "").split(",")
+        first_topic = topics[0].strip() if topics else ""
+        if not first_topic:
+            continue
+        
+        similar = conn.execute(
+            "SELECT original_name, summary_tr, pricing_type FROM products WHERE topics LIKE ? AND id != ? ORDER BY votes DESC LIMIT 4",
+            (f"%{first_topic}%", product["id"])
+        ).fetchall()
+        
+        if len(similar) < 2:  # En az 3 arac (1 ana + 2 benzer) olmali
+            continue
+        
+        # Rehber konfigurasyonu olustur
+        manual_tools = [
+            {
+                "name": product["original_name"],
+                "best_for": (product["summary_tr"] or "")[:100],
+                "pricing": product["pricing_type"] or "Bilinmiyor",
+            }
+        ]
+        for s in similar:
+            s = dict(s)
+            manual_tools.append({
+                "name": s["original_name"],
+                "best_for": (s["summary_tr"] or "")[:100],
+                "pricing": s["pricing_type"] or "Bilinmiyor",
+            })
+        
+        from db import slugify
+        guide_slug = f"{product['slug']}-rehberi"
+        
+        candidates.append({
+            "slug": guide_slug,
+            "title": f"{product['original_name']} ve Alternatifleri: Hangisini Secmelisiniz? (2026 Rehberi)",
+            "comparison_slug": None,
+            "related_topic": first_topic,
+            "manual_tools": manual_tools,
+            "related_comparisons": [],
+            "_source": "orphan",
+            "_clicks": product["clicks"],
+        })
+        
+        if len(candidates) >= max_candidates:
+            break
+    
+    conn.close()
+    
+    if candidates:
+        print(f"Orphan Firsat Raporu: {len(candidates)} aday rehber bulundu:")
+        for c in candidates:
+            print(f"  - {c['title']} ({c['_clicks']} tiklama)")
+    else:
+        print("Orphan Firsat Raporu: Tum cok tiklanan araclarin zaten bir rehberi var.")
+    
+    return candidates
+
+
 def run_scheduler(max_new: int = 2):
     """
-    Guide Scheduler: buyuyen karsilastirma listesine gore otomatik yeni rehber uretir,
-    her rehber kalite kapisindan (quality_gate.check_guide) gecmeden yayinlanmaz.
+    Guide Scheduler: iki kaynaktan aday rehber bulur ve uretir:
+    1. Karsilastirma listelerinden (comparison-based)
+    2. Orphan Firsat Raporundan (click-based) - admin paneldeki veriye dayanir
+    
+    Her rehber kalite kapisindan (quality_gate.check_guide) gecmeden yayinlanmaz.
     Haftalik workflow'dan cagrilir (bkz. weekly-content-generation.yml).
     """
-    candidates = discover_candidate_guides(max_candidates=max_new)
-    if not candidates:
-        print("Yeni rehber adayi yok - tum karsilastirmalarin zaten bir rehberi var.")
+    # Kaynak 1: Karsilastirma listelerinden aday bul
+    comp_candidates = discover_candidate_guides(max_candidates=max_new)
+    
+    # Kaynak 2: Orphan (cok tiklanan ama rehberi olmayan) araclardan aday bul
+    orphan_candidates = discover_orphan_guides(max_candidates=max_new, min_clicks=2)
+    
+    # Birlestir (once orphan - cunku tiklama verisiyle kanitlanmis talep)
+    all_candidates = orphan_candidates + comp_candidates
+    
+    # Toplam limiti asma
+    all_candidates = all_candidates[:max_new * 2]  # Her kaynaktan max_new kadar
+    
+    if not all_candidates:
+        print("Yeni rehber adayi yok - tum karsilastirmalarin ve cok tiklanan araclarin zaten bir rehberi var.")
         return 0, 0, []
 
     created, rejected = 0, 0
     rejection_report = []
-    for cfg in candidates:
+    for cfg in all_candidates:
+        source = cfg.get("_source", "comparison")
+        print(f"\n[Kaynak: {source}] {cfg['title']}")
         ok, problems = run_one(cfg, validate=True)
         if ok:
             created += 1
