@@ -725,6 +725,17 @@ Sitemap: {base}/sitemap.xml
     return Response(txt, mimetype="text/plain")
 
 
+@app.route("/ads.txt")
+def ads_txt():
+    pub_id = os.getenv("ADSENSE_PUBLISHER_ID", "").strip()
+    if not pub_id:
+        abort(404)
+    # Ensure it starts with pub- instead of ca-pub- for the ads.txt entry
+    clean_pub_id = pub_id.replace("ca-", "")
+    content = f"google.com, {clean_pub_id}, DIRECT, f08c47fec0942fa0\n"
+    return Response(content, mimetype="text/plain")
+
+
 @app.route("/googlef4ed50b2ea173e10.html")
 def google_site_verification():
     return Response("google-site-verification: googlef4ed50b2ea173e10.html", mimetype="text/html")
