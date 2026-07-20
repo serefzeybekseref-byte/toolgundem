@@ -14,6 +14,7 @@ build/
 Thumbs.db
 migration_dump.json
 _*.py
+_*.txt
 encoding_check.txt
 
 .vercel

@@ -62,6 +62,23 @@
     {% endfor %}
   </div>
 
+  <h2 style="font-size:1.2rem; margin-bottom:12px;">Ürün Üretim Kuyruğu (Coverage Opportunity)</h2>
+  <p style="color: var(--text-secondary); font-size:0.85rem; margin-bottom:12px;">Karşılaştırmalarda geçen ama henüz kendi ürün sayfası olmayan araçlar. LLM kotası açılınca işlenecek.</p>
+  <div style="display:flex; gap:16px; margin-bottom:32px;">
+    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div style="color:#e5484d; font-weight:700; font-size:1.4rem;">{{ stats.generation_queue.get('High', 0) }}</div>
+      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Yüksek Öncelik</div>
+    </div>
+    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div style="color:#e3b341; font-weight:700; font-size:1.4rem;">{{ stats.generation_queue.get('Medium', 0) }}</div>
+      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Orta Öncelik</div>
+    </div>
+    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div style="color: var(--text-secondary); font-weight:700; font-size:1.4rem;">{{ stats.generation_queue.get('Low', 0) }}</div>
+      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Düşük Öncelik</div>
+    </div>
+  </div>
+
   <h2 style="font-size:1.2rem; margin-bottom:12px;">Son Eklenen 10 Ürün</h2>
   <div style="background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); overflow:hidden;">
     {% for p in stats.recent %}

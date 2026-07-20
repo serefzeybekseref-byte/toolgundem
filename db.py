@@ -227,6 +227,30 @@ def init_db():
             except sqlite3.OperationalError:
                 pass
 
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS audit_flags (
+            id {pk},
+            product_id INTEGER,
+            reason TEXT NOT NULL,
+            detected_at TEXT NOT NULL,
+            resolved INTEGER DEFAULT 0,
+            resolved_at TEXT
+        )
+    """)
+
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS product_generation_queue (
+            id {pk},
+            name TEXT NOT NULL,
+            normalized_name TEXT,
+            source TEXT,
+            priority TEXT DEFAULT 'Medium',
+            status TEXT DEFAULT 'pending',
+            created_at TEXT NOT NULL,
+            processed_at TEXT
+        )
+    """)
+
     # Yeni kolonlar: veri modelini genisletir (duplicate kontrolu, filtreleme,
     # affiliate ve broken-link takibi icin). Zaten varsa hatasiz gecilir.
     new_columns = [
@@ -556,6 +580,101 @@ def update_product_quickfacts(product_id, why_use_it, key_features, platforms, p
     conn.close()
 
 
+def add_audit_flag(product_id, reason: str, conn=None):
+    """Bir denetim script'i (foreign_content_audit.py vb.) sorun bulunca cagirir.
+    Ayni urun+reason zaten acik (resolved=0) ise tekrar eklemez (idempotent).
+    conn verilirse (toplu tarama icin) o baglantiyi kullanir, commit etmez -
+    caginin sonunda caller commit etmeli. conn verilmezse kendi baglantisini acar/kapatir."""
+    from datetime import datetime
+    own_conn = conn is None
+    if own_conn:
+        conn = get_connection()
+    existing = conn.execute(
+        "SELECT id FROM audit_flags WHERE product_id = ? AND reason = ? AND resolved = 0",
+        (product_id, reason)
+    ).fetchone()
+    if not existing:
+        conn.execute(
+            "INSERT INTO audit_flags (product_id, reason, detected_at, resolved) VALUES (?, ?, ?, 0)",
+            (product_id, reason, datetime.utcnow().isoformat())
+        )
+        if own_conn:
+            conn.commit()
+    if own_conn:
+        conn.close()
+
+
+def resolve_audit_flag(product_id, reason: str, conn=None):
+    from datetime import datetime
+    own_conn = conn is None
+    if own_conn:
+        conn = get_connection()
+    conn.execute(
+        "UPDATE audit_flags SET resolved = 1, resolved_at = ? WHERE product_id = ? AND reason = ? AND resolved = 0",
+        (datetime.utcnow().isoformat(), product_id, reason)
+    )
+    if own_conn:
+        conn.commit()
+        conn.close()
+
+
+def add_to_generation_queue(name: str, source: str, priority: str = "Medium", conn=None):
+    """Henuz urun sayfasi olmayan ama bir karsilastirmada/koleksiyonda gecen bir aracı
+    'uretim kuyruguna' ekler. Ayni normalized_name zaten pending/done ise tekrar eklemez
+    (idempotent) - sadece source bilgisini birlestirir (birden fazla karsilastirmadan
+    referans aliyorsa hepsi tek kayitta gorunsun)."""
+    from datetime import datetime
+    own_conn = conn is None
+    if own_conn:
+        conn = get_connection()
+
+    norm = normalize_name(name)
+    existing = conn.execute(
+        "SELECT id, source FROM product_generation_queue WHERE normalized_name = ? AND status != 'done'",
+        (norm,)
+    ).fetchone()
+    if existing:
+        existing = dict(existing)
+        existing_sources = [s.strip() for s in (existing.get("source") or "").split("|") if s.strip()]
+        if source not in existing_sources:
+            existing_sources.append(source)
+            conn.execute(
+                "UPDATE product_generation_queue SET source = ? WHERE id = ?",
+                ("|".join(existing_sources), existing["id"])
+            )
+    else:
+        conn.execute(
+            "INSERT INTO product_generation_queue (name, normalized_name, source, priority, status, created_at) VALUES (?, ?, ?, ?, 'pending', ?)",
+            (name, norm, source, priority, datetime.utcnow().isoformat())
+        )
+    if own_conn:
+        conn.commit()
+        conn.close()
+
+
+def get_generation_queue(status: str = "pending"):
+    conn = get_connection()
+    if status:
+        rows = conn.execute(
+            "SELECT * FROM product_generation_queue WHERE status = ? ORDER BY priority ASC, created_at ASC", (status,)
+        ).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM product_generation_queue ORDER BY priority ASC, created_at ASC").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def mark_queue_item(queue_id: int, status: str):
+    from datetime import datetime
+    conn = get_connection()
+    conn.execute(
+        "UPDATE product_generation_queue SET status = ?, processed_at = ? WHERE id = ?",
+        (status, datetime.utcnow().isoformat(), queue_id)
+    )
+    conn.commit()
+    conn.close()
+
+
 def get_admin_stats():
     """Admin paneli icin ozet istatistikler (tek sorgu setiyle)."""
     conn = get_connection()
@@ -605,6 +724,11 @@ def get_admin_stats():
     """).fetchall()
     pricing_breakdown = [dict(r) for r in pricing_breakdown]
 
+    queue_rows = conn.execute(
+        "SELECT priority, COUNT(*) as c FROM product_generation_queue WHERE status = 'pending' GROUP BY priority"
+    ).fetchall()
+    generation_queue = {dict(r)["priority"]: dict(r)["c"] for r in queue_rows}
+
     conn.close()
     return {
         "total_products": total_products,
@@ -617,6 +741,7 @@ def get_admin_stats():
         "top_topics": top_topics_list,
         "recent": recent,
         "pricing_breakdown": pricing_breakdown,
+        "generation_queue": generation_queue,
     }
 
 
