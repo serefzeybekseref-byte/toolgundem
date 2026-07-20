@@ -157,3 +157,47 @@ def check_collection(title: str, description: str, items: list, source_products_
                 problems.append(f"product_id={pid}: bu ID veritabaninda yok (AI uydurmus olabilir)")
 
     return (len(problems) == 0, problems)
+
+
+def check_guide(title: str, meta_description: str, content_html: str, word_count: int,
+                 related_tool_slugs: list, source_tool_names: list = None):
+    """
+    Otomatik uretilen rehberler (generate_guide.py) icin kalite kapisi.
+    source_tool_names: bu rehberin bahsetmesi GEREKEN arac isimleri (karsilastirmadan gelen liste) -
+    verilirse, uretilen HTML icinde bu isimlerin gecip gecmedigi kontrol edilir (AI'nin
+    aracin adini degistirip degistirmedigini/atlamadigini yakalamak icin).
+    Donen: (ok: bool, problems: list[str])
+    """
+    problems = []
+
+    if not title or len(title.strip()) < 10:
+        problems.append("baslik cok kisa/bos")
+    if not meta_description or len(meta_description.strip()) < 50:
+        problems.append("meta_description 50 karakterden kisa (SEO icin zayif)")
+    if not content_html or len(content_html.strip()) < 200:
+        problems.append("content_html neredeyse bos")
+
+    if word_count < 300:
+        problems.append(f"kelime sayisi cok dusuk ({word_count}) - ic icerik olarak zayif kalir")
+
+    if not related_tool_slugs or len(related_tool_slugs) < 3:
+        problems.append(f"en az 3 eslesmis arac (internal_slug) gerekli, {len(related_tool_slugs or [])} var - "
+                         f"eslesme bulunamayan araclar rehberde ic link/kart alamaz")
+
+    problems.extend(_check_stale_year(title, "baslik"))
+
+    if source_tool_names:
+        content_lower = content_html.lower()
+        missing = [name for name in source_tool_names if name.lower() not in content_lower]
+        if missing:
+            problems.append(f"su araclardan rehberde hic bahsedilmemis: {', '.join(missing)} (AI atlamis olabilir)")
+
+    # Ayni cumlenin birebir tekrar etmesi (SSS/hatalar bolumlerinde AI'nin kendini tekrar etmesi)
+    import re as _re
+    sentences = [s.strip().lower() for s in _re.split(r"[.!?]\s+", content_html) if len(s.strip()) > 25]
+    if sentences and len(sentences) != len(set(sentences)):
+        dupes = len(sentences) - len(set(sentences))
+        if dupes >= 2:
+            problems.append(f"icerikte {dupes} adet birebir tekrar eden cumle var (AI kendini tekrarlamis olabilir)")
+
+    return (len(problems) == 0, problems)

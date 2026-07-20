@@ -1,8 +1,10 @@
 import os
 import json
+import re
 import time
 from dotenv import load_dotenv
 from generate_content import _generate_with_fallback
+from quality_gate import check_guide
 
 load_dotenv()
 
@@ -322,7 +324,76 @@ GUIDES = [
 ]
 
 
-def run_one(guide_cfg: dict):
+def existing_guide_comparison_slugs() -> set:
+    """Zaten bir rehberi olan comparison_slug'lari dondurur (tekrar uretmemek icin)."""
+    from db import get_all_guides
+    result = set()
+    for g in get_all_guides():
+        for s in (g.get("related_comparison_slugs") or "").split(","):
+            s = s.strip()
+            if s:
+                result.add(s)
+    return result
+
+
+def discover_candidate_guides(max_candidates: int = 3) -> list:
+    """
+    Henuz hic rehberi olmayan karsilastirmalari bulup otomatik guide_cfg listesi uretir.
+    generate_guide.py suana kadar sabit GUIDES listesiyle calisiyordu (elle yonetiliyordu);
+    bu fonksiyon auto_generate_comparisons.py'deki CANDIDATE_TOPICS mantiginin rehber
+    tarafindaki karsiligi - karsilastirma sayisi buyudukce rehberler de otomatik yetissin diye.
+    """
+    from db import get_all_comparisons
+
+    covered = existing_guide_comparison_slugs()
+    manual_slugs = {g["slug"] for g in GUIDES}
+    candidates = []
+    for comp in get_all_comparisons():
+        if comp["slug"] in covered:
+            continue
+        # comparison_detail'de zaten "kart >= 3" kurali var (auto_generate_comparisons MIN_PRODUCTS=5),
+        # bu yuzden burada ayrica bir minimum kontrolu tekrar yapmiyoruz.
+        guide_title = comp["title"]
+        if "(20" in guide_title:  # "(2026)" gibi bir yil eki varsa rehber basligina tekrar ekleme
+            guide_title = re.sub(r"\s*\(20\d{2}\)", "", guide_title)
+        candidates.append({
+            "slug": f"{comp['slug']}-rehberi",
+            "title": f"{guide_title}: Hangisini Seçmelisiniz? (Rehber)",
+            "comparison_slug": comp["slug"],
+            "related_topic": "",
+        })
+        if len(candidates) >= max_candidates:
+            break
+    return candidates
+
+
+def run_scheduler(max_new: int = 2):
+    """
+    Guide Scheduler: buyuyen karsilastirma listesine gore otomatik yeni rehber uretir,
+    her rehber kalite kapisindan (quality_gate.check_guide) gecmeden yayinlanmaz.
+    Haftalik workflow'dan cagrilir (bkz. weekly-content-generation.yml).
+    """
+    candidates = discover_candidate_guides(max_candidates=max_new)
+    if not candidates:
+        print("Yeni rehber adayi yok - tum karsilastirmalarin zaten bir rehberi var.")
+        return 0, 0, []
+
+    created, rejected = 0, 0
+    rejection_report = []
+    for cfg in candidates:
+        ok, problems = run_one(cfg, validate=True)
+        if ok:
+            created += 1
+        else:
+            rejected += 1
+            rejection_report.append({"title": cfg["title"], "problems": problems})
+        time.sleep(2)
+
+    print(f"\nGuide Scheduler bitti. Olusturulan: {created}, Kalite kapisinda reddedilen: {rejected}")
+    return created, rejected, rejection_report
+
+
+def run_one(guide_cfg: dict, validate: bool = False):
     from db import init_db, save_guide, get_comparison_by_slug, get_connection, normalize_name
 
     init_db()
@@ -334,7 +405,7 @@ def run_one(guide_cfg: dict):
         comp = get_comparison_by_slug(guide_cfg["comparison_slug"])
         if not comp:
             print(f"  !! HATA: comparison '{guide_cfg['comparison_slug']}' bulunamadi, atlaniyor.")
-            return
+            return (False, ["comparison bulunamadi"]) if validate else None
         tools = comp["tools"]
         related_comparison_slugs = [guide_cfg["comparison_slug"]]
     else:
@@ -359,6 +430,21 @@ def run_one(guide_cfg: dict):
     result = generate_guide_content(title, tools, tool_extra)
     print(f"  -> kelime sayisi: {result['word_count']}")
 
+    if validate:
+        ok, problems = check_guide(
+            title=title,
+            meta_description=result["meta_description"],
+            content_html=result["content_html"],
+            word_count=result["word_count"],
+            related_tool_slugs=related_tool_slugs,
+            source_tool_names=[t["name"] for t in tools],
+        )
+        if not ok:
+            print(f"  !! KALITE KAPISI REDDETTI ({len(problems)} sorun):")
+            for pr in problems:
+                print(f"     - {pr}")
+            return (False, problems)
+
     save_guide(
         slug=slug,
         title=title,
@@ -371,11 +457,28 @@ def run_one(guide_cfg: dict):
         faq_json=result.get("faq_qa"),
     )
     print(f"  -> kaydedildi: /rehber/{slug}")
+    return (True, []) if validate else None
 
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) > 1:
+    if "--auto" in sys.argv:
+        # Guide Scheduler: buyuyen karsilastirma listesine gore otomatik yeni rehber uretir.
+        created, rejected, rejection_report = run_scheduler(max_new=2)
+        gh_output = os.environ.get("GITHUB_OUTPUT")
+        if gh_output:
+            with open(gh_output, "a", encoding="utf-8") as f:
+                f.write(f"guide_rejected_count={rejected}\n")
+                if rejection_report:
+                    lines = []
+                    for r in rejection_report:
+                        lines.append(f"### {r['title']}")
+                        for pr in r["problems"]:
+                            lines.append(f"- {pr}")
+                    f.write("guide_rejection_report<<EOF\n")
+                    f.write("\n".join(lines) + "\n")
+                    f.write("EOF\n")
+    elif len(sys.argv) > 1:
         target_slug = sys.argv[1]
         cfg = next((g for g in GUIDES if g["slug"] == target_slug), None)
         if not cfg:

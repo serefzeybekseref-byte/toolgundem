@@ -44,16 +44,23 @@ jobs:
         continue-on-error: true
         run: python generate_collections.py
 
+      - name: Buyuyen karsilastirma listesine gore yeni rehber uret (Guide Scheduler)
+        id: guides
+        continue-on-error: true
+        run: python generate_guide.py --auto
+
       - name: Kalite kapisinda reddedilenler varsa issue ac
-        if: steps.comparisons.outputs.rejected_count > 0 || steps.collections.outputs.rejected_count > 0
+        if: steps.comparisons.outputs.rejected_count > 0 || steps.collections.outputs.rejected_count > 0 || steps.guides.outputs.guide_rejected_count > 0
         uses: actions/github-script@v7
         with:
           script: |
             const cReport = `${{ steps.comparisons.outputs.rejection_report }}`;
             const colReport = `${{ steps.collections.outputs.rejection_report }}`;
+            const gReport = `${{ steps.guides.outputs.guide_rejection_report }}`;
             let body = "Kalite kapisi bazi otomatik uretilen icerikleri reddetti, canliya cikmadilar.\n\n";
             if (cReport.trim()) body += "## Karsilastirmalar\n" + cReport + "\n\n";
             if (colReport.trim()) body += "## Koleksiyonlar\n" + colReport + "\n\n";
+            if (gReport.trim()) body += "## Rehberler\n" + gReport + "\n\n";
             await github.rest.issues.create({
               owner: context.repo.owner, repo: context.repo.repo,
               title: `Kalite kapisi bazi icerigi reddetti - ${new Date().toISOString().slice(0,10)}`,
