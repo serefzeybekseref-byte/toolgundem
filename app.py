@@ -29,18 +29,20 @@ app = Flask(__name__, static_folder="static", static_url_path="/static")
 init_db()
 
 
-_SKIP_VISIT_PREFIXES = ("/static/", "/admin", "/sitemap.xml", "/robots.txt", "/favicon")
+_TRACKED_ENDPOINTS = {
+    "home", "detail", "category", "comparisons_list", "comparison_detail",
+    "guides_list", "guide_detail", "collections_list", "collection_detail",
+    "iletisim", "hakkimizda", "gizlilik", "kvkk", "kullanim-sartlari", "search"
+}
 
 
 @app.before_request
 def _track_visit():
-    """Her BENZERSIZ tarayiciyi gunde bir kez gunluk sayaca ekler (statik dosyalar/admin/
-    sitemap haric). Onceki surumde HER istek sayiliyordu - yani sayfa yenileme = +1, bu da
-    sahibinin kendi gezinmesi dahil sayiyi anlamsizca sisiriyordu ("ziyaretci" degil "sayfa
-    goruntuleme" olculuyordu). Artik cerez tabanli basit bir tekillestirme var: ayni tarayici
-    ayni gun icinde kac kez gelirse gelsin sadece ilk istekte sayiliyor.
-    Hata olursa sayfayi bozmasin diye sessizce yutuluyor."""
-    if request.path.startswith(_SKIP_VISIT_PREFIXES):
+    """Sadece gercek HTML sayfa yuklemelerini (beyaz listedeki endpoint'leri)
+    tarayici cerezine gore tekillestirerek ziyaret sayacina ekler.
+    API istekleri, statik dosyalar, sitemap, favicon veya eksik apple-touch-icon
+    istekleri gibi arka plan isteklerinin sayaci sisirmesini kesin olarak engeller."""
+    if request.endpoint not in _TRACKED_ENDPOINTS:
         return
     from datetime import date
     today = date.today().isoformat()
