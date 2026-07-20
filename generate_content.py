@@ -16,9 +16,10 @@ MODEL = "llama-3.3-70b-versatile"
 
 NVIDIA_NIM_API_KEY = os.getenv("NVIDIA_NIM_API_KEY")
 NVIDIA_NIM_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-# qwen3.5-122b-a10b: llama-3.3-70b'den daha guclu, hizli yanit veriyor, temiz JSON donduruyor.
-# (meta/llama-4-maverick ve deepseek-v4-pro test edildi ama senkron istekte timeout'a girdi.)
-NVIDIA_NIM_MODEL = "qwen/qwen3.5-122b-a10b"
+# qwen3-next-80b-a3b-instruct: qwen3.5-122b-a10b kaldirilmis/adi degismisti (410 Gone hatasi
+# verdi), bu 'instruct' varyanti gercek 'content' alani donduruyor (bazi qwen3.5 varyantlari
+# 'reasoning' tipinde olup content'i bos birakiyor, dikkat).
+NVIDIA_NIM_MODEL = "qwen/qwen3-next-80b-a3b-instruct"
 
 
 def _call_nvidia_nim(prompt: str, max_tokens: int = 1024) -> dict:
