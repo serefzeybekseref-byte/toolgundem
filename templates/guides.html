@@ -18,19 +18,14 @@
   <div class="card-grid">
     {% for g in guides %}
     <a href="/rehber/{{ g.slug }}" class="compare-card fade-in">
-      <div class="collection-icon">📖</div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="collection-icon">📖</div>
+        <span class="compare-date mono">{{ g.created_at[:10] }}</span>
+      </div>
       <h3 class="compare-title">{{ g.title }}</h3>
       {% if g.excerpt %}
       <p class="compare-intro">{{ g.excerpt[:120] }}{% if g.excerpt|length > 120 %}...{% endif %}</p>
       {% endif %}
-      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-        {% set tool_count = (g.related_tool_slugs or '').split(',')|select|list|length %}
-        {% if tool_count > 0 %}<span class="mono" style="font-size:0.8rem; color: var(--accent);">🛠️ {{ tool_count }} araç incelendi</span>{% endif %}
-        {% set comp_count = (g.related_comparison_slugs or '').split(',')|select|list|length %}
-        {% if comp_count > 0 %}<span class="mono" style="font-size:0.8rem; color: var(--accent);">📊 {{ comp_count }} karşılaştırma</span>{% endif %}
-        <span class="compare-date mono">{{ g.created_at[:10] }}</span>
-        {% if g.content_html %}<span class="mono" style="font-size:0.8rem; color: var(--text-secondary);">📖 {{ ((g.content_html.split()|length) / 200)|round(0, 'ceil')|int }} dk</span>{% endif %}
-      </div>
     </a>
     {% else %}
     <div class="empty-state">

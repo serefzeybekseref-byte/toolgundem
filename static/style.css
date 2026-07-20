@@ -2063,103 +2063,38 @@ h1, h2, h3, h4 {
   }
 }
 
-.footer-links-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: var(--space-6);
+.footer-links-simple {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
   font-size: 0.875rem;
-  text-align: left;
   padding: var(--space-6) 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
-
-.footer-col {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.footer-col-links {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* Masaustunde <details> kapali/acik farketmeksizin icerik her zaman gorunur
-   (native tarayici davranisini eziyoruz) - akordiyon sadece mobilde aktif */
-.footer-col:not([open]) > .footer-col-links {
-  display: flex;
-}
-
-.footer-col-title {
-  font-weight: 700;
-  font-size: 0.8rem;
+.footer-links-simple a {
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 4px;
-  cursor: default;
-  list-style: none;
+  white-space: nowrap;
 }
-
-.footer-col-title::-webkit-details-marker {
-  display: none;
-}
-
-.footer-col a {
-  color: var(--text-secondary);
-  white-space: normal;
-}
-
-.footer-col a:hover {
+.footer-links-simple a:hover {
   color: var(--accent);
+}
+.footer-links-sep {
+  color: var(--border);
+  margin: 0 2px;
+}
+@media (max-width: 640px) {
+  .footer-links-simple {
+    gap: 10px 14px;
+    font-size: 0.82rem;
+  }
 }
 
 .footer-copy {
   font-size: 0.75rem;
   color: var(--text-secondary);
   opacity: 0.5;
-}
-
-@media (max-width: 640px) {
-  .footer-links-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    text-align: left;
-  }
-  .footer-col {
-    border-bottom: 1px solid var(--border);
-    padding: 12px 0;
-  }
-  .footer-col:first-child {
-    padding-top: 0;
-  }
-  .footer-col-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    margin-bottom: 0;
-    padding: 4px 0;
-  }
-  .footer-col-title::after {
-    content: "+";
-    font-size: 1rem;
-    color: var(--text-secondary);
-    transition: transform 0.2s ease;
-  }
-  .footer-col[open] > .footer-col-title::after {
-    content: "−";
-  }
-  .footer-col-links {
-    padding-top: 10px;
-    gap: 10px;
-  }
-  .footer-col:not([open]) > .footer-col-links {
-    display: none;
-  }
 }
 
 /* Scroll to top button */
