@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import time
 import requests
 from dotenv import load_dotenv
 load_dotenv()  # local'de .env'i yukler; production'da (Vercel) zaten env var'lar hazir, zararsiz.
@@ -27,6 +28,24 @@ logger = logging.getLogger("toolgundem")
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 init_db()
+
+# Footer verileri (rehber/karsilastirma/konu listesi) icin bellek-ici onbellek.
+# NOT: Vercel serverless ortaminda her "cold start" bu degeri sifirlar, ama ayni
+# warm instance'da art arda gelen isteklerde (kullanicinin hizli sekme gecisleri gibi)
+# gercek fayda saglar - 5 dakikada bir tazelenir.
+_footer_cache = {"data": None, "ts": 0}
+_home_cache = {"data": None, "ts": 0}
+_simple_caches = {}
+
+
+def cached(key, fn, ttl=300):
+    """Genel amacli bellek-ici TTL onbellek. Nadiren degisen liste sayfalari
+    (karsilastirma/koleksiyon/rehber listeleri vb.) icin kullanilir."""
+    now = time.time()
+    entry = _simple_caches.get(key)
+    if entry is None or (now - entry["ts"] > ttl):
+        _simple_caches[key] = {"data": fn(), "ts": now}
+    return _simple_caches[key]["data"]
 
 
 _TRACKED_ENDPOINTS = {
@@ -334,13 +353,21 @@ def turkce_tarih(date_str):
 
 @app.context_processor
 def inject_globals():
-    """Tum template'lerde kullanilabilecek global degiskenler."""
-    footer_guides = get_all_guides()[:5]
-    footer_comparisons = get_all_comparisons()[:5]
-    # get_all_topics() yerine get_merged_topics() kullanilir: ayni Turkce
-    # etikete cevrilen farkli ham topic'ler (AI/Artificial Intelligence gibi)
-    # footer'da iki kez gorunmesin diye birlestirilir.
-    footer_topics = [(t["raw_topic"], t["count"]) for t in get_merged_topics()[:6]]
+    """Tum template'lerde kullanilabilecek global degiskenler.
+    Footer verileri (guides/comparisons/topics) neredeyse hic degismedigi icin
+    her sayfa renderinda yeniden sorgulamak yerine 5 dakikalik bellek-ici
+    (in-memory) onbellek kullanilir - sekme/sayfa gecislerini belirgin hizlandirir."""
+    now = time.time()
+    if (_footer_cache["data"] is None) or (now - _footer_cache["ts"] > 300):
+        _footer_cache["data"] = {
+            "footer_guides": get_all_guides()[:5],
+            "footer_comparisons": get_all_comparisons()[:5],
+            "footer_topics": [(t["raw_topic"], t["count"]) for t in get_merged_topics()[:6]],
+        }
+        _footer_cache["ts"] = now
+    footer_guides = _footer_cache["data"]["footer_guides"]
+    footer_comparisons = _footer_cache["data"]["footer_comparisons"]
+    footer_topics = _footer_cache["data"]["footer_topics"]
     try:
         # Vercel her deploy'da VERCEL_GIT_COMMIT_SHA'yi otomatik enjekte eder - bu deploy'a
         # gore gercekten degisir. Dosya mtime'ina guvenmiyoruz cunku Vercel'in build sureci
@@ -371,44 +398,40 @@ def inject_globals():
 
 @app.route("/")
 def home():
-    trending = get_trending_products(limit=6)
-    recent = get_recent_products(limit=6)
-    trending_ids = [p["id"] for p in trending]
-    weekly_top = get_top_products_by_period(days=7, limit=6, exclude_ids=trending_ids)
-    monthly_top = get_top_products_by_period(days=30, limit=6, exclude_ids=trending_ids + [p["id"] for p in weekly_top])
-    topics = get_merged_topics()
-    comparisons = get_all_comparisons()
-    
-    # Get total product count for the stats section
-    from db import get_connection
-    from datetime import datetime, timezone, timedelta
-    conn = get_connection()
-    total_products = dict(conn.execute("SELECT COUNT(*) as cnt FROM products").fetchone())["cnt"]
-    thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
-    new_last_30d = dict(conn.execute(
-        "SELECT COUNT(*) as cnt FROM products WHERE created_at >= ?", (thirty_days_ago,)
-    ).fetchone())["cnt"]
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    new_today = dict(conn.execute(
-        "SELECT COUNT(*) as cnt FROM products WHERE created_at >= ?", (today_str,)
-    ).fetchone())["cnt"]
-    conn.close()
-    three_days_ago = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%d")
+    now = time.time()
+    if (_home_cache["data"] is None) or (now - _home_cache["ts"] > 300):
+        trending = get_trending_products(limit=6)
+        recent = get_recent_products(limit=6)
+        trending_ids = [p["id"] for p in trending]
+        weekly_top = get_top_products_by_period(days=7, limit=6, exclude_ids=trending_ids)
+        monthly_top = get_top_products_by_period(days=30, limit=6, exclude_ids=trending_ids + [p["id"] for p in weekly_top])
+        topics = get_merged_topics()
+        comparisons = get_all_comparisons()
 
-    return render_template(
-        "index.html",
-        trending=trending,
-        recent=recent,
-        weekly_top=weekly_top,
-        monthly_top=monthly_top,
-        topics=topics,
-        comparisons=comparisons,
-        total_products=total_products,
-        new_last_30d=new_last_30d,
-        new_today=new_today,
-        new_cutoff=three_days_ago,
-        use_case_cta=USE_CASE_CTA,
-    )
+        # Get total product count for the stats section
+        from db import get_connection
+        from datetime import datetime, timezone, timedelta
+        conn = get_connection()
+        total_products = dict(conn.execute("SELECT COUNT(*) as cnt FROM products").fetchone())["cnt"]
+        thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+        new_last_30d = dict(conn.execute(
+            "SELECT COUNT(*) as cnt FROM products WHERE created_at >= ?", (thirty_days_ago,)
+        ).fetchone())["cnt"]
+        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        new_today = dict(conn.execute(
+            "SELECT COUNT(*) as cnt FROM products WHERE created_at >= ?", (today_str,)
+        ).fetchone())["cnt"]
+        conn.close()
+        three_days_ago = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%d")
+
+        _home_cache["data"] = dict(
+            trending=trending, recent=recent, weekly_top=weekly_top, monthly_top=monthly_top,
+            topics=topics, comparisons=comparisons, total_products=total_products,
+            new_last_30d=new_last_30d, new_today=new_today, new_cutoff=three_days_ago,
+        )
+        _home_cache["ts"] = now
+
+    return render_template("index.html", use_case_cta=USE_CASE_CTA, **_home_cache["data"])
 
 
 @app.route("/urun/<slug>")
@@ -432,13 +455,13 @@ def detail(slug):
 
 @app.route("/karsilastirma")
 def comparisons_list():
-    comparisons = get_all_comparisons()
+    comparisons = cached("comparisons_list", get_all_comparisons)
     return render_template("comparisons.html", comparisons=comparisons)
 
 
 @app.route("/rehber")
 def guides_list():
-    guides = get_all_guides()
+    guides = cached("guides_list", get_all_guides)
     return render_template("guides.html", guides=guides)
 
 
@@ -659,7 +682,7 @@ def sitemap():
 @app.route("/koleksiyonlar")
 def collections_list():
     from db import get_all_collections
-    collections = get_all_collections()
+    collections = cached("collections_list", get_all_collections)
     icon_map = {
         "yazilim": "💻", "yazılım": "💻", "startup": "🚀", "girisim": "🚀",
         "sanat": "🎨", "sanatci": "🎨", "gorsel": "🎨", "tasarim": "🎨",
