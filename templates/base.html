@@ -24,7 +24,8 @@
 <link rel="apple-touch-icon" href="/static/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=optional" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=optional" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=optional"></noscript>
 <link rel="stylesheet" href="/static/style.css?v={{ asset_version }}">
 <script type="application/ld+json">
 {
@@ -154,7 +155,7 @@ document.getElementById("newsletter-form").addEventListener("submit", async func
   <button id="lightbox-next" class="lightbox-nav lightbox-next" aria-label="Sonraki">›</button>
 </div>
 
-<script src="/static/app.js"></script>
+<script src="/static/app.js" defer></script>
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
 </script>
