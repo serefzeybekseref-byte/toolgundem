@@ -2096,6 +2096,22 @@ h1, h2, h3, h4 {
   color: var(--text-secondary);
 }
 
+/* AdSense reklam alanlari icin sabit yer ayirma - reklam gec yuklendiginde
+   sayfanin tumu asagi kaymasin diye (CLS = 1 buradan kaynaklaniyordu, mobilde
+   agir yuklenen reklam icerigi altindaki her seyi asagi itiyordu). */
+.adsense-banner-container,
+.adsense-home-container,
+.adsense-sidebar-container {
+  min-height: 250px;
+}
+@media (max-width: 640px) {
+  .adsense-banner-container,
+  .adsense-home-container,
+  .adsense-sidebar-container {
+    min-height: 100px;
+  }
+}
+
 /* Scroll to top button */
 .scroll-top {
   position: fixed;
