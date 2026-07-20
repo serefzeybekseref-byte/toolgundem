@@ -187,6 +187,12 @@ def init_db():
         )
     """)
     conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS daily_visits (
+            visit_date TEXT PRIMARY KEY,
+            count INTEGER DEFAULT 0
+        )
+    """)
+    conn.execute(f"""
         CREATE TABLE IF NOT EXISTS comparison_items (
             id {pk},
             comparison_id INTEGER NOT NULL,
@@ -674,6 +680,58 @@ def mark_queue_item(queue_id: int, status: str):
     )
     conn.commit()
     conn.close()
+
+
+def record_visit():
+    """Her sayfa istegi icin bugunun ziyaret sayacini bir artirir (UPSERT).
+    Agir olmasin diye tek satirlik bir counter - detayli per-page log tutmuyor."""
+    from datetime import date
+    today = date.today().isoformat()
+    conn = get_connection()
+    if USE_POSTGRES:
+        conn.execute("""
+            INSERT INTO daily_visits (visit_date, count) VALUES (?, 1)
+            ON CONFLICT (visit_date) DO UPDATE SET count = daily_visits.count + 1
+        """, (today,))
+    else:
+        conn.execute("""
+            INSERT INTO daily_visits (visit_date, count) VALUES (?, 1)
+            ON CONFLICT(visit_date) DO UPDATE SET count = count + 1
+        """, (today,))
+    conn.commit()
+    conn.close()
+
+
+def get_visit_stats():
+    """Admin paneli icin: bugun, son 7 gun, toplam ziyaret."""
+    from datetime import date, timedelta
+    conn = get_connection()
+    today = date.today().isoformat()
+    week_ago = (date.today() - timedelta(days=7)).isoformat()
+
+    today_row = conn.execute("SELECT count FROM daily_visits WHERE visit_date = ?", (today,)).fetchone()
+    today_count = dict(today_row)["count"] if today_row else 0
+
+    week_row = conn.execute(
+        "SELECT COALESCE(SUM(count), 0) as c FROM daily_visits WHERE visit_date >= ?", (week_ago,)
+    ).fetchone()
+    week_count = dict(week_row)["c"]
+
+    total_row = conn.execute("SELECT COALESCE(SUM(count), 0) as c FROM daily_visits").fetchone()
+    total_count = dict(total_row)["c"]
+
+    conn.close()
+    return {"today": today_count, "last_7_days": week_count, "total": total_count}
+
+
+def get_all_subscribers():
+    """Admin paneli icin: tum abonelerin (aktif) e-posta listesi + tarih."""
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT email, subscribed_at, is_active FROM subscribers ORDER BY subscribed_at DESC"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def get_admin_stats():

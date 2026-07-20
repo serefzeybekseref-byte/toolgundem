@@ -32,6 +32,49 @@
     </div>
   </div>
 
+  <h2 style="font-size:1.2rem; margin-bottom:12px;">Ziyaret ve Abone</h2>
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:12px;">
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">BUGÜNKÜ ZİYARET</div>
+      <div style="font-size:2rem; font-weight:700;">{{ visits.today }}</div>
+    </div>
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">SON 7 GÜN</div>
+      <div style="font-size:2rem; font-weight:700;">{{ visits.last_7_days }}</div>
+    </div>
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">TOPLAM ZİYARET</div>
+      <div style="font-size:2rem; font-weight:700;">{{ visits.total }}</div>
+    </div>
+    <div id="subscriber-box" onclick="toggleSubscribers()" style="cursor:pointer; padding:20px; background: var(--surface); border:1px solid var(--accent); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">ABONE (tıkla, e-postaları gör)</div>
+      <div style="font-size:2rem; font-weight:700; color: var(--accent);">{{ subscribers|selectattr('is_active')|list|length }}</div>
+    </div>
+  </div>
+  <p style="color: var(--text-secondary); font-size:0.78rem; margin-bottom:12px;">
+    Ziyaret sayısı basit dahili sayaçtır (sayfa isteği başına +1) — bot trafiğini ayırmaz, kaba bir tahmindir.
+  </p>
+
+  <div id="subscriber-list" style="display:none; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); overflow:hidden; margin-bottom:32px; max-height:400px; overflow-y:auto;">
+    {% for s in subscribers %}
+    <div style="display:flex; justify-content:space-between; padding:10px 16px; {% if not loop.last %}border-bottom:1px solid var(--border);{% endif %} {% if not s.is_active %}opacity:0.5;{% endif %}">
+      <span class="mono" style="font-size:0.85rem;">{{ s.email }}</span>
+      <span class="mono" style="color: var(--text-secondary); font-size:0.78rem;">
+        {{ s.subscribed_at[:10] if s.subscribed_at else '' }} {% if not s.is_active %}(pasif){% endif %}
+      </span>
+    </div>
+    {% endfor %}
+    {% if not subscribers %}
+    <div style="padding:16px; color: var(--text-secondary);">Henüz abone yok.</div>
+    {% endif %}
+  </div>
+  <script>
+    function toggleSubscribers() {
+      const el = document.getElementById('subscriber-list');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+  </script>
+
   <h2 style="font-size:1.2rem; margin-bottom:12px;">Kalite Skoru Dağılımı</h2>
   <div style="display:flex; gap:16px; margin-bottom:32px;">
     <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">

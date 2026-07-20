@@ -14,6 +14,7 @@ from db import (
     subscribe_email, unsubscribe_email,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
     get_admin_stats, get_all_guides, get_guide_by_slug, get_related_guides,
+    record_visit, get_visit_stats, get_all_subscribers,
     get_guides_for_topic, get_guides_for_tool_slug, get_guides_for_comparison_slug,
     get_products_by_slugs, get_comparisons_by_slugs,
     BEST_FOR_TYPES,
@@ -26,6 +27,21 @@ logger = logging.getLogger("toolgundem")
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 init_db()
+
+
+_SKIP_VISIT_PREFIXES = ("/static/", "/admin", "/sitemap.xml", "/robots.txt", "/favicon")
+
+
+@app.before_request
+def _track_visit():
+    """Her sayfa istegini (statik dosyalar/admin/sitemap haric) gunluk sayaca ekler.
+    Hata olursa sayfayi bozmasin diye sessizce yutuluyor."""
+    if request.path.startswith(_SKIP_VISIT_PREFIXES):
+        return
+    try:
+        record_visit()
+    except Exception:
+        pass
 
 
 @app.teardown_appcontext
@@ -699,7 +715,9 @@ def admin():
     if not expected or token != expected:
         abort(404)  # 401 yerine 404 -> panelin varligini gizler
     stats = get_admin_stats()
-    return render_template("admin.html", stats=stats)
+    visits = get_visit_stats()
+    subscribers = get_all_subscribers()
+    return render_template("admin.html", stats=stats, visits=visits, subscribers=subscribers, admin_token=token)
 
 
 @app.errorhandler(404)
