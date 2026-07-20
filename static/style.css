@@ -2098,18 +2098,13 @@ h1, h2, h3, h4 {
 
 /* AdSense reklam alanlari icin sabit yer ayirma - reklam gec yuklendiginde
    sayfanin tumu asagi kaymasin diye (CLS = 1 buradan kaynaklaniyordu, mobilde
-   agir yuklenen reklam icerigi altindaki her seyi asagi itiyordu). */
+   agir yuklenen reklam icerigi altindaki her seyi asagi itiyordu).
+   Not: mobilde daha kucuk min-height (100px) denendi ama gercek reklam boyutu
+   onu asiyordu ve kayma devam ediyordu - simdi tum cihazlarda ayni (250px). */
 .adsense-banner-container,
 .adsense-home-container,
 .adsense-sidebar-container {
   min-height: 250px;
-}
-@media (max-width: 640px) {
-  .adsense-banner-container,
-  .adsense-home-container,
-  .adsense-sidebar-container {
-    min-height: 100px;
-  }
 }
 
 /* Scroll to top button */
