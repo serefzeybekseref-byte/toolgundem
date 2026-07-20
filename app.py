@@ -27,6 +27,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("toolgundem")
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
+# Statik dosyalar (CSS/JS/img) icin uzun sureli tarayici onbellegi. style.css ve favicon
+# ?v={{ asset_version }} ile versiyonlu oldugu icin guvenle uzun tutulabilir; favicon.ico/
+# icon-192.png gibi birkac dosya versiyonsuz kaldigi icin 1 yil yerine 30 gun (daha guvenli
+# bir denge) seciliyor - bkz. inject_globals().
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 2592000  # 30 gun
 init_db()
 
 # Footer verileri (rehber/karsilastirma/konu listesi) icin bellek-ici onbellek.
