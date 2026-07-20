@@ -17,7 +17,7 @@ from db import (
     record_visit, get_visit_stats, get_all_subscribers,
     get_guides_for_topic, get_guides_for_tool_slug, get_guides_for_comparison_slug,
     get_products_by_slugs, get_comparisons_by_slugs,
-    BEST_FOR_TYPES,
+    BEST_FOR_TYPES, record_outbound_click_event,
 )
 import os
 from rules_engine import derive_use_cases_and_personas
@@ -36,12 +36,43 @@ _TRACKED_ENDPOINTS = {
 }
 
 
+BOT_KEYWORDS = [
+    "googlebot", "bingbot", "yandexbot", "ahrefsbot", "semrushbot", "mj12bot",
+    "gptbot", "claudebot", "perplexitybot", "bytespider", "applebot", "crawl",
+    "spider", "slurp", "facebookexternalhit", "twitterbot", "linkedinbot", "ia_archiver"
+]
+
+def is_bot(user_agent_str):
+    if not user_agent_str:
+        return True
+    ua = user_agent_str.lower()
+    return any(bot in ua for bot in BOT_KEYWORDS)
+
+def parse_device(user_agent_str):
+    if not user_agent_str:
+        return "Unknown"
+    if is_bot(user_agent_str):
+        return "Bot"
+    ua = user_agent_str.lower()
+    if "ipad" in ua or "tablet" in ua or ("android" in ua and "mobile" not in ua):
+        return "Tablet"
+    if "mobile" in ua or "android" in ua or "iphone" in ua or "ipod" in ua:
+        return "Mobile"
+    if "windows" in ua or "macintosh" in ua or "linux" in ua:
+        return "Desktop"
+    return "Unknown"
+
 @app.before_request
 def _track_visit():
     """Sadece gercek HTML sayfa yuklemelerini (beyaz listedeki endpoint'leri)
     tarayici cerezine gore tekillestirerek ziyaret sayacina ekler.
-    API istekleri, statik dosyalar, sitemap, favicon veya eksik apple-touch-icon
-    istekleri gibi arka plan isteklerinin sayaci sisirmesini kesin olarak engeller."""
+    Ayrıca kullanıcılara uzun vadeli anonim bir tg_session çerezi atar."""
+    # tg_session çerezi yoksa oluştur (her istek için geçerli)
+    session_id = request.cookies.get("tg_session")
+    if not session_id:
+        import uuid
+        g._new_session_id = uuid.uuid4().hex
+
     if request.endpoint not in _TRACKED_ENDPOINTS:
         return
     from datetime import date
@@ -57,11 +88,15 @@ def _track_visit():
 
 @app.after_request
 def _set_visit_cookie(response):
-    """_track_visit bu istekte yeni bir ziyaret saydiysa, ayni tarayicinin bugun tekrar
-    sayilmamasi icin bir cerez birakir (1 gun gecerli, HttpOnly - JS erisemez)."""
+    """Oturum ve ziyaret çerezlerini tarayıcıya yazar."""
     today = getattr(g, "_mark_visit_cookie", None)
     if today:
         response.set_cookie("tg_visited", today, max_age=60 * 60 * 24, httponly=True, samesite="Lax", secure=True)
+    
+    new_session = getattr(g, "_new_session_id", None)
+    if new_session:
+        # tg_session çerezi 1 yıl (365 gün) saklanır
+        response.set_cookie("tg_session", new_session, max_age=60 * 60 * 24 * 365, httponly=True, samesite="Lax", secure=True)
     return response
 
 
@@ -253,9 +288,18 @@ def get_comparison_icon(title):
     return "🏆"
 
 
-def get_cta_url(product):
-    """Affiliate linki varsa onu, yoksa resmi siteyi dondurur (kullanici fark etmez)."""
-    return (product.get("affiliate_url") or "").strip() or product.get("website", "")
+def get_cta_url(product, type='website', ref='product'):
+    """Tüm dışa yönlendirme linklerini /go/<slug> köprüsüne bağlar."""
+    slug = product.get("slug")
+    if not slug:
+        return (product.get("affiliate_url") or "").strip() or product.get("website", "")
+    from urllib.parse import urlencode
+    params = {"type": type, "ref": ref}
+    if ref == "search":
+        q = request.args.get("q", "").strip()
+        if q:
+            params["q"] = q
+    return f"/go/{slug}?{urlencode(params)}"
 
 
 def get_cta_label(product):
@@ -750,7 +794,147 @@ def admin():
     stats = get_admin_stats()
     visits = get_visit_stats()
     subscribers = get_all_subscribers()
-    return render_template("admin.html", stats=stats, visits=visits, subscribers=subscribers, admin_token=token)
+    
+    # Yeni analitik sorgularını çek
+    from db import (
+        get_top_clicked_tools_stats,
+        get_category_clicks_stats,
+        get_search_queries_stats,
+        get_zero_click_tools_stats,
+        get_orphan_opportunity_stats
+    )
+    top_clicked = get_top_clicked_tools_stats(days=30)
+    category_clicks = get_category_clicks_stats(days=30)
+    search_queries = get_search_queries_stats(days=30)
+    zero_clicks = get_zero_click_tools_stats(days=90)
+    orphans = get_orphan_opportunity_stats(days=30, limit=10)
+    
+    # Gelir simülatörü ayarları (GET parametreleri ile oynanabilir)
+    conv_rate = request.args.get("conv", 2.0, type=float)
+    avg_comm = request.args.get("comm", 18.0, type=float)
+    
+    # Toplam tıklama sayısı (Bugün)
+    from datetime import date
+    from db import get_daily_clicks_count
+    today_str = date.today().isoformat()
+    today_clicks = get_daily_clicks_count(today_str)
+    
+    return render_template(
+        "admin.html", 
+        stats=stats, 
+        visits=visits, 
+        subscribers=subscribers, 
+        admin_token=token,
+        top_clicked=top_clicked,
+        category_clicks=category_clicks,
+        search_queries=search_queries,
+        zero_clicks=zero_clicks,
+        orphans=orphans,
+        conv_rate=conv_rate,
+        avg_comm=avg_comm,
+        today_clicks=today_clicks
+    )
+
+
+@app.route("/go/<slug>")
+def outbound_redirect(slug):
+    from flask import redirect
+    product = get_product_by_slug(slug)
+    if not product:
+        abort(404)
+        
+    ua = request.headers.get("User-Agent", "")
+    
+    # 1. Bot Filtreleme
+    if is_bot(ua):
+        dest_url = (product.get("affiliate_url") or "").strip() or product.get("website", "")
+        if not dest_url.startswith(("http://", "https://")):
+            dest_url = "https://" + dest_url
+        return redirect(dest_url)
+        
+    # 2. Parametreleri Normalize Et
+    dest_type = request.args.get("type", "website").strip().lower()
+    valid_types = {"website", "affiliate", "github", "pricing", "docs", "discord", "download", "demo", "youtube", "api"}
+    if dest_type not in valid_types:
+        dest_type = "website"
+        
+    referrer = request.args.get("ref", "external").strip().lower()
+    valid_refs = {"home", "product", "guide", "comparison", "collection", "category", "search", "newsletter", "trending", "admin", "external"}
+    if referrer not in valid_refs:
+        referrer = "external"
+        
+    raw_query = request.args.get("q", "").strip()
+    import re
+    search_query = re.sub(r"\s+", " ", raw_query.lower()) if raw_query else None
+    
+    # 3. Country & Device Normalization
+    country = request.headers.get("X-Vercel-IP-Country", "Unknown").strip().upper()
+    device = parse_device(ua)
+    
+    # 4. Session ID
+    session_id = request.cookies.get("tg_session")
+    
+    # 5. Olayı Kaydet
+    try:
+        record_outbound_click_event(
+            session_id=session_id,
+            product_id=product["id"],
+            dest_type=dest_type,
+            referrer=referrer,
+            search_query=search_query,
+            country=country,
+            device=device
+        )
+    except Exception as e:
+        logger.error(f"Failed to record outbound click: {e}")
+        
+    # 6. Yönlendir
+    dest_url = (product.get("affiliate_url") or "").strip() or product.get("website", "")
+        
+    if not dest_url.startswith(("http://", "https://")):
+        dest_url = "https://" + dest_url
+        
+    return redirect(dest_url)
+
+
+@app.route("/admin/export/clicks")
+def export_clicks():
+    token = request.args.get("token", "")
+    expected = os.getenv("ADMIN_TOKEN", "")
+    if not expected or token != expected:
+        abort(404)
+        
+    from db import get_raw_click_events_for_csv
+    events = get_raw_click_events_for_csv(days=30)
+    
+    import csv
+    import io
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow([
+        "event_uuid", "session_id", "product_name", "product_slug",
+        "clicked_at", "destination_type", "referrer", "search_query", "country", "device"
+    ])
+    
+    for e in events:
+        writer.writerow([
+            e.get("event_uuid"),
+            e.get("session_id"),
+            e.get("product_name"),
+            e.get("product_slug"),
+            e.get("clicked_at"),
+            e.get("destination_type"),
+            e.get("referrer"),
+            e.get("search_query"),
+            e.get("country"),
+            e.get("device")
+        ])
+        
+    response = Response(output.getvalue(), mimetype="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=outbound_clicks_last_30_days.csv"
+    return response
 
 
 @app.errorhandler(404)

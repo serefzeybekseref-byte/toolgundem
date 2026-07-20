@@ -1,61 +1,41 @@
-﻿{% extends "base.html" %}
-{% block title %}Admin Panel — BulurumAI{% endblock %}
+{% extends "base.html" %}
+{% block title %}Admin Panel & Analitik — BulurumAI{% endblock %}
 {% block content %}
-<div class="container" style="max-width: 1000px;">
-  <h1 class="detail-title" style="margin: 24px 0 8px;">📊 Admin Panel</h1>
-  <p style="color: var(--text-secondary); margin-bottom: 32px;">Sadece sende görünen dahili istatistik sayfası.</p>
-
-  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:32px;">
-    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">TOPLAM ÜRÜN</div>
-      <div style="font-size:2rem; font-weight:700;">{{ stats.total_products }}</div>
+<div class="container" style="max-width: 1100px;">
+  
+  <!-- Header Block with Title & CSV Export -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin: 24px 0 32px; flex-wrap:wrap; gap:16px;">
+    <div>
+      <h1 class="detail-title" style="margin: 0 0 8px;">📊 Admin Panel & Analitik</h1>
+      <p style="color: var(--text-secondary); margin:0;">Sadece sende görünen dahili istatistik, trafik ve gelir paneli.</p>
     </div>
-    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">ORTALAMA KALİTE SKORU</div>
-      <div style="font-size:2rem; font-weight:700; color: var(--accent);">{{ stats.avg_quality }}</div>
-    </div>
-    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">EN İYİ AI ARAÇLARI</div>
-      <div style="font-size:2rem; font-weight:700;">{{ stats.total_comparisons }}</div>
-    </div>
-    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">KOLEKSİYON</div>
-      <div style="font-size:2rem; font-weight:700;">{{ stats.total_collections }}</div>
-    </div>
-    <div style="padding:20px; background: var(--surface); border:1px solid #e5484d55; border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">KIRIK LİNK</div>
-      <div style="font-size:2rem; font-weight:700; color:#e5484d;">{{ stats.broken_links }}</div>
-    </div>
-    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">HİÇ KONTROL EDİLMEMİŞ</div>
-      <div style="font-size:2rem; font-weight:700;">{{ stats.never_checked }}</div>
-    </div>
+    <a href="/admin/export/clicks?token={{ admin_token }}" class="btn btn-outline" style="display:inline-flex; align-items:center; gap:8px; border-color:var(--accent); color:var(--accent);">
+      📥 CSV Dışa Aktar (Son 30 Gün)
+    </a>
   </div>
 
-  <h2 style="font-size:1.2rem; margin-bottom:12px;">Ziyaret ve Abone</h2>
-  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:12px;">
+  <!-- Row 1: Today Clicks, Today Visitors, Last 7d, Newsletter Subs -->
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:32px;">
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">BUGÜNKÜ ORGANİK DIŞ TIKLAMA</div>
+      <div style="font-size:2rem; font-weight:700; color: var(--accent);">{{ today_clicks }}</div>
+    </div>
     <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
       <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">BUGÜNKÜ ZİYARETÇİ</div>
       <div style="font-size:2rem; font-weight:700;">{{ visits.today }}</div>
     </div>
     <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">SON 7 GÜN</div>
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">SON 7 GÜN ZİYARET</div>
       <div style="font-size:2rem; font-weight:700;">{{ visits.last_7_days }}</div>
     </div>
-    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">TOPLAM ZİYARET</div>
-      <div style="font-size:2rem; font-weight:700;">{{ visits.total }}</div>
-    </div>
-    <div id="subscriber-box" onclick="toggleSubscribers()" style="cursor:pointer; padding:20px; background: var(--surface); border:1px solid var(--accent); border-radius: var(--radius-lg);">
-      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">ABONE (tıkla, e-postaları gör)</div>
+    <div id="subscriber-box" onclick="toggleSubscribers()" style="cursor:pointer; padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); transition: border-color 0.2s ease;">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">BÜLTEN ABONESİ (tıkla, gör)</div>
       <div style="font-size:2rem; font-weight:700; color: var(--accent);">{{ subscribers|selectattr('is_active')|list|length }}</div>
     </div>
   </div>
-  <p style="color: var(--text-secondary); font-size:0.78rem; margin-bottom:12px;">
-    Ziyaret sayısı basit dahili sayaçtır (sayfa isteği başına +1) — bot trafiğini ayırmaz, kaba bir tahmindir.
-  </p>
 
-  <div id="subscriber-list" style="display:none; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); overflow:hidden; margin-bottom:32px; max-height:400px; overflow-y:auto;">
+  <!-- Subscriber list toggle wrapper -->
+  <div id="subscriber-list" style="display:none; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); overflow:hidden; margin-bottom:32px; max-height:250px; overflow-y:auto;">
     {% for s in subscribers %}
     <div style="display:flex; justify-content:space-between; padding:10px 16px; {% if not loop.last %}border-bottom:1px solid var(--border);{% endif %} {% if not s.is_active %}opacity:0.5;{% endif %}">
       <span class="mono" style="font-size:0.85rem;">{{ s.email }}</span>
@@ -71,67 +51,263 @@
   <script>
     function toggleSubscribers() {
       const el = document.getElementById('subscriber-list');
-      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      const box = document.getElementById('subscriber-box');
+      if (el.style.display === 'none') {
+        el.style.display = 'block';
+        box.style.borderColor = 'var(--accent)';
+      } else {
+        el.style.display = 'none';
+        box.style.borderColor = 'var(--border)';
+      }
     }
   </script>
 
-  <h2 style="font-size:1.2rem; margin-bottom:12px;">Kalite Skoru Dağılımı</h2>
-  <div style="display:flex; gap:16px; margin-bottom:32px;">
-    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div style="color:#3fb950; font-weight:700; font-size:1.4rem;">{{ stats.quality_buckets.yuksek }}</div>
-      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Yüksek (≥80)</div>
-    </div>
-    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div style="color:#e3b341; font-weight:700; font-size:1.4rem;">{{ stats.quality_buckets.orta }}</div>
-      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Orta (50-79)</div>
-    </div>
-    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div style="color:#e5484d; font-weight:700; font-size:1.4rem;">{{ stats.quality_buckets.dusuk }}</div>
-      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Düşük (&lt;50)</div>
+  <!-- Row 2: Revenue Simulator & Potential Income -->
+  <div style="display:grid; grid-template-columns: 1fr; gap:24px; margin-bottom:32px;">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px; padding:24px; background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(99,102,241,0.01)); border:1px solid var(--accent); border-radius: var(--radius-lg);">
+      
+      <!-- Simulator Settings Panel -->
+      <div>
+        <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px; color:var(--text);">⚙️ Gelir Simülatörü Ayarları</h3>
+        <form method="GET" action="/admin" style="display:flex; flex-direction:column; gap:12px;">
+          <input type="hidden" name="token" value="{{ admin_token }}">
+          <div>
+            <label style="display:block; font-size:0.8rem; color: var(--text-secondary); margin-bottom:4px;">Dönüşüm Oranı (Conversion):</label>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <input type="range" name="conv" min="0.5" max="10.0" step="0.5" value="{{ conv_rate }}" oninput="document.getElementById('conv-val').innerText = this.value + '%'" style="flex:1;">
+              <span id="conv-val" class="mono" style="font-size:0.85rem; font-weight:600; width:45px; text-align:right;">{{ conv_rate }}%</span>
+            </div>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.8rem; color: var(--text-secondary); margin-bottom:4px;">Ortalama Komisyon ($):</label>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <input type="range" name="comm" min="5" max="100" step="1" value="{{ avg_comm }}" oninput="document.getElementById('comm-val').innerText = '$' + this.value" style="flex:1;">
+              <span id="comm-val" class="mono" style="font-size:0.85rem; font-weight:600; width:45px; text-align:right;">${{ avg_comm|int }}</span>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-outline" style="padding:6px; border-radius:var(--radius-sm); font-size:0.82rem; margin-top:4px;">Simülasyonu Güncelle</button>
+        </form>
+      </div>
+
+      <!-- Financial projections based on Top Clicked items -->
+      {% set total_clicks = top_clicked|sum(attribute='clicks_count') %}
+      {% set monthly_est = total_clicks * (conv_rate / 100.0) * avg_comm %}
+      {% set yearly_est = monthly_est * 12 %}
+      <div style="display:flex; flex-direction:column; justify-content:center; padding-left: 20px; border-left: 1px solid rgba(255,255,255,0.08);">
+        <div class="mono" style="font-size:0.75rem; color: var(--text-secondary); margin-bottom:4px;">AYLIK POTANSİYEL GELİR</div>
+        <div style="font-size:2.2rem; font-weight:800; color:var(--green);">${{ "%.2f"|format(monthly_est) }}</div>
+        <div style="font-size:0.78rem; color: var(--text-secondary); margin-top:6px;">En çok tıklanan ilk 10 aracın aylık trafiğine göredir.</div>
+      </div>
+      
+      <div style="display:flex; flex-direction:column; justify-content:center; padding-left: 20px; border-left: 1px solid rgba(255,255,255,0.08);">
+        <div class="mono" style="font-size:0.75rem; color: var(--text-secondary); margin-bottom:4px;">YILLIK POTANSİYEL GELİR</div>
+        <div style="font-size:2.2rem; font-weight:800; color:var(--green);">${{ "%.2f"|format(yearly_est) }}</div>
+        <div style="font-size:0.78rem; color: var(--text-secondary); margin-top:6px;">Yıllık ölçeklendirilmiş tahmini brüt kazanç potansiyeli.</div>
+      </div>
     </div>
   </div>
 
-  <h2 style="font-size:1.2rem; margin-bottom:12px;">Fiyatlandırma Dağılımı</h2>
-  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:32px;">
-    {% for p in stats.pricing_breakdown %}
-    <span class="tag">{{ p.pricing_type }}: {{ p.c }}</span>
-    {% endfor %}
+  <!-- Row 3: Top Clicked Tools with Affiliate Opportunity alert -->
+  <div style="margin-bottom:32px; padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
+    <h2 style="font-size:1.15rem; margin-top:0; margin-bottom:16px;">🔥 En Çok Tıklanan 10 Araç (Son 30 Gün)</h2>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; text-align:left;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border); color:var(--text-secondary); font-size:0.78rem;">
+            <th style="padding:10px; width:50px;">Rank</th>
+            <th style="padding:10px;">Araç</th>
+            <th style="padding:10px; text-align:right;">Clicks</th>
+            <th style="padding:10px; text-align:center;">Trend (7g)</th>
+            <th style="padding:10px; text-align:center;">Affiliate Durumu</th>
+            <th style="padding:10px; text-align:right;">Est. Revenue (30g)</th>
+          </tr>
+        </thead>
+         <tbody>
+           {% for tool in top_clicked %}
+           {% set tool_revenue = tool.clicks_count * (conv_rate / 100.0) * avg_comm %}
+           <tr style="border-bottom:1px solid rgba(255,255,255,0.03); font-size:0.88rem;">
+             <td style="padding:12px; font-weight:600; color:var(--text-secondary);">#{{ loop.index }}</td>
+             <td style="padding:12px;">
+               <a href="{{ url_for('detail', slug=tool.slug) }}" style="font-weight:600; color:var(--text); text-decoration:none;">{{ tool.original_name }}</a>
+             </td>
+             <td style="padding:12px; text-align:right; font-weight:bold;" class="mono">{{ tool.clicks_count }}</td>
+             <td style="padding:12px; text-align:center;">
+               {% if tool.trend_dir == 'up' %}
+               <span style="color:var(--green); font-weight:600;">{{ tool.trend_pct }} ↑</span>
+               {% elif tool.trend_dir == 'down' %}
+               <span style="color:#e5484d; font-weight:600;">{{ tool.trend_pct }} ↓</span>
+               {% else %}
+               <span style="color:var(--text-secondary);">{{ tool.trend_pct }} →</span>
+               {% endif %}
+             </td>
+             <td style="padding:12px; text-align:center;">
+               {% if tool.affiliate_url %}
+               <span style="color: var(--green); font-weight:600;">✅ Aktif</span>
+               {% else %}
+               <div style="display:inline-flex; align-items:center; gap:6px;">
+                 <span style="color:#e5484d; font-weight:600;">❌ Fırsat</span>
+                 <a href="https://www.google.com/search?q={{ tool.original_name|urlencode }}+affiliate+program" target="_blank" style="padding: 2px 6px; background:#e5484d22; border:1px solid #e5484d55; border-radius:4px; font-size:0.72rem; color:#e5484d; text-decoration:none; font-weight:bold;">Başvur</a>
+               </div>
+               {% endif %}
+             </td>
+             <td style="padding:12px; text-align:right; color:var(--green); font-weight:600;" class="mono">${{ "%.2f"|format(tool_revenue) }}</td>
+           </tr>
+           {% else %}
+           <tr>
+             <td colspan="6" style="padding:24px; text-align:center; color:var(--text-secondary);">Son 30 günde hiç dış tıklama alınmadı.</td>
+           </tr>
+           {% endfor %}
+         </tbody>
+      </table>
+    </div>
   </div>
 
-  <h2 style="font-size:1.2rem; margin-bottom:12px;">En Çok Kullanılan Kategoriler (Top 10)</h2>
-  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:32px;">
-    {% for topic, count in stats.top_topics %}
-    <span class="tag">{{ topic }} ({{ count }})</span>
-    {% endfor %}
+  <!-- Row 4: Two Column Grid for other sub-analytics -->
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:24px; margin-bottom:32px;">
+    
+    <!-- Left Column: Categories and Search Terms -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      
+      <!-- Category Click Share -->
+      <div style="padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
+        <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">📁 Kategori Tıklama Dağılımı</h3>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          {% for cat in category_clicks %}
+          {% set label = topic_labels.get(cat.topic, cat.topic) %}
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:4px;">
+              <span>{{ label }}</span>
+              <span class="mono" style="color:var(--text-secondary);">{{ cat.count }} click</span>
+            </div>
+            <!-- Progress bar -->
+            <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+              {% set max_click = category_clicks[0].count if category_clicks else 1 %}
+              {% set width_pct = (cat.count / max_click * 100)|int %}
+              <div style="height:100%; width:{{ width_pct }}%; background:var(--accent); border-radius:3px;"></div>
+            </div>
+          </div>
+          {% else %}
+          <p style="font-size:0.85rem; color:var(--text-secondary); text-align:center; margin:0; padding:12px;">Veri yok.</p>
+          {% endfor %}
+        </div>
+      </div>
+      
+      <!-- Search Intent -->
+      <div style="padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
+        <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">🔍 Arama Terimleri Performansı</h3>
+        <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border); color:var(--text-secondary); text-align:left;">
+              <th style="padding:6px 0;">Terim</th>
+              <th style="padding:6px 0; text-align:right;">Yönlendirme Clicks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sq in search_queries %}
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+              <td style="padding:8px 0; font-weight:600;" class="mono">{{ sq.query }}</td>
+              <td style="padding:8px 0; text-align:right; font-weight:bold;">{{ sq.clicks }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="2" style="padding:12px; text-align:center; color:var(--text-secondary);">Arama sorgulu yönlendirme bulunamadı.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Right Column: Orphan Opportunities and Zero Click alerts -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      
+      <!-- Orphan Opportunity (Missing content) -->
+      <div style="padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
+        <h3 style="font-size:1rem; margin-top:0; margin-bottom:12px;">💡 İçerik Öncelik (Orphan) Raporu</h3>
+        <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:16px;">En çok tıklanan ama kendine ait bir rehber, karşılaştırma veya koleksiyon dosyası eksik olan fırsatlar.</p>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          {% for o in orphans %}
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:8px;">
+            <div>
+              <span style="font-weight:600;">{{ o.original_name }}</span>
+              <span class="mono" style="font-size:0.72rem; color:var(--text-secondary); display:block;">{{ o.clicks }} click</span>
+            </div>
+            <!-- Missing badges -->
+            <div style="display:flex; gap:6px;">
+              {% if not o.has_guide %}
+              <span style="background:rgba(229,72,77,0.1); color:#e5484d; border:1px solid rgba(229,72,77,0.3); font-size:0.68rem; padding:2px 6px; border-radius:4px;">Rehber Yok</span>
+              {% endif %}
+              {% if not o.has_comparison %}
+              <span style="background:rgba(229,72,77,0.1); color:#e5484d; border:1px solid rgba(229,72,77,0.3); font-size:0.68rem; padding:2px 6px; border-radius:4px;">Kıyaslama Yok</span>
+              {% endif %}
+              {% if not o.has_collection %}
+              <span style="background:rgba(229,72,77,0.1); color:#e5484d; border:1px solid rgba(229,72,77,0.3); font-size:0.68rem; padding:2px 6px; border-radius:4px;">Koleksiyon Yok</span>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+          <p style="font-size:0.85rem; color:var(--text-secondary); text-align:center; margin:0; padding:12px;">Orphan fırsatı bulunamadı.</p>
+          {% endfor %}
+        </div>
+      </div>
+      
+      <!-- Zero Click (Atıl) Tools -->
+      <div style="padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
+        <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">❄️ Zero-Click (Atıl) Araçlar (90 Gün+)</h3>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          {% for z in zero_clicks %}
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:8px;">
+            <div>
+              <span style="font-weight:600;">{{ z.original_name }}</span>
+              <span class="mono" style="font-size:0.72rem; color:var(--text-secondary); display:block;">Eklenme: {{ z.created_at }}</span>
+            </div>
+            <span style="color:#e5484d; font-size:0.78rem; font-weight:600;" class="mono">{{ z.last_clicked_str }}</span>
+          </div>
+          {% else %}
+          <p style="font-size:0.85rem; color:var(--text-secondary); text-align:center; margin:0; padding:12px;">Atıl araç yok, hepsi aktif.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
   </div>
 
-  <h2 style="font-size:1.2rem; margin-bottom:12px;">Ürün Üretim Kuyruğu (Coverage Opportunity)</h2>
-  <p style="color: var(--text-secondary); font-size:0.85rem; margin-bottom:12px;">Karşılaştırmalarda geçen ama henüz kendi ürün sayfası olmayan araçlar. LLM kotası açılınca işlenecek.</p>
-  <div style="display:flex; gap:16px; margin-bottom:32px;">
-    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div style="color:#e5484d; font-weight:700; font-size:1.4rem;">{{ stats.generation_queue.get('High', 0) }}</div>
-      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Yüksek Öncelik</div>
-    </div>
-    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div style="color:#e3b341; font-weight:700; font-size:1.4rem;">{{ stats.generation_queue.get('Medium', 0) }}</div>
-      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Orta Öncelik</div>
-    </div>
-    <div style="flex:1; padding:16px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
-      <div style="color: var(--text-secondary); font-weight:700; font-size:1.4rem;">{{ stats.generation_queue.get('Low', 0) }}</div>
-      <div class="mono" style="font-size:0.8rem; color: var(--text-secondary);">Düşük Öncelik</div>
+  <!-- Row 5: Existing stats details (Quality, pricing breakdown, etc) -->
+  <div style="border-top:1px solid var(--border); padding-top:32px;">
+    <h2 style="font-size:1.15rem; margin-bottom:16px;">Dahili Dağılımlar</h2>
+    
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:24px; margin-bottom:32px;">
+      
+      <!-- Quality breakdown -->
+      <div style="padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
+        <h3 style="font-size:0.95rem; margin-top:0; margin-bottom:16px;">Kalite Skoru Dağılımı</h3>
+        <div style="display:flex; gap:12px;">
+          <div style="flex:1; padding:12px; background: rgba(63, 185, 80, 0.08); border:1px solid rgba(63,185,80,0.2); border-radius: var(--radius-md); text-align:center;">
+            <div style="color:#3fb950; font-weight:700; font-size:1.2rem;">{{ stats.quality_buckets.yuksek }}</div>
+            <div class="mono" style="font-size:0.7rem; color: var(--text-secondary); margin-top:4px;">Yüksek (≥80)</div>
+          </div>
+          <div style="flex:1; padding:12px; background: rgba(227, 179, 65, 0.08); border:1px solid rgba(227,179,65,0.2); border-radius: var(--radius-md); text-align:center;">
+            <div style="color:#e3b341; font-weight:700; font-size:1.2rem;">{{ stats.quality_buckets.orta }}</div>
+            <div class="mono" style="font-size:0.7rem; color: var(--text-secondary); margin-top:4px;">Orta (50-79)</div>
+          </div>
+          <div style="flex:1; padding:12px; background: rgba(229, 72, 77, 0.08); border:1px solid rgba(229,72,77,0.2); border-radius: var(--radius-md); text-align:center;">
+            <div style="color:#e5484d; font-weight:700; font-size:1.2rem;">{{ stats.quality_buckets.dusuk }}</div>
+            <div class="mono" style="font-size:0.7rem; color: var(--text-secondary); margin-top:4px;">Düşük (&lt;50)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pricing breakdown -->
+      <div style="padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
+        <h3 style="font-size:0.95rem; margin-top:0; margin-bottom:16px;">Fiyatlandırma Dağılımı</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          {% for p in stats.pricing_breakdown %}
+          <span class="tag" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); font-size:0.78rem;">{{ p.pricing_type }}: {{ p.c }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      
     </div>
   </div>
 
-  <h2 style="font-size:1.2rem; margin-bottom:12px;">Son Eklenen 10 Ürün</h2>
-  <div style="background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); overflow:hidden;">
-    {% for p in stats.recent %}
-    <div style="display:flex; justify-content:space-between; padding:12px 16px; {% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
-      <a href="{{ url_for('detail', slug=p.slug) }}">{{ p.original_name }}</a>
-      <span class="mono" style="color: var(--text-secondary); font-size:0.85rem;">
-        skor: {{ p.quality_score }} · {{ p.created_at[:10] if p.created_at else '' }}
-      </span>
-    </div>
-    {% endfor %}
-  </div>
 </div>
 {% endblock %}

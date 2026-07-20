@@ -296,6 +296,22 @@ def init_db():
         )
     """)
 
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS outbound_click_events (
+            id {pk},
+            event_uuid TEXT UNIQUE NOT NULL,
+            session_id TEXT,
+            product_id INTEGER NOT NULL,
+            clicked_at TEXT NOT NULL,
+            destination_type TEXT NOT NULL,
+            referrer TEXT NOT NULL,
+            search_query TEXT,
+            country TEXT DEFAULT 'Unknown',
+            device TEXT NOT NULL,
+            FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+    """)
+
     # Yeni kolonlar: veri modelini genisletir (duplicate kontrolu, filtreleme,
     # affiliate ve broken-link takibi icin). Zaten varsa hatasiz gecilir.
     new_columns = [
@@ -1548,3 +1564,273 @@ def get_comparisons_by_slugs(slugs):
     conn.close()
     by_slug = {dict(r)["slug"]: dict(r) for r in rows}
     return [by_slug[s] for s in slugs if s in by_slug]
+
+
+def record_outbound_click_event(session_id, product_id, dest_type, referrer, search_query, country, device):
+    """Yeni bir dışa yönlendirme (outbound click) olayını veritabanına kaydeder."""
+    import uuid
+    from datetime import datetime
+    
+    event_uuid = f"evt_{uuid.uuid4().hex}"
+    clicked_at = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    conn = get_connection()
+    conn.execute(
+        """
+        INSERT INTO outbound_click_events (
+            event_uuid, session_id, product_id, clicked_at, destination_type, referrer, search_query, country, device
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (event_uuid, session_id, product_id, clicked_at, dest_type, referrer, search_query, country, device)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_top_clicked_tools_stats(days=30):
+    """
+    En çok tıklanan araçları, tıklama sayılarını, 
+    7 günlük trendlerini (son 7 gün vs önceki 7 gün) ve affiliate durumunu hesaplar.
+    """
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    
+    now = datetime.utcnow()
+    t30 = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    t7 = (now - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    t14 = (now - timedelta(days=14)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    sql = """
+        SELECT 
+            p.id, p.original_name, p.slug, p.affiliate_url, p.is_partner,
+            COUNT(e.id) as clicks_count
+        FROM products p
+        JOIN outbound_click_events e ON p.id = e.product_id
+        WHERE e.clicked_at >= ?
+        GROUP BY p.id, p.original_name, p.slug, p.affiliate_url, p.is_partner
+        ORDER BY clicks_count DESC
+        LIMIT 10
+    """
+    rows = conn.execute(sql, (t30,)).fetchall()
+    top_tools = [dict(r) for r in rows]
+    
+    for tool in top_tools:
+        p_id = tool["id"]
+        # Son 7 gün tıklamaları
+        r7 = conn.execute(
+            "SELECT COUNT(id) as cnt FROM outbound_click_events WHERE product_id = ? AND clicked_at >= ?", 
+            (p_id, t7)
+        ).fetchone()
+        c7 = r7["cnt"] if r7 else 0
+        
+        # Önceki 7 gün tıklamaları (t14 ile t7 arası)
+        r_prev = conn.execute(
+            "SELECT COUNT(id) as cnt FROM outbound_click_events WHERE product_id = ? AND clicked_at >= ? AND clicked_at < ?",
+            (p_id, t14, t7)
+        ).fetchone()
+        c_prev = r_prev["cnt"] if r_prev else 0
+        
+        tool["clicks_last_7"] = c7
+        tool["clicks_prev_7"] = c_prev
+        
+        if c_prev > 0:
+            diff = c7 - c_prev
+            percent = int((diff / c_prev) * 100)
+            tool["trend_pct"] = f"{'+' if diff >= 0 else ''}{percent}%"
+            tool["trend_dir"] = "up" if diff >= 0 else "down"
+        else:
+            tool["trend_pct"] = f"+{c7 * 100}%" if c7 > 0 else "0%"
+            tool["trend_dir"] = "up" if c7 > 0 else "flat"
+            
+    conn.close()
+    return top_tools
+
+
+def get_category_clicks_stats(days=30):
+    """Kategorilerin tıklama hacimlerini döndürür."""
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    sql = """
+        SELECT p.topics, COUNT(e.id) as cnt
+        FROM products p
+        JOIN outbound_click_events e ON p.id = e.product_id
+        WHERE e.clicked_at >= ?
+        GROUP BY p.topics
+    """
+    rows = conn.execute(sql, (t_start,)).fetchall()
+    
+    cat_counts = {}
+    for r in rows:
+        topics_str = r["topics"] or ""
+        cnt = r["cnt"] or 0
+        for topic in topics_str.split(","):
+            topic = topic.strip()
+            if topic:
+                cat_counts[topic] = cat_counts.get(topic, 0) + cnt
+                
+    sorted_cats = sorted(cat_counts.items(), key=lambda x: x[1], reverse=True)
+    conn.close()
+    return [{"topic": t, "count": c} for t, c in sorted_cats[:10]]
+
+
+def get_search_queries_stats(days=30):
+    """Arama kelimeleri normalizasyonu yapılmış tıklama sayılarını listeler."""
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    sql = """
+        SELECT search_query, COUNT(id) as cnt
+        FROM outbound_click_events
+        WHERE clicked_at >= ? AND search_query IS NOT NULL AND search_query != ''
+        GROUP BY search_query
+        ORDER BY cnt DESC
+        LIMIT 10
+    """
+    rows = conn.execute(sql, (t_start,)).fetchall()
+    conn.close()
+    return [{"query": r["search_query"], "clicks": r["cnt"]} for r in rows]
+
+
+def get_zero_click_tools_stats(days=90):
+    """Son 90 günde hiç tıklanmamış araçları getirir."""
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    sql = """
+        SELECT 
+            p.id, p.original_name, p.slug, p.created_at, p.topics,
+            MAX(e.clicked_at) as last_clicked
+        FROM products p
+        LEFT JOIN outbound_click_events e ON p.id = e.product_id
+        WHERE p.is_broken IS NULL OR p.is_broken = 0
+        GROUP BY p.id, p.original_name, p.slug, p.created_at, p.topics
+        HAVING last_clicked IS NULL OR last_clicked < ?
+        ORDER BY last_clicked ASC, p.created_at ASC
+        LIMIT 10
+    """
+    rows = conn.execute(sql, (t_start,)).fetchall()
+    conn.close()
+    
+    result = []
+    for r in rows:
+        last_clicked = r["last_clicked"]
+        if last_clicked:
+            try:
+                last_dt = datetime.strptime(last_clicked[:19], "%Y-%m-%dT%H:%M:%S")
+                days_ago = (now - last_dt).days
+                time_str = f"{days_ago} gün önce"
+            except Exception:
+                time_str = "Bilinmiyor"
+        else:
+            time_str = "Hiç tıklanmadı"
+            
+        result.append({
+            "original_name": r["original_name"],
+            "slug": r["slug"],
+            "created_at": r["created_at"][:10] if r["created_at"] else "Bilinmiyor",
+            "last_clicked_str": time_str,
+            "topics": r["topics"]
+        })
+    return result
+
+
+def get_orphan_opportunity_stats(days=30, limit=10):
+    """En çok tıklanan ama rehberi, karşılaştırması veya koleksiyonu olmayan araçlar."""
+    conn = get_connection()
+    from datetime import datetime, timedelta
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    # 1. Koleksiyonlardaki tüm product_id'leri çek
+    collection_pids = {r["product_id"] for r in conn.execute("SELECT product_id FROM collection_items").fetchall()}
+    
+    # 2. Rehberlerdeki tüm related_tool_slug'ları çek
+    guides = conn.execute("SELECT related_tool_slugs FROM guides").fetchall()
+    guide_slugs = set()
+    for g in guides:
+        for s in (g["related_tool_slugs"] or "").split(","):
+            s = s.strip()
+            if s:
+                guide_slugs.add(s)
+                
+    # 3. Karşılaştırmalardaki tüm isimleri çek
+    comp_names = {r["name"].strip().lower() for r in conn.execute("SELECT name FROM comparison_items").fetchall()}
+    
+    # 4. En çok tıklanan araçları çek
+    sql = """
+        SELECT 
+            p.id, p.original_name, p.slug, p.topics,
+            COUNT(e.id) as clicks_count
+        FROM products p
+        JOIN outbound_click_events e ON p.id = e.product_id
+        WHERE e.clicked_at >= ?
+        GROUP BY p.id, p.original_name, p.slug, p.topics
+        ORDER BY clicks_count DESC
+    """
+    top_clicked = [dict(r) for r in conn.execute(sql, (t_start,)).fetchall()]
+    
+    orphans = []
+    for tool in top_clicked:
+        p_id = tool["id"]
+        slug = tool["slug"]
+        name_low = tool["original_name"].strip().lower()
+        
+        has_collection = p_id in collection_pids
+        has_guide = slug in guide_slugs
+        has_comparison = name_low in comp_names
+        
+        if not (has_collection and has_guide and has_comparison):
+            orphans.append({
+                "original_name": tool["original_name"],
+                "slug": slug,
+                "clicks": tool["clicks_count"],
+                "has_collection": has_collection,
+                "has_guide": has_guide,
+                "has_comparison": has_comparison,
+                "topics": tool["topics"]
+            })
+            if len(orphans) >= limit:
+                break
+                
+    conn.close()
+    return orphans
+
+
+def get_raw_click_events_for_csv(days=30):
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    sql = """
+        SELECT 
+            e.event_uuid, e.session_id, p.original_name as product_name, p.slug as product_slug,
+            e.clicked_at, e.destination_type, e.referrer, e.search_query, e.country, e.device
+        FROM outbound_click_events e
+        JOIN products p ON e.product_id = p.id
+        WHERE e.clicked_at >= ?
+        ORDER BY e.clicked_at DESC
+    """
+    rows = conn.execute(sql, (t_start,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_daily_clicks_count(date_str):
+    """Belirli bir gün (YYYY-MM-DD) içindeki toplam tıklama sayısını verir."""
+    conn = get_connection()
+    pattern = f"{date_str}%"
+    row = conn.execute(
+        "SELECT COUNT(id) as cnt FROM outbound_click_events WHERE clicked_at LIKE ? AND device != 'Bot'",
+        (pattern,)
+    ).fetchone()
+    conn.close()
+    return row["cnt"] if row else 0
+

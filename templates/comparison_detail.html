@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}{{ comparison.title }} ({{ comparison.updated_at[:4] }}) — BulurumAI{% endblock %}
 {% block description %}{{ comparison.intro }}{% endblock %}
 
@@ -67,7 +67,7 @@
         <div class="comparison-top">
           <div>
             <h3 class="comparison-name">
-              {% if item.website %}<a href="{{ item.website }}" target="_blank" rel="noopener">{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}
+              {% if item.website %}<a href="{% if item.internal_slug %}/go/{{ item.internal_slug }}?type=website&ref=comparison{% else %}{{ item.website }}{% endif %}" target="_blank" rel="noopener">{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}
             </h3>
             {% if item.internal_slug %}
             <a href="{{ url_for('detail', slug=item.internal_slug) }}" class="mono" style="font-size:0.82rem; color: var(--accent);">Detaylı incelemeyi oku →</a>
