@@ -1,0 +1,44 @@
+name: Trending Vote Refresh (haftalik)
+
+on:
+  schedule:
+    # Her Carsamba 06:00 UTC (TR 09:00) - pipeline saatleriyle carpismasin
+    - cron: "0 6 * * 3"
+  workflow_dispatch: {}
+
+jobs:
+  refresh-votes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      issues: write
+    env:
+      PRODUCTHUNT_TOKEN: ${{ secrets.PRODUCTHUNT_TOKEN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Refresh top 100 trending votes
+        run: python refresh_trending_votes.py 100
+
+      - name: Open issue if job failed
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: `Trending vote refresh basarisiz oldu - ${new Date().toISOString().slice(0,10)}`,
+              body: `Log: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ["pipeline-hata"],
+            });

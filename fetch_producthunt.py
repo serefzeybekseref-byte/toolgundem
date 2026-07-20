@@ -111,6 +111,36 @@ def get_latest_products(max_products: int = MAX_PRODUCTS):
     return products
 
 
+POST_VOTES_QUERY = """
+query($id: ID!) {
+  post(id: $id) {
+    votesCount
+  }
+}
+"""
+
+
+def get_post_votes(ph_id: str):
+    """Tek bir Product Hunt ürününün güncel oy sayısını çeker (trending refresh için).
+    Ürün Product Hunt'tan kaldırılmışsa None döner."""
+    if not TOKEN:
+        raise ValueError("PRODUCTHUNT_TOKEN bulunamadi. .env dosyasini kontrol et.")
+    headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Content-Type": "application/json",
+    }
+    resp = requests.post(
+        API_URL, json={"query": POST_VOTES_QUERY, "variables": {"id": ph_id}},
+        headers=headers, timeout=15
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if "errors" in data:
+        return None
+    post = data.get("data", {}).get("post")
+    return post["votesCount"] if post else None
+
+
 if __name__ == "__main__":
     products = get_latest_products()
     for p in products:

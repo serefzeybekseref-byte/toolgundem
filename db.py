@@ -193,7 +193,33 @@ def init_db():
             id {pk},
             ran_at TEXT,
             new_count INTEGER,
-            error_count INTEGER
+            error_count INTEGER,
+            budget REAL,
+            success INTEGER,
+            failed INTEGER,
+            skipped INTEGER,
+            retry INTEGER,
+            llm_tokens INTEGER,
+            llm_cost REAL,
+            duration INTEGER
+        )
+    """)
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS content_tasks (
+            id {pk},
+            product_id INTEGER,
+            task_type TEXT,
+            status TEXT,
+            priority_score INTEGER DEFAULT 0,
+            score_details TEXT,
+            reason TEXT,
+            retry_count INTEGER DEFAULT 0,
+            last_error TEXT,
+            estimated_cost REAL,
+            created_at TEXT,
+            started_at TEXT,
+            finished_at TEXT,
+            FOREIGN KEY (product_id) REFERENCES products (id)
         )
     """)
     conn.execute(f"""
@@ -354,6 +380,26 @@ def init_db():
             conn.execute("ALTER TABLE outbound_click_events ADD COLUMN session_started_at TEXT")
         except sqlite3.OperationalError:
             pass
+
+    # Pipeline runs extension
+    pipeline_new_cols = [
+        ("budget", "REAL"),
+        ("success", "INTEGER"),
+        ("failed", "INTEGER"),
+        ("skipped", "INTEGER"),
+        ("retry", "INTEGER"),
+        ("llm_tokens", "INTEGER"),
+        ("llm_cost", "REAL"),
+        ("duration", "INTEGER")
+    ]
+    for col_name, col_type in pipeline_new_cols:
+        if USE_POSTGRES:
+            conn.execute(f"ALTER TABLE pipeline_runs ADD COLUMN IF NOT EXISTS {col_name} {col_type}")
+        else:
+            try:
+                conn.execute(f"ALTER TABLE pipeline_runs ADD COLUMN {col_name} {col_type}")
+            except sqlite3.OperationalError:
+                pass
 
     conn.commit()
     conn.close()
@@ -875,6 +921,45 @@ def get_admin_stats():
         "generation_queue": generation_queue,
     }
 
+
+def get_content_os_dashboard():
+    """Content OS admin paneli icin kuyruk ve saglik verilerini dondurur."""
+    conn = get_connection()
+    
+    # Bekleyen Isler (To-Do)
+    tasks = conn.execute("""
+        SELECT t.*, p.original_name, p.slug 
+        FROM content_tasks t
+        JOIN products p ON t.product_id = p.id
+        WHERE t.status = 'PENDING'
+        ORDER BY t.priority_score DESC
+        LIMIT 20
+    """).fetchall()
+    
+    # Son calismalar
+    runs = conn.execute("""
+        SELECT * FROM pipeline_runs
+        ORDER BY id DESC
+        LIMIT 5
+    """).fetchall()
+    
+    # Istatistikler
+    stats = conn.execute("""
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) as success,
+            SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) as failed
+        FROM content_tasks
+    """).fetchone()
+    
+    conn.close()
+    
+    return {
+        "tasks": [dict(t) for t in tasks],
+        "runs": [dict(r) for r in runs],
+        "stats": dict(stats)
+    }
 
 def get_all_products():
     """Tum urunleri en yeniden en eskiye siralar (ornegin sitemap.xml icin -

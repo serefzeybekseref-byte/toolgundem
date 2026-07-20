@@ -63,6 +63,84 @@
     </div>
   </div>
 
+  <!-- CONTENT OS -->
+  <h2 style="font-size:1.15rem; margin-bottom:16px;">🤖 Content OS (İçerik İşletim Sistemi)</h2>
+  
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap:24px; margin-bottom:32px;">
+    
+    <!-- Bu Hafta Yapılacaklar (To-Do) -->
+    <div style="padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
+      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">🎯 Bu Hafta Yapılacaklar (Fırsatlar)</h3>
+      <div style="display:flex; flex-direction:column; gap:12px; max-height:400px; overflow-y:auto; padding-right:8px;">
+        {% for task in content_os.tasks %}
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-md); padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="badge" style="background:rgba(255,255,255,0.1); font-size:0.75rem;">{{ task.task_type }}</span>
+              <strong style="font-size:0.95rem;">{{ task.original_name }}</strong>
+            </div>
+            <div style="text-align:right;">
+              <div style="color:var(--yellow); font-size:1rem;">
+                {% if task.priority_score > 90 %}★★★★★
+                {% elif task.priority_score > 70 %}★★★★☆
+                {% elif task.priority_score > 50 %}★★★☆☆
+                {% elif task.priority_score > 30 %}★★☆☆☆
+                {% else %}★☆☆☆☆{% endif %}
+              </div>
+            </div>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 8px;">{{ task.reason }}</p>
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-secondary);" class="mono">
+            <span>Score: {{ task.priority_score }}</span>
+            {% if task.estimated_cost and task.estimated_cost > 0 %}
+            <span>Maliyet: ${{ task.estimated_cost|round(2) }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <p style="color:var(--text-secondary); font-size:0.85rem;">Kuyruk boş. Fırsat yok.</p>
+        {% endfor %}
+      </div>
+    </div>
+    
+    <!-- Otomasyon Sağlığı & Loglar -->
+    <div style="padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);">
+      <h3 style="font-size:1rem; margin-top:0; margin-bottom:16px;">🩺 Otomasyon Sağlığı</h3>
+      
+      <div style="display:flex; gap:16px; margin-bottom:24px;">
+        <div style="flex:1; background:rgba(255,255,255,0.02); padding:12px; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.05); text-align:center;">
+          <div style="font-size:1.5rem; font-weight:bold; color:var(--text);">{{ content_os.stats.pending or 0 }}</div>
+          <div class="mono" style="font-size:0.7rem; color:var(--text-secondary);">BEKLEYEN</div>
+        </div>
+        <div style="flex:1; background:rgba(63,185,80,0.1); padding:12px; border-radius:var(--radius-sm); border:1px solid rgba(63,185,80,0.2); text-align:center;">
+          <div style="font-size:1.5rem; font-weight:bold; color:#3fb950;">{{ content_os.stats.success or 0 }}</div>
+          <div class="mono" style="font-size:0.7rem; color:#3fb950;">BAŞARILI</div>
+        </div>
+        <div style="flex:1; background:rgba(248,81,73,0.1); padding:12px; border-radius:var(--radius-sm); border:1px solid rgba(248,81,73,0.2); text-align:center;">
+          <div style="font-size:1.5rem; font-weight:bold; color:#f85149;">{{ content_os.stats.failed or 0 }}</div>
+          <div class="mono" style="font-size:0.7rem; color:#f85149;">BAŞARISIZ</div>
+        </div>
+      </div>
+      
+      <h4 style="font-size:0.9rem; margin-top:0; margin-bottom:12px; color:var(--text-secondary);">Son Çalışmalar</h4>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        {% for run in content_os.runs %}
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:10px 12px; border-radius:var(--radius-sm);">
+          <div class="mono" style="font-size:0.8rem; color:var(--text-secondary);">{{ run.ran_at[:16] }}</div>
+          <div style="display:flex; gap:12px; font-size:0.8rem;">
+            <span style="color:#3fb950;">✓ {{ run.success or run.new_count or 0 }}</span>
+            <span style="color:#f85149;">✗ {{ run.failed or run.error_count or 0 }}</span>
+            <span style="color:var(--text-secondary);">${{ (run.budget or 0)|round(2) }}</span>
+          </div>
+        </div>
+        {% else %}
+        <p style="color:var(--text-secondary); font-size:0.85rem;">Henüz çalışma kaydı yok.</p>
+        {% endfor %}
+      </div>
+    </div>
+    
+  </div>
+
   <!-- TRAFİK KAYNAKLARI -->
   <h2 style="font-size:1.15rem; margin-bottom:16px;">📡 Trafik Kaynakları & Akış</h2>
   <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap:24px; margin-bottom:32px;">

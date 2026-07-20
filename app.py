@@ -816,7 +816,8 @@ def admin():
         get_entry_exit_matrix,
         get_multi_click_sessions,
         get_recent_user_journeys,
-        get_average_time_to_first_click
+        get_average_time_to_first_click,
+        get_content_os_dashboard
     )
     
     # Global/Eski filtreler (varsayılan 30 gün)
@@ -843,11 +844,15 @@ def admin():
     today_str = date.today().isoformat()
     today_clicks = get_daily_clicks_count(today_str)
     
+    # Content OS Data
+    content_os = get_content_os_dashboard()
+    
     return render_template(
         "admin.html", 
         stats=stats, 
         visits=visits, 
         subscribers=subscribers, 
+        content_os=content_os,
         admin_token=token,
         top_clicked=top_clicked,
         category_clicks=category_clicks,
