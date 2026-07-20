@@ -59,7 +59,7 @@ def _set_visit_cookie(response):
     sayilmamasi icin bir cerez birakir (1 gun gecerli, HttpOnly - JS erisemez)."""
     today = getattr(g, "_mark_visit_cookie", None)
     if today:
-        response.set_cookie("tg_visited", today, max_age=60 * 60 * 24, httponly=True, samesite="Lax")
+        response.set_cookie("tg_visited", today, max_age=60 * 60 * 24, httponly=True, samesite="Lax", secure=True)
     return response
 
 
