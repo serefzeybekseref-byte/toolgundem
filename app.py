@@ -71,7 +71,9 @@ def _track_visit():
     session_id = request.cookies.get("tg_session")
     if not session_id:
         import uuid
+        from datetime import datetime
         g._new_session_id = uuid.uuid4().hex
+        g._new_session_started_at = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
     if request.endpoint not in _TRACKED_ENDPOINTS:
         return
@@ -97,6 +99,9 @@ def _set_visit_cookie(response):
     if new_session:
         # tg_session çerezi 1 yıl (365 gün) saklanır
         response.set_cookie("tg_session", new_session, max_age=60 * 60 * 24 * 365, httponly=True, samesite="Lax", secure=True)
+        new_started = getattr(g, "_new_session_started_at", None)
+        if new_started:
+            response.set_cookie("tg_session_started", new_started, max_age=60 * 60 * 24 * 365, httponly=True, samesite="Lax", secure=True)
     return response
 
 
@@ -795,19 +800,38 @@ def admin():
     visits = get_visit_stats()
     subscribers = get_all_subscribers()
     
+    # Filtre Parametreleri
+    days = request.args.get("days", 30, type=int)
+    country = request.args.get("country", "All").strip()
+    device = request.args.get("device", "All").strip()
+    
     # Yeni analitik sorgularını çek
     from db import (
         get_top_clicked_tools_stats,
         get_category_clicks_stats,
         get_search_queries_stats,
         get_zero_click_tools_stats,
-        get_orphan_opportunity_stats
+        get_orphan_opportunity_stats,
+        get_referrer_distribution,
+        get_entry_exit_matrix,
+        get_multi_click_sessions,
+        get_recent_user_journeys,
+        get_average_time_to_first_click
     )
-    top_clicked = get_top_clicked_tools_stats(days=30)
-    category_clicks = get_category_clicks_stats(days=30)
-    search_queries = get_search_queries_stats(days=30)
+    
+    # Global/Eski filtreler (varsayılan 30 gün)
+    top_clicked = get_top_clicked_tools_stats(days=days)
+    category_clicks = get_category_clicks_stats(days=days)
+    search_queries = get_search_queries_stats(days=days)
     zero_clicks = get_zero_click_tools_stats(days=90)
-    orphans = get_orphan_opportunity_stats(days=30, limit=10)
+    orphans = get_orphan_opportunity_stats(days=days, limit=10)
+    
+    # Yeni Sprint 2 Analitikleri
+    ref_dist = get_referrer_distribution(days=days, country=country, device=device)
+    entry_exit = get_entry_exit_matrix(days=days, country=country, device=device)
+    multi_clicks = get_multi_click_sessions(days=days, country=country, device=device)
+    recent_journeys = get_recent_user_journeys(days=days, country=country, device=device, limit=50)
+    avg_time = get_average_time_to_first_click(days=days, country=country, device=device)
     
     # Gelir simülatörü ayarları (GET parametreleri ile oynanabilir)
     conv_rate = request.args.get("conv", 2.0, type=float)
@@ -830,9 +854,17 @@ def admin():
         search_queries=search_queries,
         zero_clicks=zero_clicks,
         orphans=orphans,
+        ref_dist=ref_dist,
+        entry_exit=entry_exit,
+        multi_clicks=multi_clicks,
+        recent_journeys=recent_journeys,
+        avg_time=avg_time,
         conv_rate=conv_rate,
         avg_comm=avg_comm,
-        today_clicks=today_clicks
+        today_clicks=today_clicks,
+        filter_days=days,
+        filter_country=country,
+        filter_device=device
     )
 
 
@@ -871,11 +903,10 @@ def outbound_redirect(slug):
     country = request.headers.get("X-Vercel-IP-Country", "Unknown").strip().upper()
     device = parse_device(ua)
     
-    # 4. Session ID
-    session_id = request.cookies.get("tg_session")
-    
-    # 5. Olayı Kaydet
+    # 4. Kaydet
     try:
+        session_id = request.cookies.get("tg_session")
+        session_started_at = request.cookies.get("tg_session_started")
         record_outbound_click_event(
             session_id=session_id,
             product_id=product["id"],
@@ -883,7 +914,8 @@ def outbound_redirect(slug):
             referrer=referrer,
             search_query=search_query,
             country=country,
-            device=device
+            device=device,
+            session_started_at=session_started_at
         )
     except Exception as e:
         logger.error(f"Failed to record outbound click: {e}")

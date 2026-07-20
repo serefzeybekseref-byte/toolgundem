@@ -347,6 +347,14 @@ def init_db():
         except sqlite3.OperationalError:
             pass
 
+    if USE_POSTGRES:
+        conn.execute("ALTER TABLE outbound_click_events ADD COLUMN IF NOT EXISTS session_started_at TEXT")
+    else:
+        try:
+            conn.execute("ALTER TABLE outbound_click_events ADD COLUMN session_started_at TEXT")
+        except sqlite3.OperationalError:
+            pass
+
     conn.commit()
     conn.close()
 
@@ -1566,7 +1574,7 @@ def get_comparisons_by_slugs(slugs):
     return [by_slug[s] for s in slugs if s in by_slug]
 
 
-def record_outbound_click_event(session_id, product_id, dest_type, referrer, search_query, country, device):
+def record_outbound_click_event(session_id, product_id, dest_type, referrer, search_query, country, device, session_started_at=None):
     """Yeni bir dışa yönlendirme (outbound click) olayını veritabanına kaydeder."""
     import uuid
     from datetime import datetime
@@ -1578,10 +1586,10 @@ def record_outbound_click_event(session_id, product_id, dest_type, referrer, sea
     conn.execute(
         """
         INSERT INTO outbound_click_events (
-            event_uuid, session_id, product_id, clicked_at, destination_type, referrer, search_query, country, device
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            event_uuid, session_id, product_id, clicked_at, destination_type, referrer, search_query, country, device, session_started_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (event_uuid, session_id, product_id, clicked_at, dest_type, referrer, search_query, country, device)
+        (event_uuid, session_id, product_id, clicked_at, dest_type, referrer, search_query, country, device, session_started_at)
     )
     conn.commit()
     conn.close()
@@ -1711,8 +1719,8 @@ def get_zero_click_tools_stats(days=90):
         LEFT JOIN outbound_click_events e ON p.id = e.product_id
         WHERE p.is_broken IS NULL OR p.is_broken = 0
         GROUP BY p.id, p.original_name, p.slug, p.created_at, p.topics
-        HAVING last_clicked IS NULL OR last_clicked < ?
-        ORDER BY last_clicked ASC, p.created_at ASC
+        HAVING MAX(e.clicked_at) IS NULL OR MAX(e.clicked_at) < ?
+        ORDER BY MAX(e.clicked_at) ASC NULLS FIRST, p.created_at ASC
         LIMIT 10
     """
     rows = conn.execute(sql, (t_start,)).fetchall()
@@ -1833,4 +1841,196 @@ def get_daily_clicks_count(date_str):
     ).fetchone()
     conn.close()
     return row["cnt"] if row else 0
+
+def get_referrer_distribution(days=30, country='All', device='All'):
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    query = "SELECT referrer, COUNT(id) as cnt FROM outbound_click_events WHERE clicked_at >= ?"
+    params = [t_start]
+    
+    if country != 'All':
+        query += " AND country = ?"
+        params.append(country)
+    if device != 'All':
+        query += " AND device = ?"
+        params.append(device)
+        
+    query += " GROUP BY referrer ORDER BY cnt DESC"
+    
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    
+    total = sum(r['cnt'] for r in rows)
+    if total == 0:
+        return []
+        
+    return [{'referrer': r['referrer'], 'count': r['cnt'], 'percent': int(round((r['cnt'] / total) * 100))} for r in rows]
+
+def get_entry_exit_matrix(days=30, country='All', device='All'):
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    query = "SELECT referrer, destination_type, COUNT(id) as cnt FROM outbound_click_events WHERE clicked_at >= ?"
+    params = [t_start]
+    
+    if country != 'All':
+        query += " AND country = ?"
+        params.append(country)
+    if device != 'All':
+        query += " AND device = ?"
+        params.append(device)
+        
+    query += " GROUP BY referrer, destination_type ORDER BY cnt DESC LIMIT 20"
+    
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_multi_click_sessions(days=30, country='All', device='All'):
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    query = "SELECT session_id, COUNT(id) as cnt, MIN(clicked_at) as first_click, MAX(clicked_at) as last_click FROM outbound_click_events WHERE clicked_at >= ?"
+    params = [t_start]
+    
+    if country != 'All':
+        query += " AND country = ?"
+        params.append(country)
+    if device != 'All':
+        query += " AND device = ?"
+        params.append(device)
+        
+    query += " AND session_id IS NOT NULL GROUP BY session_id HAVING COUNT(id) > 1 ORDER BY COUNT(id) DESC LIMIT 20"
+    
+    session_rows = conn.execute(query, params).fetchall()
+    
+    results = []
+    for s in session_rows:
+        sid = s['session_id']
+        if not sid:
+            continue
+        clicks = conn.execute("SELECT o.clicked_at, o.referrer, p.original_name, o.destination_type FROM outbound_click_events o JOIN products p ON o.product_id = p.id WHERE o.session_id = ? ORDER BY o.clicked_at ASC", (sid,)).fetchall()
+        results.append({
+            'session_id': sid[:8] + '...',
+            'click_count': s['cnt'] if 'cnt' in s.keys() else len(clicks),
+            'first_click': s['first_click'],
+            'last_click': s['last_click'],
+            'clicks': [dict(c) for c in clicks]
+        })
+        
+    conn.close()
+    return results
+
+def get_recent_user_journeys(days=30, country='All', device='All', limit=50):
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    query = "SELECT session_id, MAX(clicked_at) as last_click, MIN(session_started_at) as started_at, MAX(country) as country, MAX(device) as device FROM outbound_click_events WHERE clicked_at >= ? AND session_id IS NOT NULL"
+    params = [t_start]
+    
+    if country != 'All':
+        query += " AND country = ?"
+        params.append(country)
+    if device != 'All':
+        query += " AND device = ?"
+        params.append(device)
+        
+    query += " GROUP BY session_id ORDER BY MAX(clicked_at) DESC LIMIT ?"
+    params.append(limit)
+    
+    sessions = conn.execute(query, params).fetchall()
+    
+    journeys = []
+    for s in sessions:
+        sid = s['session_id']
+        if not sid:
+            continue
+        clicks = conn.execute("SELECT o.clicked_at, o.referrer, o.destination_type, p.original_name, o.search_query FROM outbound_click_events o JOIN products p ON o.product_id = p.id WHERE o.session_id = ? ORDER BY o.clicked_at ASC", (sid,)).fetchall()
+        
+        click_count = len(clicks)
+        if click_count == 1:
+            intent = "Düşük"
+            intent_val = 1
+        elif click_count <= 3:
+            intent = "Orta"
+            intent_val = 2
+        else:
+            intent = "Yüksek"
+            intent_val = 3
+            
+        time_to_first_click = None
+        started_at = s['started_at']
+        if started_at and clicks:
+            try:
+                start_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+                first_click_dt = datetime.fromisoformat(clicks[0]['clicked_at'].replace("Z", "+00:00"))
+                diff = (first_click_dt - start_dt).total_seconds()
+                if diff >= 0 and diff < 86400:
+                    time_to_first_click = int(diff)
+            except Exception:
+                pass
+                
+        journeys.append({
+            "session_id": sid[:8] + "...",
+            "country": s['country'],
+            "device": s['device'],
+            "started_at": started_at,
+            "time_to_first_click": time_to_first_click,
+            "intent": intent,
+            "intent_val": intent_val,
+            "clicks": [dict(c) for c in clicks]
+        })
+    conn.close()
+    return journeys
+
+def get_average_time_to_first_click(days=30, country='All', device='All'):
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    now = datetime.utcnow()
+    t_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    query = """
+        SELECT session_id, MIN(session_started_at) as session_started_at, MIN(clicked_at) as first_click
+        FROM outbound_click_events
+        WHERE clicked_at >= ? AND session_started_at IS NOT NULL AND session_id IS NOT NULL
+    """
+    params = [t_start]
+    
+    if country != 'All':
+        query += " AND country = ?"
+        params.append(country)
+    if device != 'All':
+        query += " AND device = ?"
+        params.append(device)
+        
+    query += " GROUP BY session_id"
+    
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    
+    total_seconds = 0
+    valid_count = 0
+    for r in rows:
+        try:
+            start_dt = datetime.fromisoformat(r['session_started_at'].replace("Z", "+00:00"))
+            first_click_dt = datetime.fromisoformat(r['first_click'].replace("Z", "+00:00"))
+            diff = (first_click_dt - start_dt).total_seconds()
+            if 0 <= diff < 86400:
+                total_seconds += diff
+                valid_count += 1
+        except Exception:
+            pass
+            
+    if valid_count == 0:
+        return 0
+    return int(total_seconds / valid_count)
 
