@@ -34,14 +34,33 @@ _SKIP_VISIT_PREFIXES = ("/static/", "/admin", "/sitemap.xml", "/robots.txt", "/f
 
 @app.before_request
 def _track_visit():
-    """Her sayfa istegini (statik dosyalar/admin/sitemap haric) gunluk sayaca ekler.
+    """Her BENZERSIZ tarayiciyi gunde bir kez gunluk sayaca ekler (statik dosyalar/admin/
+    sitemap haric). Onceki surumde HER istek sayiliyordu - yani sayfa yenileme = +1, bu da
+    sahibinin kendi gezinmesi dahil sayiyi anlamsizca sisiriyordu ("ziyaretci" degil "sayfa
+    goruntuleme" olculuyordu). Artik cerez tabanli basit bir tekillestirme var: ayni tarayici
+    ayni gun icinde kac kez gelirse gelsin sadece ilk istekte sayiliyor.
     Hata olursa sayfayi bozmasin diye sessizce yutuluyor."""
     if request.path.startswith(_SKIP_VISIT_PREFIXES):
         return
+    from datetime import date
+    today = date.today().isoformat()
+    if request.cookies.get("tg_visited") == today:
+        return  # bu tarayici bugun zaten sayildi, tekrar sayma
     try:
         record_visit()
     except Exception:
         pass
+    g._mark_visit_cookie = today
+
+
+@app.after_request
+def _set_visit_cookie(response):
+    """_track_visit bu istekte yeni bir ziyaret saydiysa, ayni tarayicinin bugun tekrar
+    sayilmamasi icin bir cerez birakir (1 gun gecerli, HttpOnly - JS erisemez)."""
+    today = getattr(g, "_mark_visit_cookie", None)
+    if today:
+        response.set_cookie("tg_visited", today, max_age=60 * 60 * 24, httponly=True, samesite="Lax")
+    return response
 
 
 @app.teardown_appcontext
