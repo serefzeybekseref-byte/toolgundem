@@ -8,6 +8,7 @@ serverless ortamlarda calisabilir hale gelir.
 import os
 import re
 import json
+import time
 import logging
 import sqlite3
 import unicodedata
@@ -110,7 +111,18 @@ class _ConnWrapper:
                 table_name = match.group(1) if match else None
                 if table_name and table_name in _TABLES_WITH_ID_COLUMN:
                     converted += " RETURNING id"
-            cur.execute(converted, params)
+            try:
+                cur.execute(converted, params)
+            except psycopg2.errors.DeadlockDetected:
+                # Nadir ama gercek: birden fazla otomasyon/oturum ayni anda DB'ye
+                # yaziyor olabilir. inject_globals() HER sayfada calistigi icin tek
+                # bir deadlock tum siteyi 500'e dusurebiliyordu - kisa bekleyip bir
+                # kez daha deniyoruz, cogu zaman diger islem o arada biter.
+                logger.warning("Postgres deadlock, 0.4sn sonra tekrar deneniyor: %s", converted[:80])
+                self.raw.rollback()
+                time.sleep(0.4)
+                cur = self.raw.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                cur.execute(converted, params)
             return _PGCursorWrapper(cur)
         return self.raw.execute(sql, params)
 
