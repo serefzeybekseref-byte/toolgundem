@@ -342,9 +342,16 @@ def inject_globals():
     # footer'da iki kez gorunmesin diye birlestirilir.
     footer_topics = [(t["raw_topic"], t["count"]) for t in get_merged_topics()[:6]]
     try:
-        asset_version = int(os.path.getmtime(os.path.join(app.static_folder, "style.css")))
+        # Vercel her deploy'da VERCEL_GIT_COMMIT_SHA'yi otomatik enjekte eder - bu deploy'a
+        # gore gercekten degisir. Dosya mtime'ina guvenmiyoruz cunku Vercel'in build sureci
+        # dosya zamanlarini sabit bir referansa normalize ediyor (asset_version hic degismiyordu,
+        # tarayicilar CSS degisikliklerini asla gormuyordu - CLS fix'inin "calismamis" gorunmesinin
+        # gercek nedeni buydu).
+        asset_version = os.environ.get("VERCEL_GIT_COMMIT_SHA", "")[:10]
+        if not asset_version:
+            asset_version = str(int(os.path.getmtime(os.path.join(app.static_folder, "style.css"))))
     except OSError:
-        asset_version = 1
+        asset_version = "1"
     return {
         "asset_version": asset_version,
         "topic_labels": TOPIC_LABELS,
