@@ -5,7 +5,7 @@ import time
 import requests
 from dotenv import load_dotenv
 load_dotenv()  # local'de .env'i yukler; production'da (Vercel) zaten env var'lar hazir, zararsiz.
-from flask import Flask, render_template, abort, request, jsonify, Response, g
+from flask import Flask, render_template, abort, request, jsonify, Response, g, redirect
 from db import (
     init_db, get_all_products, get_product_by_slug,
     get_all_comparisons, get_comparison_by_slug,
@@ -85,6 +85,25 @@ def parse_device(user_agent_str):
     if "windows" in ua or "macintosh" in ua or "linux" in ua:
         return "Desktop"
     return "Unknown"
+
+_CANONICAL_HOST = "www.bulurumai.com"
+
+
+@app.before_request
+def _enforce_canonical_host():
+    """www ve www-siz surumler ayni icerigi farkli host'larda sunuyordu (redirect yoktu).
+    Bu, canonical/JSON-LD logo/sitemap URL'lerinin request.host'a gore degisken olmasi
+    demekti - Google iki ayri site kimligi goruyor gibi degerlendirebilir, bu da site
+    simgesi (favicon) gibi entity-seviyesi sinyallerin gecikmesine/gorunmemesine katkida
+    bulunabilir. Artik tum trafik tek bir kanonik host'a (www) 301 ile yonlendiriliyor.
+    Vercel preview domainleri (*.vercel.app) ve localhost bu kuraldan muaf."""
+    host = request.host.split(":")[0]
+    if host == _CANONICAL_HOST or host in ("localhost", "127.0.0.1") or host.endswith(".vercel.app"):
+        return
+    qs = request.query_string.decode()
+    target = f"https://{_CANONICAL_HOST}{request.path}" + (f"?{qs}" if qs else "")
+    return redirect(target, code=301)
+
 
 @app.before_request
 def _track_visit():

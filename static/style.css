@@ -1571,6 +1571,11 @@ h1, h2, h3, h4 {
 .meta-ok { color: #3fb950; }
 .meta-warn { color: #e5484d; }
 
+.verified-badge {
+  color: var(--green);
+  font-size: 0.82rem;
+}
+
 .detail-related-box {
   margin: var(--space-5) 0;
   padding: var(--space-4) var(--space-5);
