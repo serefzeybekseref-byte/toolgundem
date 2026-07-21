@@ -58,17 +58,29 @@ def is_semantic_duplicate(candidate_title: str, existing_titles: list) -> str | 
 
 
 def _brand_key(website: str, name: str) -> str:
-    """Urunun 'marka'sini domain'den cikarir (ornek: chat.openai.com -> openai)."""
+    """
+    Urunun 'marka'sini domain'den cikarir (ornek: chat.openai.com -> openai).
+    NOT (21 Temmuz 2026 - kritik bug fix): Product Hunt'tan gelen urunlerin website alani
+    urunun gercek sitesi degil, PH'nin kendi yonlendirme linki (producthunt.com/r/...) -
+    bu deger yakalanmazsa TUM PH kaynakli urunler "producthunt" markasi sayilip
+    MAX_PER_BRAND=2 limitine takilir, karsilastirmalarin neredeyse tamamindan PH urunlerini
+    disliyordu (sadece elle eklenen taninmis araclar - gercek website'i olanlar - giriyordu).
+    """
     try:
         netloc = urlparse(website).netloc.lower()
         parts = netloc.replace("www.", "").split(".")
-        if len(parts) >= 2:
+        if len(parts) >= 2 and "producthunt" not in parts:
             return parts[-2]
     except Exception:
         pass
     return name.lower().split()[0] if name else "?"
 
 # topic etiketi -> (baslik, slug, min_urun_ustyazi)
+# NOT: bu liste, products.topics alanindaki GERCEK frekans dagilimina bakilarak genisletildi
+# (21 Temmuz 2026) - rastgele/varsayimsal kategori eklemek yerine, veride 6+ urunu olan,
+# henuz kapsanmayan ve birbiriyle anlam cakismasi olmayan topic'ler secildi. Korlemesine
+# 150-200 kategoriye cikmak (ChatGPT'nin ilk onerisi) reddedildi cunku CANDIDATE_TOPICS'in
+# cogunda MIN_PRODUCTS=5 esigini gecemeyecek, bos "atlandi" satirlari uretecekti.
 CANDIDATE_TOPICS = {
     "SEO": "En Iyi AI SEO Araclari",
     "Otomasyon": "En Iyi AI Otomasyon ve Ajan Araclari",
@@ -85,6 +97,20 @@ CANDIDATE_TOPICS = {
     "Ceviri": "En Iyi AI Ceviri Araclari",
     "MusteriDestegi": "En Iyi AI Musteri Destek Araclari",
     "Arastirma": "En Iyi AI Arastirma ve Veri Analizi Araclari",
+    # --- 21 Temmuz 2026'da veri-destekli eklenenler ---
+    "Developer Tools": "En Iyi AI Gelistirici Araclari",
+    "Social Media": "En Iyi AI Sosyal Medya Araclari",
+    "Analytics": "En Iyi AI Analitik Araclari",
+    "Games": "En Iyi AI Oyun Gelistirme Araclari",
+    "Privacy": "En Iyi AI Gizlilik Araclari",
+    "Career": "En Iyi AI Kariyer ve Ise Alim Araclari",
+    "Fintech": "En Iyi AI Fintech Araclari",
+    "Security": "En Iyi AI Guvenlik Araclari",
+    "Task Management": "En Iyi AI Gorev Yonetimi Araclari",
+    "Chrome Extensions": "En Iyi AI Chrome Eklentileri",
+    "Photography": "En Iyi AI Fotograf Araclari",
+    "Finance": "En Iyi AI Finans Araclari",
+    "Notes": "En Iyi AI Not Alma Araclari",
 }
 
 def get_top_products_for_topic(topic: str, limit: int = MAX_ITEMS):
