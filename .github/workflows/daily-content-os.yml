@@ -39,6 +39,10 @@ jobs:
         continue-on-error: true
         run: python automation_pipeline.py
 
+      - name: Yeni/guncellenen sayfalari IndexNow ile bildir (Bing/Yandex)
+        continue-on-error: true
+        run: python ping_search_engines.py --hours 24
+
       - name: Kalite kapisinda reddedilenler veya hatalar varsa issue ac
         if: steps.pipeline.outcome == 'failure'
         uses: actions/github-script@v7

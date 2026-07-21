@@ -799,6 +799,13 @@ def favicon_root():
     return app.send_static_file("favicon.ico")
 
 
+@app.route("/d4c153c71d2d2321087ed549ff32eb7c.txt")
+def indexnow_key():
+    """IndexNow protokolu (Bing/Yandex) icin dogrulama anahtari - kokten erisilebilir olmali.
+    Bkz. ping_search_engines.py - yeni/guncellenen sayfalari arama motorlarina anlik bildirir."""
+    return app.send_static_file("d4c153c71d2d2321087ed549ff32eb7c.txt")
+
+
 @app.route("/robots.txt")
 def robots():
     base = "https://" + request.host
