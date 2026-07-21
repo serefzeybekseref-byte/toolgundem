@@ -59,6 +59,34 @@ _PROCESSORS = {
 }
 
 
+def _run_collection_and_comparison_generators(dry_run=False):
+    """
+    COLLECTION ve COMPARISON, GUIDE/REFRESH'in aksine content_tasks kuyruguna tek tek
+    satir olarak girmiyor - cunku generate_collections.py ve auto_generate_comparisons.py
+    zaten kendi kendine "uretilecek bir sey var mi" kararini veren, idempotent (var olani
+    atlayan) global script'ler. Bu yuzden pipeline onlari her calistiginda dogrudan cagirir;
+    ayri bir task satirina zorlamak (product_id NOT NULL join'i icin yapay bir urun secmek
+    gerekirdi) gereksiz karmasiklik olurdu. (ChatGPT onerisi degerlendirildi, kullanicinin
+    onayiyla bu daha basit yol secildi - 21 Temmuz 2026.)
+    """
+    if dry_run:
+        print("\n[DRY RUN] COLLECTION ve COMPARISON generator'lari calistirilmayacak (sadece gercek modda calisirlar).")
+        return
+    print("\n--- Koleksiyon ve Karsilastirma Generator'lari ---")
+    try:
+        import generate_collections
+        print("[COLLECTION] generate_collections.run() cagriliyor...")
+        generate_collections.run()
+    except Exception as e:
+        print(f"[COLLECTION] HATA: {e}")
+    try:
+        import auto_generate_comparisons
+        print("[COMPARISON] auto_generate_comparisons.run() cagriliyor...")
+        auto_generate_comparisons.run()
+    except Exception as e:
+        print(f"[COMPARISON] HATA: {e}")
+
+
 def run_pipeline(dry_run=False, max_tasks=3):
     print("=== Content OS Pipeline Basliyor ===")
 
@@ -115,6 +143,9 @@ def run_pipeline(dry_run=False, max_tasks=3):
         processed += 1
 
     print(f"\n=== Pipeline bitti. {processed} gorev islendi. ===")
+
+    _run_collection_and_comparison_generators(dry_run=dry_run)
+
     conn.close()
 
 
