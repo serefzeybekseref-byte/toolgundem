@@ -6,6 +6,9 @@ Yabanci dil sizintisi + ic tutarlilik denetimi. LLM KULLANMAZ (deterministik, uc
 import re
 from dotenv import load_dotenv
 load_dotenv()
+from db_target import print_db_target, guard_postgres
+print_db_target()
+guard_postgres()
 import db
 
 # Meru teknik terimler / marka adlari - yanlis pozitif olmasin diye whitelist.
@@ -25,6 +28,7 @@ FOREIGN_SCRIPT_PATTERN = re.compile(
     r'|[\u0400-\u04FF]'     # Kiril
     r'|[\u0600-\u06ff]'     # Arapca
     r'|[\u0e00-\u0e7f]'     # Tay dili
+    r'|[ěřďťňľĺżźćńąę]'     # Cekce/Slovakca/Lehce aksanli karakterler (Turkce'de olmayan)
     r'|\b(thì|và|của|được|những|không|với|người|làm|này|cho|một|các|để|có|là|trong|khi)\b'  # Vietnamca
 )
 
