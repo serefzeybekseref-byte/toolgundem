@@ -367,6 +367,64 @@ def discover_candidate_guides(max_candidates: int = 3) -> list:
     return candidates
 
 
+def build_guide_cfg_for_product(product_id: int):
+    """
+    Tek bir urun icin (Content OS'un content_tasks kuyrugundan gelen GUIDE gorevleri icin)
+    'X ve Alternatifleri' rehber konfigurasyonu kurar - discover_orphan_guides()'in ic
+    mantiginin tek-urunluk, disaridan cagrilabilir hali (kod tekrarini onlemek icin
+    ikisi de bu fonksiyonu kullanir).
+    Donen: guide_cfg dict, veya yeterli benzer urun yoksa None.
+    """
+    from db import get_connection, init_db
+    init_db()
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT id, original_name, slug, topics, summary_tr, pricing_type FROM products WHERE id = ?",
+        (product_id,)
+    ).fetchone()
+    if not row:
+        conn.close()
+        return None
+    product = dict(row)
+
+    topics = (product["topics"] or "").split(",")
+    first_topic = topics[0].strip() if topics else ""
+    if not first_topic:
+        conn.close()
+        return None
+
+    similar = conn.execute(
+        "SELECT original_name, summary_tr, pricing_type FROM products WHERE topics LIKE ? AND id != ? ORDER BY votes DESC LIMIT 4",
+        (f"%{first_topic}%", product["id"])
+    ).fetchall()
+    conn.close()
+
+    if len(similar) < 2:
+        return None
+
+    manual_tools = [{
+        "name": product["original_name"],
+        "best_for": (product["summary_tr"] or "")[:100],
+        "pricing": product["pricing_type"] or "Bilinmiyor",
+    }]
+    for s in similar:
+        s = dict(s)
+        manual_tools.append({
+            "name": s["original_name"],
+            "best_for": (s["summary_tr"] or "")[:100],
+            "pricing": s["pricing_type"] or "Bilinmiyor",
+        })
+
+    return {
+        "slug": f"{product['slug']}-rehberi",
+        "title": f"{product['original_name']} ve Alternatifleri: Hangisini Seçmelisiniz? (2026 Rehberi)",
+        "comparison_slug": None,
+        "related_topic": first_topic,
+        "manual_tools": manual_tools,
+        "related_comparisons": [],
+    }
+
+
 def discover_orphan_guides(max_candidates: int = 2, min_clicks: int = 2):
     """
     Admin paneldeki 'Orphan Firsat Raporu'nun otomasyonu.

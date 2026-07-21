@@ -38,14 +38,14 @@ def discover_opportunities():
             p.affiliate_url,
             p.topics,
             COUNT(e.id) as total_clicks,
-            SUM(CASE WHEN e.referrer LIKE '%/ara%' THEN 1 ELSE 0 END) as search_clicks
+            SUM(CASE WHEN e.referrer LIKE ? THEN 1 ELSE 0 END) as search_clicks
         FROM products p
         JOIN outbound_click_events e ON p.id = e.product_id
         WHERE e.clicked_at >= ?
         GROUP BY p.id, p.slug, p.original_name, p.affiliate_url, p.topics
         HAVING COUNT(e.id) > 0
     """
-    products_stats = conn.execute(stats_query, (t_30d,)).fetchall()
+    products_stats = conn.execute(stats_query, ("%/ara%", t_30d)).fetchall()
 
     # Zaten var olan rehberleri (guides) ogren
     guides = conn.execute("SELECT related_tool_slugs, created_at, slug as guide_slug FROM guides").fetchall()
@@ -91,18 +91,32 @@ def discover_opportunities():
     tasks_to_insert = []
 
     # A. Guide, Affiliate, Refresh Firsatlari
+    # Once urun bazinda "aynı oturumda kac kez baska urunlerle birlikte incelendi" sayisini
+    # cikaralim - bu sinyal ARTIK 1'e1 "A vs B" sayfasi UeRETMEK icin degil, o urunun
+    # GUIDE (kategori rehberi) onceliğini artirmak icin kullanilacak (bkz. asagidaki not).
+    multi_click_boost = {}  # product_id -> (boost_puani, en_cok_birlikte_gorulen_urun_adi)
+    for pair, data in pair_counts.items():
+        count = data["count"]
+        p1, p2 = data["p1"], data["p2"]
+        for owner, other in [(p1, p2), (p2, p1)]:
+            pid = owner["product_id"]
+            prev = multi_click_boost.get(pid, (0, ""))
+            if count > prev[0]:
+                multi_click_boost[pid] = (count, other["original_name"])
+
     for p in products_stats:
         pid = p["product_id"]
         slug = p["slug"]
         clicks = p["total_clicks"]
         searches = p["search_clicks"]
-        
+        boost_count, boost_partner = multi_click_boost.get(pid, (0, ""))
+
         # Affiliate Firsati
         if not p["affiliate_url"]:
             score_data = calculate_priority_score(clicks, searches, 0, orphan_bonus=10, penalty=0)
             reason = f"Affiliate yok ({clicks} tiklama)"
             tasks_to_insert.append((pid, "AFFILIATE", score_data, reason))
-            
+
         # Guide/Refresh Firsati
         if slug in covered_in_guides:
             g_created = covered_in_guides[slug]["created_at"]
@@ -112,24 +126,23 @@ def discover_opportunities():
                 reason = f"Rehber 180 gunden eski ({clicks} tiklama)"
                 tasks_to_insert.append((pid, "REFRESH", score_data, reason))
         else:
-            # Guide Firsati (Orphan)
-            score_data = calculate_priority_score(clicks, searches, 0, orphan_bonus=20, penalty=0)
+            # Guide Firsati (Orphan) - multi_clicks sinyali burada "1'e1 comparison" DEGIL,
+            # GUIDE'in oncelik puanini artiran bir bonus olarak kullaniliyor (ChatGPT onerisi:
+            # "insanlar bunlari birlikte degerlendiriyor" -> kategori rehberi daha da onemli demek,
+            # ikili "A vs B" sayfasi anlamina gelmiyor).
+            score_data = calculate_priority_score(clicks, searches, boost_count, orphan_bonus=20, penalty=0)
             reason = f"Rehber yok ({clicks} tiklama)"
+            if boost_count > 0:
+                reason += f" - ayni oturumda {boost_partner} ile birlikte {boost_count} kez incelendi"
             tasks_to_insert.append((pid, "GUIDE", score_data, reason))
 
-    # B. Comparison Firsatlari
-    existing_comp_slugs = {c["slug"] for c in comparisons}
-    for pair, data in pair_counts.items():
-        p1 = data["p1"]
-        p2 = data["p2"]
-        count = data["count"]
-        comp_slug = f"{p1['slug']}-vs-{p2['slug']}"
-        
-        if comp_slug not in existing_comp_slugs:
-            score_data = calculate_priority_score(clicks=count, searches=0, multi_clicks=count, orphan_bonus=15, penalty=0)
-            reason = f"Ayni oturumda {count} kez kiyaslandi: {p1['original_name']} vs {p2['original_name']}"
-            tasks_to_insert.append((p1["product_id"], "COMPARISON", score_data, reason))
-            
+    # B. Comparison Firsatlari: KASITLI OLARAK KAPALI.
+    # Onceki oturumlarda bilincli olarak reddedildi: N urun icin N*(N-1)/2 ikili sayfa
+    # kombinatorik patlar, cogu hic aranmaz, thin-content SEO riski tasir. Kategori bazli
+    # karsilastirmalar zaten auto_generate_comparisons.py tarafindan AYRI ve dogru sekilde
+    # (CANDIDATE_TOPICS + semantik duplicate kontrolu ile) uretiliyor - session verisi
+    # yukarida GUIDE onceliğini artirmak icin kullanildi, ayrica bir "A-vs-B" sayfasi
+    # ureten kod burada BILEREK yok.
     # C. Kuyruga Yaz (Eger zaten ayni product_id ve task_type bekliyorsa guncelle, yoksa ekle)
     for pid, task_type, score_data, reason in tasks_to_insert:
         score_json = json.dumps(score_data)
