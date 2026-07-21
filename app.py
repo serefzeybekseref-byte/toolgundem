@@ -17,7 +17,7 @@ from db import (
     get_admin_stats, get_all_guides, get_guide_by_slug, get_related_guides,
     record_visit, get_visit_stats, get_all_subscribers,
     get_guides_for_topic, get_guides_for_tool_slug, get_guides_for_comparison_slug,
-    get_products_by_slugs, get_comparisons_by_slugs,
+    get_products_by_slugs, get_comparisons_by_slugs, get_broken_products,
     BEST_FOR_TYPES, record_outbound_click_event,
 )
 import os
@@ -462,6 +462,18 @@ def detail(slug):
 def comparisons_list():
     comparisons = cached("comparisons_list", get_all_comparisons)
     return render_template("comparisons.html", comparisons=comparisons)
+
+
+@app.route("/artik-aktif-degil")
+def graveyard():
+    """
+    Seffaflik sayfasi: kirik/kapanan araclari sessizce silmek yerine burada
+    listeler (buyuk AI dizinlerinin guven pratigi - 21 Temmuz 2026 rakip
+    arastirmasindan). Bu urunler diger tum kesif yuzeylerinde (ana sayfa,
+    kategori, arama, benzer araclar) hala GIZLI kalir - sadece burada gorunur.
+    """
+    broken = get_broken_products()
+    return render_template("graveyard.html", broken_products=broken)
 
 
 @app.route("/rehber")

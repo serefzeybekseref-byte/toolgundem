@@ -1,0 +1,53 @@
+﻿{% extends "base.html" %}
+{% block title %}Artık Aktif Değil Olan Araçlar — Şeffaflık Sayfası — BulurumAI{% endblock %}
+{% block description %}Web sitesi kapanmış, alan adı değişmiş veya erişilemez hale gelmiş AI araçlarının şeffaf listesi. Bu araçlar diğer sayfalarımızda gösterilmez.{% endblock %}
+
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">Ana Sayfa</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>Artık Aktif Değil</span>
+  </nav>
+
+  <div class="page-header">
+    <h1 class="page-title">🪦 Artık Aktif Değil Olan Araçlar</h1>
+    <p class="page-subtitle">
+      Bu araçların web sitelerine son kontrolümüzde erişemedik (site kapanmış, alan adı satılmış
+      veya erişilemez olmuş olabilir). Onları sessizce silmek yerine burada şeffaf şekilde
+      listeliyoruz. <strong>Bu araçlar sitemizin başka hiçbir yerinde (ana sayfa, kategoriler,
+      arama, benzer araçlar) gösterilmez</strong> — sadece burada arşiv amaçlı duruyor.
+    </p>
+  </div>
+
+  <div class="card-grid">
+    {% for p in broken_products %}
+    <div class="tool-card" style="opacity: 0.7;">
+      <div class="tool-card-img">
+        {% if p.thumbnail %}
+        <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy" style="filter: grayscale(1);">
+        {% else %}
+        <span class="tool-card-img-fallback">{{ p.original_name[0]|upper }}</span>
+        {% endif %}
+      </div>
+      <div class="tool-card-body">
+        <h3 class="tool-card-title">{{ p.original_name }}</h3>
+        <p class="tool-card-summary">{{ p.summary_tr }}</p>
+        <div class="tool-card-footer">
+          <span class="badge" style="background: rgba(229,72,77,0.1); color:#e5484d; border:1px solid rgba(229,72,77,0.3);">
+            ⚠️ {% if p.broken_reason == '404' %}Sayfa bulunamadı{% elif p.broken_reason == 'dns_error' %}Alan adı erişilemez{% elif p.broken_reason == 'timeout' %}Yanıt vermiyor{% elif p.broken_reason == 'ssl_error' %}Güvenlik sertifikası hatalı{% else %}Erişilemiyor{% endif %}
+          </span>
+          {% if p.last_checked_at %}
+          <span class="mono" style="font-size:0.75rem; color: var(--text-secondary);">Son kontrol: {{ p.last_checked_at[:10] }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <p>🎉 Şu an kırık/erişilemez işaretli araç yok — tüm katalog sağlıklı.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

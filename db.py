@@ -886,6 +886,11 @@ def get_admin_stats():
         "SELECT COUNT(*) as c FROM products WHERE last_checked_at IS NULL OR last_checked_at = ''"
     ).fetchone())["c"]
 
+    affiliate_count = dict(conn.execute(
+        "SELECT COUNT(*) as c FROM products WHERE affiliate_url IS NOT NULL AND affiliate_url != ''"
+    ).fetchone())["c"]
+    affiliate_coverage_pct = round((affiliate_count / total_products * 100), 1) if total_products else 0
+
     total_comparisons = dict(conn.execute("SELECT COUNT(*) as c FROM comparisons").fetchone())["c"]
     total_collections = dict(conn.execute("SELECT COUNT(*) as c FROM collections").fetchone())["c"]
 
@@ -925,6 +930,8 @@ def get_admin_stats():
         "quality_buckets": quality_buckets,
         "broken_links": broken_links,
         "never_checked": never_checked,
+        "affiliate_count": affiliate_count,
+        "affiliate_coverage_pct": affiliate_coverage_pct,
         "total_comparisons": total_comparisons,
         "total_collections": total_collections,
         "top_topics": top_topics_list,
@@ -1116,6 +1123,21 @@ def get_collections_for_product(product_id: int, limit: int = 3):
     """, (product_id, limit)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+def get_broken_products():
+    """
+    'Graveyard' sayfasi icin: kirik isaretli urunleri gizlemek yerine
+    seffaf bir listede gosteririz (bkz. Best-AI.org gibi buyuk dizinlerin
+    guven pratikleri - sessizce silmek yerine 'artik aktif degil' diye
+    isaretlemek kullanicida daha fazla guven yaratir).
+    """
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM products WHERE is_broken = 1 ORDER BY last_checked_at DESC"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
 
 def get_trending_products(limit=5):
     """En cok oy alan urunler. Kirik link isaretli urunler kesif yuzeylerinde gosterilmez."""

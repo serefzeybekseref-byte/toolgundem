@@ -61,6 +61,12 @@
       <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">ÇOKLU TIKLAMA OTURUMLARI</div>
       <div style="font-size:2rem; font-weight:700; color: var(--text);">{{ multi_clicks|length }}</div>
     </div>
+
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">AFFİLİATE KAPSAMI</div>
+      <div style="font-size:2rem; font-weight:700; color: {% if stats.affiliate_coverage_pct < 10 %}#e5484d{% elif stats.affiliate_coverage_pct < 30 %}var(--yellow){% else %}var(--green){% endif %};">%{{ stats.affiliate_coverage_pct }}</div>
+      <div class="mono" style="font-size:0.7rem; color: var(--text-secondary); margin-top:2px;">{{ stats.affiliate_count }} / {{ stats.total_products }} ürün</div>
+    </div>
   </div>
 
   <!-- CONTENT OS -->
