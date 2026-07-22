@@ -869,77 +869,86 @@ def admin():
     expected = os.getenv("ADMIN_TOKEN", "")
     if not expected or token != expected:
         abort(404)  # 401 yerine 404 -> panelin varligini gizler
-    stats = get_admin_stats()
-    visits = get_visit_stats()
-    subscribers = get_all_subscribers()
-    
+
     # Filtre Parametreleri
     days = request.args.get("days", 30, type=int)
     country = request.args.get("country", "All").strip()
     device = request.args.get("device", "All").strip()
-    
-    # Yeni analitik sorgularını çek
-    from db import (
-        get_top_clicked_tools_stats,
-        get_category_clicks_stats,
-        get_search_queries_stats,
-        get_zero_click_tools_stats,
-        get_orphan_opportunity_stats,
-        get_referrer_distribution,
-        get_entry_exit_matrix,
-        get_multi_click_sessions,
-        get_recent_user_journeys,
-        get_average_time_to_first_click,
-        get_content_os_dashboard
-    )
-    
-    # Global/Eski filtreler (varsayılan 30 gün)
-    top_clicked = get_top_clicked_tools_stats(days=days)
-    category_clicks = get_category_clicks_stats(days=days)
-    search_queries = get_search_queries_stats(days=days)
-    zero_clicks = get_zero_click_tools_stats(days=90)
-    orphans = get_orphan_opportunity_stats(days=days, limit=10)
-    
-    # Yeni Sprint 2 Analitikleri
-    ref_dist = get_referrer_distribution(days=days, country=country, device=device)
-    entry_exit = get_entry_exit_matrix(days=days, country=country, device=device)
-    multi_clicks = get_multi_click_sessions(days=days, country=country, device=device)
-    recent_journeys = get_recent_user_journeys(days=days, country=country, device=device, limit=50)
-    avg_time = get_average_time_to_first_click(days=days, country=country, device=device)
-    
-    # Gelir simülatörü ayarları (GET parametreleri ile oynanabilir)
+
+    def _load_admin_data():
+        stats = get_admin_stats()
+        visits = get_visit_stats()
+        subscribers = get_all_subscribers()
+
+        from db import (
+            get_top_clicked_tools_stats,
+            get_category_clicks_stats,
+            get_search_queries_stats,
+            get_zero_click_tools_stats,
+            get_orphan_opportunity_stats,
+            get_referrer_distribution,
+            get_entry_exit_matrix,
+            get_multi_click_sessions,
+            get_recent_user_journeys,
+            get_average_time_to_first_click,
+            get_content_os_dashboard
+        )
+
+        top_clicked = get_top_clicked_tools_stats(days=days)
+        category_clicks = get_category_clicks_stats(days=days)
+        search_queries = get_search_queries_stats(days=days)
+        zero_clicks = get_zero_click_tools_stats(days=90)
+        orphans = get_orphan_opportunity_stats(days=days, limit=10)
+
+        ref_dist = get_referrer_distribution(days=days, country=country, device=device)
+        entry_exit = get_entry_exit_matrix(days=days, country=country, device=device)
+        multi_clicks = get_multi_click_sessions(days=days, country=country, device=device)
+        recent_journeys = get_recent_user_journeys(days=days, country=country, device=device, limit=50)
+        avg_time = get_average_time_to_first_click(days=days, country=country, device=device)
+
+        from datetime import date
+        from db import get_daily_clicks_count
+        today_str = date.today().isoformat()
+        today_clicks = get_daily_clicks_count(today_str)
+
+        content_os = get_content_os_dashboard()
+
+        return dict(
+            stats=stats, visits=visits, subscribers=subscribers, content_os=content_os,
+            top_clicked=top_clicked, category_clicks=category_clicks, search_queries=search_queries,
+            zero_clicks=zero_clicks, orphans=orphans, ref_dist=ref_dist, entry_exit=entry_exit,
+            multi_clicks=multi_clicks, recent_journeys=recent_journeys, avg_time=avg_time,
+            today_clicks=today_clicks,
+        )
+
+    # Admin sayfasi cok agir (~18 ayri sorgu) oldugu icin 60sn'lik kisa TTL cache
+    # kullaniyoruz - filtreler (days/country/device) degisince ayri bir cache anahtari olusur.
+    cache_key = f"admin_{days}_{country}_{device}"
+    data = cached(cache_key, _load_admin_data, ttl=60)
+
     conv_rate = request.args.get("conv", 2.0, type=float)
     avg_comm = request.args.get("comm", 18.0, type=float)
-    
-    # Toplam tıklama sayısı (Bugün)
-    from datetime import date
-    from db import get_daily_clicks_count
-    today_str = date.today().isoformat()
-    today_clicks = get_daily_clicks_count(today_str)
-    
-    # Content OS Data
-    content_os = get_content_os_dashboard()
-    
+
     return render_template(
-        "admin.html", 
-        stats=stats, 
-        visits=visits, 
-        subscribers=subscribers, 
-        content_os=content_os,
+        "admin.html",
+        stats=data["stats"],
+        visits=data["visits"],
+        subscribers=data["subscribers"],
+        content_os=data["content_os"],
         admin_token=token,
-        top_clicked=top_clicked,
-        category_clicks=category_clicks,
-        search_queries=search_queries,
-        zero_clicks=zero_clicks,
-        orphans=orphans,
-        ref_dist=ref_dist,
-        entry_exit=entry_exit,
-        multi_clicks=multi_clicks,
-        recent_journeys=recent_journeys,
-        avg_time=avg_time,
+        top_clicked=data["top_clicked"],
+        category_clicks=data["category_clicks"],
+        search_queries=data["search_queries"],
+        zero_clicks=data["zero_clicks"],
+        orphans=data["orphans"],
+        ref_dist=data["ref_dist"],
+        entry_exit=data["entry_exit"],
+        multi_clicks=data["multi_clicks"],
+        recent_journeys=data["recent_journeys"],
+        avg_time=data["avg_time"],
         conv_rate=conv_rate,
         avg_comm=avg_comm,
-        today_clicks=today_clicks,
+        today_clicks=data["today_clicks"],
         filter_days=days,
         filter_country=country,
         filter_device=device
