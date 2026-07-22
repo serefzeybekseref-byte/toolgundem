@@ -126,6 +126,19 @@
 </footer>
 
 {% if not request.path.startswith('/admin') %}
+<script>
+  // app.js defer edildigi icin gec yuklenebiliyor - resimler daha erken hataya
+  // dusebiliyor ("logoFallback is not defined"). Bu yuzden burada da (satir ici,
+  // hemen calisan) tanimliyoruz, resimlerden once calismasi garanti olsun diye.
+  function logoFallback(imgEl, domain, letter) {
+    if (!imgEl.dataset.fallbackStep) {
+      imgEl.dataset.fallbackStep = "1";
+      imgEl.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+    } else {
+      imgEl.outerHTML = `<span class="leaderboard-logo-fallback" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0;">${letter}</span>`;
+    }
+  }
+</script>
 <div id="promo-widget" class="promo-widget">
   <button id="promo-widget-close" class="promo-widget-close" aria-label="Kapat">✕</button>
   <div class="promo-widget-title">Vitrin</div>
