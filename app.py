@@ -56,7 +56,7 @@ def cached(key, fn, ttl=300):
 _TRACKED_ENDPOINTS = {
     "home", "detail", "category", "comparisons_list", "comparison_detail",
     "guides_list", "guide_detail", "collections_list", "collection_detail",
-    "iletisim", "hakkimizda", "gizlilik", "kvkk", "kullanim-sartlari", "search"
+    "iletisim", "hakkimizda", "onerdiklerimiz", "gizlilik", "kvkk", "kullanim-sartlari", "search"
 }
 
 
@@ -613,6 +613,11 @@ def iletisim():
 @app.route("/hakkimizda")
 def hakkimizda():
     return render_template("hakkimizda.html", page_title="Hakkımızda")
+
+
+@app.route("/onerdiklerimiz")
+def onerdiklerimiz():
+    return render_template("onerdiklerimiz.html", page_title="Önerdiklerimiz")
 
 
 @app.route("/gizlilik")
