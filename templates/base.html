@@ -139,53 +139,53 @@
     }
   }
 </script>
-<div id="promo-widget" class="promo-widget">
-  <button id="promo-widget-close" class="promo-widget-close" aria-label="Kapat">✕</button>
-  <div class="promo-widget-title">Vitrin</div>
-  <p class="promo-widget-tagline">Ekibimizin düzenli olarak test ettiği ve güvenle önerdiği araçlar.</p>
-  <a href="https://go.nordvpn.net/aff_c?offer_id=15&aff_id=153130&url_id=902" target="_blank" rel="noopener sponsored" class="promo-widget-item">
+<div id="quick-picks" class="quick-picks">
+  <button id="quick-picks-close" class="quick-picks-close" aria-label="Kapat">✕</button>
+  <div class="quick-picks-title">Vitrin</div>
+  <p class="quick-picks-tagline">Ekibimizin düzenli olarak test ettiği ve güvenle önerdiği araçlar.</p>
+  <a href="https://go.nordvpn.net/aff_c?offer_id=15&aff_id=153130&url_id=902" target="_blank" rel="noopener sponsored" class="quick-picks-item">
     <img src="/static/logos/nordvpn.png" alt="NordVPN" loading="lazy" width="28" height="28" onerror="logoFallback(this,'nordvpn.com','N')">
-    <div class="promo-widget-item-text">
-      <span class="promo-widget-item-name">NordVPN</span>
-      <span class="promo-widget-item-desc">Veri gizliliğinizi koruyun</span>
+    <div class="quick-picks-item-text">
+      <span class="quick-picks-item-name">NordVPN</span>
+      <span class="quick-picks-item-desc">Veri gizliliğinizi koruyun</span>
     </div>
   </a>
-  <a href="https://go.nordpass.io/aff_c?offer_id=488&aff_id=153130&url_id=9356" target="_blank" rel="noopener sponsored" class="promo-widget-item">
+  <a href="https://go.nordpass.io/aff_c?offer_id=488&aff_id=153130&url_id=9356" target="_blank" rel="noopener sponsored" class="quick-picks-item">
     <img src="/static/logos/nordpass.png" alt="NordPass" loading="lazy" width="28" height="28" onerror="logoFallback(this,'nordpass.com','N')">
-    <div class="promo-widget-item-text">
-      <span class="promo-widget-item-name">NordPass</span>
-      <span class="promo-widget-item-desc">Şifrelerinizi güvenle saklayın</span>
+    <div class="quick-picks-item-text">
+      <span class="quick-picks-item-name">NordPass</span>
+      <span class="quick-picks-item-desc">Şifrelerinizi güvenle saklayın</span>
     </div>
   </a>
   {% for p in showcase_products %}
-  <a href="{{ url_for('detail', slug=p.slug) }}" class="promo-widget-item">
+  <a href="{{ url_for('detail', slug=p.slug) }}" class="quick-picks-item">
     {% if p.thumbnail %}
     <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
     {% else %}
     <span class="leaderboard-logo-fallback" style="width:28px;height:28px;font-size:0.8rem;">{{ p.original_name[0]|upper }}</span>
     {% endif %}
-    <div class="promo-widget-item-text">
-      <span class="promo-widget-item-name">{{ p.original_name }}</span>
-      <span class="promo-widget-item-desc">{{ p.summary_tr[:40] }}…</span>
+    <div class="quick-picks-item-text">
+      <span class="quick-picks-item-name">{{ p.original_name }}</span>
+      <span class="quick-picks-item-desc">{{ p.summary_tr[:40] }}…</span>
     </div>
   </a>
   {% endfor %}
 </div>
 <script>
 (function () {
-  var KEY = "promo_widget_dismissed_until";
-  var widget = document.getElementById("promo-widget");
-  var closeBtn = document.getElementById("promo-widget-close");
+  var KEY = "quick_picks_dismissed_until";
+  var widget = document.getElementById("quick-picks");
+  var closeBtn = document.getElementById("quick-picks-close");
   if (!widget) return;
   try {
     var until = parseInt(localStorage.getItem(KEY) || "0", 10);
     if (Date.now() < until) {
       widget.style.display = "none";
     } else {
-      widget.classList.add("promo-widget-visible");
+      widget.classList.add("quick-picks-visible");
     }
   } catch (e) {
-    widget.classList.add("promo-widget-visible");
+    widget.classList.add("quick-picks-visible");
   }
   closeBtn.addEventListener("click", function () {
     widget.style.display = "none";

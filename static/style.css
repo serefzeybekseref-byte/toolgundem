@@ -2169,7 +2169,7 @@ h1, h2, h3, h4 {
 
 /* Scroll to top button */
 /* Sabit "Onerdiklerimiz" promosyon widget'i - tum sayfalarda gorunur (base.html) */
-.promo-widget {
+.quick-picks {
   position: fixed;
   bottom: 24px;
   left: 24px;
@@ -2188,13 +2188,13 @@ h1, h2, h3, h4 {
   pointer-events: none;
 }
 
-.promo-widget.promo-widget-visible {
+.quick-picks.quick-picks-visible {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
 
-.promo-widget-close {
+.quick-picks-close {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -2211,12 +2211,12 @@ h1, h2, h3, h4 {
   justify-content: center;
 }
 
-.promo-widget-close:hover {
+.quick-picks-close:hover {
   color: var(--text);
   border-color: var(--accent);
 }
 
-.promo-widget-title {
+.quick-picks-title {
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -2233,7 +2233,7 @@ h1, h2, h3, h4 {
   display: inline-block;
 }
 
-.promo-widget-item {
+.quick-picks-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2245,33 +2245,33 @@ h1, h2, h3, h4 {
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.promo-widget-item:last-of-type {
+.quick-picks-item:last-of-type {
   border-bottom: none;
 }
 
-.promo-widget-item:hover {
+.quick-picks-item:hover {
   background-color: var(--surface-hover);
 }
 
-.promo-widget-item img {
+.quick-picks-item img {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
-.promo-widget-item-text {
+.quick-picks-item-text {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-.promo-widget-item-name {
+.quick-picks-item-name {
   font-size: 0.82rem;
   font-weight: 600;
 }
 
-.promo-widget-item-desc {
+.quick-picks-item-desc {
   font-size: 0.7rem;
   color: var(--text-secondary);
   white-space: nowrap;
@@ -2279,7 +2279,7 @@ h1, h2, h3, h4 {
   text-overflow: ellipsis;
 }
 
-.promo-widget-disclosure {
+.quick-picks-disclosure {
   font-size: 0.62rem;
   color: var(--text-secondary);
   text-align: center;
@@ -2288,7 +2288,7 @@ h1, h2, h3, h4 {
 }
 
 @media (max-width: 640px) {
-  .promo-widget {
+  .quick-picks {
     left: 12px;
     right: 12px;
     bottom: 12px;
