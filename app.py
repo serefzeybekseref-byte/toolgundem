@@ -955,28 +955,33 @@ def admin():
 
         content_os = get_content_os_dashboard()
 
+        from db import get_connection as _gc2
+        showcase_full = [dict(r) for r in _gc2().execute(
+            "SELECT id, slug, original_name FROM products WHERE is_showcase = 1 ORDER BY original_name"
+        ).fetchall()]
+
         return dict(
             stats=stats, visits=visits, subscribers=subscribers, content_os=content_os,
             top_clicked=top_clicked, category_clicks=category_clicks, search_queries=search_queries,
             zero_clicks=zero_clicks, orphans=orphans, ref_dist=ref_dist, entry_exit=entry_exit,
             multi_clicks=multi_clicks, recent_journeys=recent_journeys, avg_time=avg_time,
-            today_clicks=today_clicks,
+            today_clicks=today_clicks, showcase_full=showcase_full,
         )
 
-    # Admin sayfasi cok agir (~18 ayri sorgu) oldugu icin 60sn'lik kisa TTL cache
+    # Admin sayfasi cok agir (~18 ayri sorgu) oldugu icin kisa TTL cache
     # kullaniyoruz - filtreler (days/country/device) degisince ayri bir cache anahtari olusur.
+    # NOT: Vercel serverless'ta bellek-ici cache instance soguyunca sifirlanabilir, garanti
+    # degil - asil hizi N+1 sorgu duzeltmeleri (db.py) sagliyor, bu sadece ek bir katman.
+    # Admin sayfasi nadiren (gunde birkac kez) kontrol edildigi icin TTL'i 60sn'den
+    # 300sn'ye (5dk) cikardik - eskiden neredeyse her ziyarette cache zaten suresi
+    # dolmus oluyordu, faydasi minimaldi.
     cache_key = f"admin_{days}_{country}_{device}"
-    data = cached(cache_key, _load_admin_data, ttl=60)
+    data = cached(cache_key, _load_admin_data, ttl=300)
 
     conv_rate = request.args.get("conv", 2.0, type=float)
     avg_comm = request.args.get("comm", 18.0, type=float)
 
-    from db import get_connection as _gc
-    _conn = _gc()
-    showcase_full = _conn.execute(
-        "SELECT id, slug, original_name FROM products WHERE is_showcase = 1 ORDER BY original_name"
-    ).fetchall()
-    _conn.close()
+    showcase_full = data["showcase_full"]
 
     return render_template(
         "admin.html",

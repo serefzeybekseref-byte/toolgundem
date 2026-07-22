@@ -1786,22 +1786,32 @@ def get_top_clicked_tools_stats(days=30):
     """
     rows = conn.execute(sql, (t30,)).fetchall()
     top_tools = [dict(r) for r in rows]
-    
+
+    # ONEMLI: eskiden her arac icin 2 AYRI sorgu atiliyordu (10 arac = 21 sorgu).
+    # Simdi tum araclarin son-7-gun ve onceki-7-gun sayilarini TEK sorguda,
+    # CASE WHEN ile grupluyoruz.
+    tool_ids = [t["id"] for t in top_tools]
+    trend_map = {}
+    if tool_ids:
+        placeholders = ",".join(["?"] * len(tool_ids))
+        trend_sql = f"""
+            SELECT product_id,
+                SUM(CASE WHEN clicked_at >= ? THEN 1 ELSE 0 END) as c7,
+                SUM(CASE WHEN clicked_at >= ? AND clicked_at < ? THEN 1 ELSE 0 END) as c_prev
+            FROM outbound_click_events
+            WHERE product_id IN ({placeholders})
+            GROUP BY product_id
+        """
+        trend_rows = conn.execute(trend_sql, [t7, t14, t7] + tool_ids).fetchall()
+        for r in trend_rows:
+            r = dict(r)
+            trend_map[r["product_id"]] = {"c7": r["c7"] or 0, "c_prev": r["c_prev"] or 0}
+
     for tool in top_tools:
         p_id = tool["id"]
-        # Son 7 gün tıklamaları
-        r7 = conn.execute(
-            "SELECT COUNT(id) as cnt FROM outbound_click_events WHERE product_id = ? AND clicked_at >= ?", 
-            (p_id, t7)
-        ).fetchone()
-        c7 = r7["cnt"] if r7 else 0
-        
-        # Önceki 7 gün tıklamaları (t14 ile t7 arası)
-        r_prev = conn.execute(
-            "SELECT COUNT(id) as cnt FROM outbound_click_events WHERE product_id = ? AND clicked_at >= ? AND clicked_at < ?",
-            (p_id, t14, t7)
-        ).fetchone()
-        c_prev = r_prev["cnt"] if r_prev else 0
+        counts = trend_map.get(p_id, {"c7": 0, "c_prev": 0})
+        c7 = counts["c7"]
+        c_prev = counts["c_prev"]
         
         tool["clicks_last_7"] = c7
         tool["clicks_prev_7"] = c_prev
@@ -2074,20 +2084,37 @@ def get_multi_click_sessions(days=30, country='All', device='All'):
         
     query += " AND session_id IS NOT NULL GROUP BY session_id HAVING COUNT(id) > 1 ORDER BY COUNT(id) DESC LIMIT 20"
     
-    session_rows = conn.execute(query, params).fetchall()
-    
+    session_rows = [dict(r) for r in conn.execute(query, params).fetchall()]
+    session_ids = [s["session_id"] for s in session_rows if s.get("session_id")]
+
+    # Tek sorguda tum session'larin click'lerini cek (eskiden her session icin ayri
+    # sorgu vardi - N+1 deseni, bkz. get_recent_user_journeys'deki ayni duzeltme).
+    clicks_by_session = {}
+    if session_ids:
+        placeholders = ",".join(["?"] * len(session_ids))
+        all_clicks = conn.execute(
+            f"""SELECT o.session_id, o.clicked_at, o.referrer, p.original_name, o.destination_type
+                FROM outbound_click_events o JOIN products p ON o.product_id = p.id
+                WHERE o.session_id IN ({placeholders})
+                ORDER BY o.session_id, o.clicked_at ASC""",
+            session_ids
+        ).fetchall()
+        for row in all_clicks:
+            row = dict(row)
+            clicks_by_session.setdefault(row["session_id"], []).append(row)
+
     results = []
     for s in session_rows:
         sid = s['session_id']
         if not sid:
             continue
-        clicks = conn.execute("SELECT o.clicked_at, o.referrer, p.original_name, o.destination_type FROM outbound_click_events o JOIN products p ON o.product_id = p.id WHERE o.session_id = ? ORDER BY o.clicked_at ASC", (sid,)).fetchall()
+        clicks = clicks_by_session.get(sid, [])
         results.append({
             'session_id': sid[:8] + '...',
-            'click_count': s['cnt'] if 'cnt' in s.keys() else len(clicks),
+            'click_count': s.get('cnt', len(clicks)),
             'first_click': s['first_click'],
             'last_click': s['last_click'],
-            'clicks': [dict(c) for c in clicks]
+            'clicks': clicks
         })
         
     conn.close()
@@ -2113,13 +2140,33 @@ def get_recent_user_journeys(days=30, country='All', device='All', limit=50):
     params.append(limit)
     
     sessions = conn.execute(query, params).fetchall()
-    
+    session_ids = [dict(s)["session_id"] for s in sessions if dict(s).get("session_id")]
+
+    # ONEMLI: eskiden her session icin AYRI bir sorgu atiliyordu (N+1 sorgu deseni -
+    # 50 session = 51 sorgu, admin panelinin "asiri yavas" olmasinin ana sebeplerinden
+    # biriydi). Simdi TUM session'larin click'lerini TEK sorguda cekip Python'da
+    # session_id'ye gore gruplu topluyoruz.
+    clicks_by_session = {}
+    if session_ids:
+        placeholders = ",".join(["?"] * len(session_ids))
+        all_clicks = conn.execute(
+            f"""SELECT o.session_id, o.clicked_at, o.referrer, o.destination_type, p.original_name, o.search_query
+                FROM outbound_click_events o JOIN products p ON o.product_id = p.id
+                WHERE o.session_id IN ({placeholders})
+                ORDER BY o.session_id, o.clicked_at ASC""",
+            session_ids
+        ).fetchall()
+        for row in all_clicks:
+            row = dict(row)
+            clicks_by_session.setdefault(row["session_id"], []).append(row)
+
     journeys = []
     for s in sessions:
+        s = dict(s)
         sid = s['session_id']
         if not sid:
             continue
-        clicks = conn.execute("SELECT o.clicked_at, o.referrer, o.destination_type, p.original_name, o.search_query FROM outbound_click_events o JOIN products p ON o.product_id = p.id WHERE o.session_id = ? ORDER BY o.clicked_at ASC", (sid,)).fetchall()
+        clicks = clicks_by_session.get(sid, [])
         
         click_count = len(clicks)
         if click_count == 1:
