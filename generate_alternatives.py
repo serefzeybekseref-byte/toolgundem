@@ -212,14 +212,31 @@ def generate_one(brand: str, dry_run=False):
         print(f"  ATLANDI: kelime sayisi cok dusuk ({word_count})")
         return None
 
-    # HTML birlestir
+    # HTML birlestir - slug eslestirip ic link ekliyoruz (SEO + kullanici deneyimi)
+    from db import normalize_name
+    conn = get_connection()
+    slug_map = {}
+    for a in body.get("alternatifler", []) + [{"isim": brand}]:
+        name = a.get("isim") or a.get("name")
+        row = conn.execute(
+            "SELECT slug FROM products WHERE normalized_name = ?", (normalize_name(name),)
+        ).fetchone()
+        if row:
+            slug_map[name] = dict(row)["slug"]
+    conn.close()
+    related_tool_slugs = list(slug_map.values())
+
     html_parts = []
     if intro.get("hizli_ozet"):
         html_parts.append(f"<div class='guide-quick-answer'><strong>⚡ Kısa cevap:</strong> {intro['hizli_ozet']}</div>")
     html_parts.append(f"<p>{intro['giris']}</p>")
     html_parts.append(f"<h2>{brand} Alternatifleri</h2>")
     for a in body.get("alternatifler", []):
-        html_parts.append(f"<h3>{a['isim']}</h3><p>{a['aciklama']}</p>")
+        name = a["isim"]
+        if name in slug_map:
+            html_parts.append(f"<h3><a href='/urun/{slug_map[name]}'>{name}</a></h3><p>{a['aciklama']}</p>")
+        else:
+            html_parts.append(f"<h3>{name}</h3><p>{a['aciklama']}</p>")
     html_parts.append(f"<h2>Sonuç</h2><p>{outro['sonuc']}</p>")
     if outro.get("sss"):
         html_parts.append("<h2>Sık Sorulan Sorular</h2>")
@@ -243,7 +260,7 @@ def generate_one(brand: str, dry_run=False):
         excerpt=intro["excerpt"],
         content_html=content_html,
         related_topic="",
-        related_tool_slugs=[],
+        related_tool_slugs=related_tool_slugs,
         related_comparison_slugs=[],
     )
     print(f"  -> kaydedildi: /rehber/{slug}")
