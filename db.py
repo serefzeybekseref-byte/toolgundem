@@ -942,40 +942,58 @@ def get_admin_stats():
 
 
 def get_content_os_dashboard():
-    """Content OS admin paneli icin kuyruk ve saglik verilerini dondurur."""
+    """Content OS admin paneli icin kuyruk ve saglik verilerini dondurur.
+    AFFILIATE gorevleri otomatik islenmiyor (bilincli tasarim - gercek affiliate linki
+    eklemek insan/is karari gerektirir), bu yuzden 'otomasyon kuyrugu' (tasks/stats)
+    disinda, ayri bir 'is karari bekleyenler' listesi (affiliate_opportunities) olarak
+    dondurulur - aksi halde hicbir zaman islenmeyecek kalemler 'bekleyen otomasyon isi'
+    gibi gorunup yaniltici olurdu."""
     conn = get_connection()
-    
-    # Bekleyen Isler (To-Do)
+
+    # Otomatik islenebilir gorevler (GUIDE/REFRESH) - gercek otomasyon kuyrugu
     tasks = conn.execute("""
-        SELECT t.*, p.original_name, p.slug 
+        SELECT t.*, p.original_name, p.slug
         FROM content_tasks t
         JOIN products p ON t.product_id = p.id
-        WHERE t.status = 'PENDING'
+        WHERE t.status = 'PENDING' AND t.task_type IN ('GUIDE', 'REFRESH')
         ORDER BY t.priority_score DESC
         LIMIT 20
     """).fetchall()
-    
+
+    # AFFILIATE: otomatik islenmez, ayri "is karari bekleyenler" listesi
+    affiliate_opportunities = conn.execute("""
+        SELECT t.*, p.original_name, p.slug
+        FROM content_tasks t
+        JOIN products p ON t.product_id = p.id
+        WHERE t.status = 'PENDING' AND t.task_type = 'AFFILIATE'
+        ORDER BY t.priority_score DESC
+        LIMIT 30
+    """).fetchall()
+
     # Son calismalar
     runs = conn.execute("""
         SELECT * FROM pipeline_runs
         ORDER BY id DESC
         LIMIT 5
     """).fetchall()
-    
-    # Istatistikler
+
+    # Istatistikler - sadece otomatik islenebilir turler (GUIDE/REFRESH) sayilir,
+    # AFFILIATE dahil edilirse "bekleyen" sayisi hep yuksek kalir ve yanlis alarm verir.
     stats = conn.execute("""
-        SELECT 
+        SELECT
             COUNT(*) as total,
             SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) as pending,
             SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) as success,
             SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) as failed
         FROM content_tasks
+        WHERE task_type IN ('GUIDE', 'REFRESH')
     """).fetchone()
-    
+
     conn.close()
-    
+
     return {
         "tasks": [dict(t) for t in tasks],
+        "affiliate_opportunities": [dict(a) for a in affiliate_opportunities],
         "runs": [dict(r) for r in runs],
         "stats": dict(stats)
     }

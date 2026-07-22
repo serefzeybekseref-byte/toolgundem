@@ -9,7 +9,7 @@ on:
 jobs:
   generate-content:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     permissions:
       issues: write
     env:
@@ -37,7 +37,7 @@ jobs:
       - name: Content OS Pipeline Calistir
         id: pipeline
         continue-on-error: true
-        run: python automation_pipeline.py
+        run: python automation_pipeline.py --max-tasks 6
 
       - name: Yeni/guncellenen sayfalari IndexNow ile bildir (Bing/Yandex)
         continue-on-error: true

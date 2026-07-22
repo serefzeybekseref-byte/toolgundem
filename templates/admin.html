@@ -147,6 +147,29 @@
     
   </div>
 
+  <!-- İş Kararı Bekleyenler (AFFILIATE) - otomasyon kuyrugundan ayri, cunku hicbir zaman
+       otomatik islenmeyecek, gercek affiliate linki eklemek senin is kararin gerektiriyor -->
+  <div style="padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:32px;">
+    <h3 style="font-size:1rem; margin-top:0; margin-bottom:4px;">💰 İş Kararı Bekleyenler (Affiliate Fırsatları)</h3>
+    <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0; margin-bottom:16px;">
+      Bunlar otomasyon kuyruğunda DEĞİL — hiçbir script bunları kendiliğinden işlemez.
+      Gerçek bir affiliate/partner linki bulup <code>affiliate_url</code> alanına eklediğinde bu liste kısalır.
+    </p>
+    <div style="display:flex; flex-direction:column; gap:10px; max-height:320px; overflow-y:auto; padding-right:8px;">
+      {% for a in content_os.affiliate_opportunities %}
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-md); padding:12px 16px;">
+        <div>
+          <strong style="font-size:0.9rem;">{{ a.original_name }}</strong>
+          <div style="font-size:0.78rem; color:var(--text-secondary);">{{ a.reason }}</div>
+        </div>
+        <a href="{{ url_for('detail', slug=a.slug) }}" class="mono" style="font-size:0.78rem; color:var(--accent);">gör →</a>
+      </div>
+      {% else %}
+      <p style="color:var(--text-secondary); font-size:0.85rem;">Şu an bekleyen affiliate fırsatı yok.</p>
+      {% endfor %}
+    </div>
+  </div>
+
   <!-- TRAFİK KAYNAKLARI -->
   <h2 style="font-size:1.15rem; margin-bottom:16px;">📡 Trafik Kaynakları & Akış</h2>
   <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap:24px; margin-bottom:32px;">
