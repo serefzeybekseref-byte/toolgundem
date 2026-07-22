@@ -498,6 +498,8 @@ def graveyard():
 @app.route("/rehber")
 def guides_list():
     guides = cached("guides_list", get_all_guides)
+    for g in guides:
+        g["is_alternative"] = g["slug"].endswith("-alternatifleri")
     return render_template("guides.html", guides=guides)
 
 

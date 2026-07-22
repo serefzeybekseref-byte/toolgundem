@@ -15,13 +15,20 @@
     <p class="page-subtitle">Yapay zeka araçlarını seçmek, karşılaştırmak ve verimli kullanmak için hazırlanan kapsamlı rehberler. Düzenli olarak güncellenen içerikler ve gerçek araç önerileriyle doğru seçimi yapın.</p>
   </div>
 
+  <div class="category-grid" style="margin-bottom: var(--space-6);">
+    <button class="category-chip guide-filter-btn active" data-filter="all">🗂️ Tümü</button>
+    <button class="category-chip guide-filter-btn" data-filter="guide">📖 Rehberler</button>
+    <button class="category-chip guide-filter-btn" data-filter="alternative">🔄 Alternatifler</button>
+  </div>
+
   <div class="card-grid">
     {% for g in guides %}
-    <a href="/rehber/{{ g.slug }}" class="compare-card fade-in">
+    <a href="/rehber/{{ g.slug }}" class="compare-card fade-in" data-type="{{ 'alternative' if g.is_alternative else 'guide' }}">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="collection-icon">📖</div>
+        <div class="collection-icon">{{ '🔄' if g.is_alternative else '📖' }}</div>
         <span class="compare-date mono">{{ g.created_at[:10] }}</span>
       </div>
+      {% if g.is_alternative %}<span class="tag" style="margin-bottom:6px;">Alternatif Rehberi</span>{% endif %}
       <h3 class="compare-title">{{ g.title }}</h3>
       {% if g.excerpt %}
       <p class="compare-intro">{{ g.excerpt[:120] }}{% if g.excerpt|length > 120 %}...{% endif %}</p>
@@ -34,4 +41,16 @@
     {% endfor %}
   </div>
 </div>
+<script>
+document.querySelectorAll('.guide-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.guide-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.dataset.filter;
+    document.querySelectorAll('[data-type]').forEach(card => {
+      card.style.display = (filter === 'all' || card.dataset.type === filter) ? '' : 'none';
+    });
+  });
+});
+</script>
 {% endblock %}

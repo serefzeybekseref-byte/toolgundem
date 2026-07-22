@@ -2101,6 +2101,16 @@ h1, h2, h3, h4 {
   color: var(--text-secondary);
 }
 
+.guide-filter-btn {
+  cursor: pointer;
+  font-family: inherit;
+}
+.guide-filter-btn.active {
+  background-color: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
 /* AdSense reklam alanlari icin sabit yer ayirma - reklam gec yuklendiginde
    sayfanin tumu asagi kaymasin diye (CLS = 1 buradan kaynaklaniyordu, mobilde
    agir yuklenen reklam icerigi altindaki her seyi asagi itiyordu).
