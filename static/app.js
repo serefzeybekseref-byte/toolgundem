@@ -289,6 +289,19 @@ if (scrollBtn) {
   });
 }
 
+// Cok kaynakli logo fallback zinciri: Google favicon -> DuckDuckGo icon -> harf rozeti.
+// Yeni affiliate/editoryel urun eklerken tek tek logo yuklemeye gerek kalmasin diye
+// otomatik calisir (Clearbit'in ucretsiz logo API'si Aralik 2025'te kapandi, tek
+// kaynaga guvenmek yerine zincirleme fallback kullaniyoruz).
+function logoFallback(imgEl, domain, letter) {
+  if (!imgEl.dataset.fallbackStep) {
+    imgEl.dataset.fallbackStep = "1";
+    imgEl.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+  } else {
+    imgEl.outerHTML = `<span class="leaderboard-logo-fallback" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0;">${letter}</span>`;
+  }
+}
+
 // Fade-in animation on scroll
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
