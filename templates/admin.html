@@ -75,11 +75,68 @@
     Sol-alt köşe widget'ında NordVPN/NordPass'ten sonra gösterilen, en fazla 4 editöryel ürün. Kod yazmadan slug ile ekle/çıkar.
   </p>
   <div style="padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:32px;">
-    <form method="POST" action="/admin/vitrin-toggle" style="display:flex; gap:8px; margin-bottom:16px;">
+    <form id="vitrin-add-form" method="POST" action="/admin/vitrin-toggle" style="display:flex; gap:8px; margin-bottom:16px; position:relative;">
       <input type="hidden" name="token" value="{{ admin_token }}">
-      <input type="text" name="slug" placeholder="ürün-slug-i (ör: canva-ai)" class="advisor-input" style="margin:0; flex:1;" required>
-      <button type="submit" class="btn btn-outline" style="padding:8px 16px; border-color:var(--accent); color:var(--accent);">Ekle / Çıkar (toggle)</button>
+      <div style="position:relative; flex:1;">
+        <input type="text" id="vitrin-search-input" autocomplete="off" placeholder="Ürün adı yaz (ör: canva)..." class="advisor-input" style="margin:0; width:100%;">
+        <input type="hidden" name="slug" id="vitrin-slug-input" required>
+        <div id="vitrin-suggest" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); max-height:280px; overflow-y:auto; z-index:20; box-shadow:0 8px 24px rgba(0,0,0,0.3);"></div>
+      </div>
+      <button type="submit" class="btn btn-outline" style="padding:8px 16px; border-color:var(--accent); color:var(--accent);">Ekle</button>
     </form>
+    <script>
+    (function() {
+      const nameInput = document.getElementById('vitrin-search-input');
+      const slugInput = document.getElementById('vitrin-slug-input');
+      const suggestBox = document.getElementById('vitrin-suggest');
+      const form = document.getElementById('vitrin-add-form');
+      let timer = null;
+
+      function hide() { suggestBox.style.display = 'none'; suggestBox.innerHTML = ''; }
+
+      nameInput.addEventListener('input', () => {
+        slugInput.value = '';  // yazi degistikce eski secim gecersiz olsun
+        const q = nameInput.value.trim();
+        if (q.length < 2) { hide(); return; }
+        clearTimeout(timer);
+        timer = setTimeout(async () => {
+          try {
+            const resp = await fetch(`/api/search-suggest?q=${encodeURIComponent(q)}`);
+            const data = await resp.json();
+            const results = data.results || [];
+            if (!results.length) { hide(); return; }
+            suggestBox.innerHTML = results.map(p => `
+              <div class="vitrin-suggest-item" data-slug="${p.slug}" data-name="${p.original_name}"
+                   style="padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--border);">
+                <strong>${p.original_name}</strong>
+                <span class="mono" style="color:var(--text-secondary); font-size:0.75rem; margin-left:6px;">/${p.slug}</span>
+              </div>
+            `).join('');
+            suggestBox.style.display = 'block';
+          } catch (e) { hide(); }
+        }, 200);
+      });
+
+      suggestBox.addEventListener('click', (e) => {
+        const item = e.target.closest('.vitrin-suggest-item');
+        if (!item) return;
+        nameInput.value = item.dataset.name;
+        slugInput.value = item.dataset.slug;
+        hide();
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!form.contains(e.target)) hide();
+      });
+
+      form.addEventListener('submit', (e) => {
+        if (!slugInput.value) {
+          e.preventDefault();
+          alert('Lütfen listeden bir ürün seçin (sadece yazmak yeterli değil).');
+        }
+      });
+    })();
+    </script>
     {% if showcase_products %}
     <div style="display:flex; flex-direction:column; gap:8px;">
       {% for p in showcase_products %}
