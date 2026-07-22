@@ -122,19 +122,26 @@ Su JSON formatinda cevap ver (baska hicbir sey yazma):
 """
 
 
-def build_outro_prompt(brand: str, alternatives: list) -> str:
+def build_outro_prompt(brand: str, alternatives: list, body: dict) -> str:
     names = ", ".join(a["name"] for a in alternatives)
+    body_summary = "\n".join(
+        f"- {a['isim']}: {a['aciklama']}" for a in body.get("alternatifler", [])
+    )
     return f"""Sen deneyimli bir Turkce teknoloji editorusun. "{brand} Alternatifleri" rehberinin SONUC
 ve SSS bolumlerini yaziyorsun. Ele alinan alternatifler: {names}.
+
+ONEMLI: Az once ayni rehberde her arac icin su bilgiler zaten yazildi - SONUC ve SSS bu bilgilerle
+CELISMEMELI, aynen bunlara dayanmali (yeni ozellik, hiz karsilastirmasi vb. UYDURMA):
+{body_summary}
 {_COMMON_RULES}
 
 Su JSON formatinda cevap ver (baska hicbir sey yazma):
 {{
-  "sonuc": "TAM OLARAK 100-150 kelimelik kisa sonuc paragrafi, hangi durumda hangi aracin secilmesi gerektigini ozetler",
+  "sonuc": "TAM OLARAK 100-150 kelimelik kisa sonuc paragrafi, hangi durumda hangi aracin secilmesi gerektigini ozetler - YUKARIDAKI bilgilerle tutarli olmali",
   "sss": [
-    {{"soru": "...", "cevap": "TAM OLARAK 100-140 kelime"}},
-    {{"soru": "...", "cevap": "TAM OLARAK 100-140 kelime"}},
-    {{"soru": "...", "cevap": "TAM OLARAK 100-140 kelime"}}
+    {{"soru": "...", "cevap": "TAM OLARAK 100-140 kelime, yukaridaki bilgilerle tutarli"}},
+    {{"soru": "...", "cevap": "TAM OLARAK 100-140 kelime, yukaridaki bilgilerle tutarli"}},
+    {{"soru": "...", "cevap": "TAM OLARAK 100-140 kelime, yukaridaki bilgilerle tutarli"}}
   ]
 }}
 """
@@ -149,6 +156,11 @@ KURALLAR:
 
 
 def _has_language_leak(text: str) -> bool:
+    # Bazi karisik/uydurma kelimeler (ornegin Almanca "benötigen" + Turkce ek
+    # karisimi "benötiyorsanız") tam kelime eslesmesiyle yakalanamiyor,
+    # bu yuzden kok bazinda ayrica kontrol ediyoruz.
+    if "benöt" in text.lower():
+        return True
     return bool(_suspicious_pattern.search(text))
 
 
@@ -194,7 +206,7 @@ def generate_one(brand: str, dry_run=False):
     print("  (bolum 2/3: alternatifler)")
     body = _call_section(build_alternatives_body_prompt(brand, alternatives), max_tokens=2000)
     print("  (bolum 3/3: sonuc + SSS)")
-    outro = _call_section(build_outro_prompt(brand, alternatives))
+    outro = _call_section(build_outro_prompt(brand, alternatives, body))
 
     if not intro or not body or not outro:
         print(f"  HATA: bir bolum 3 denemede de temiz uretilemedi, atlaniyor.")
@@ -228,7 +240,8 @@ def generate_one(brand: str, dry_run=False):
 
     html_parts = []
     if intro.get("hizli_ozet"):
-        html_parts.append(f"<div class='guide-quick-answer'><strong>⚡ Kısa cevap:</strong> {intro['hizli_ozet']}</div>")
+        ozet = re.sub(r"^\s*k[ıi]sa\s+cevap\s*:\s*", "", intro["hizli_ozet"], flags=re.IGNORECASE)
+        html_parts.append(f"<div class='guide-quick-answer'><strong>⚡ Kısa cevap:</strong> {ozet}</div>")
     html_parts.append(f"<p>{intro['giris']}</p>")
     html_parts.append(f"<h2>{brand} Alternatifleri</h2>")
     for a in body.get("alternatifler", []):
