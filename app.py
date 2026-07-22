@@ -15,6 +15,7 @@ from db import (
     subscribe_email, unsubscribe_email,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
     get_admin_stats, get_all_guides, get_guide_by_slug, get_related_guides,
+    get_showcase_products, toggle_showcase,
     record_visit, get_visit_stats, get_all_subscribers,
     get_guides_for_topic, get_guides_for_tool_slug, get_guides_for_comparison_slug,
     get_products_by_slugs, get_comparisons_by_slugs, get_broken_products,
@@ -387,11 +388,13 @@ def inject_globals():
             "footer_guides": get_all_guides()[:5],
             "footer_comparisons": get_all_comparisons()[:5],
             "footer_topics": [(t["raw_topic"], t["count"]) for t in get_merged_topics()[:6]],
+            "showcase_products": get_showcase_products(limit=4),
         }
         _footer_cache["ts"] = now
     footer_guides = _footer_cache["data"]["footer_guides"]
     footer_comparisons = _footer_cache["data"]["footer_comparisons"]
     footer_topics = _footer_cache["data"]["footer_topics"]
+    showcase_products = _footer_cache["data"]["showcase_products"]
     try:
         # Vercel her deploy'da VERCEL_GIT_COMMIT_SHA'yi otomatik enjekte eder - bu deploy'a
         # gore gercekten degisir. Dosya mtime'ina guvenmiyoruz cunku Vercel'in build sureci
@@ -416,6 +419,7 @@ def inject_globals():
         "footer_guides": footer_guides,
         "footer_comparisons": footer_comparisons,
         "footer_topics": footer_topics,
+        "showcase_products": showcase_products,
         "adsense_publisher_id": os.getenv("ADSENSE_PUBLISHER_ID", ""),
     }
 
@@ -967,6 +971,13 @@ def admin():
     conv_rate = request.args.get("conv", 2.0, type=float)
     avg_comm = request.args.get("comm", 18.0, type=float)
 
+    from db import get_connection as _gc
+    _conn = _gc()
+    showcase_full = _conn.execute(
+        "SELECT id, slug, original_name FROM products WHERE is_showcase = 1 ORDER BY original_name"
+    ).fetchall()
+    _conn.close()
+
     return render_template(
         "admin.html",
         stats=data["stats"],
@@ -989,8 +1000,28 @@ def admin():
         today_clicks=data["today_clicks"],
         filter_days=days,
         filter_country=country,
-        filter_device=device
+        filter_device=device,
+        showcase_products=[dict(r) for r in showcase_full],
     )
+
+
+@app.route("/admin/vitrin-toggle", methods=["POST"])
+def admin_vitrin_toggle():
+    """Vitrin yonetimi: admin panelden urun slug'i girip vitrine ekleme/cikarma.
+    Kod yazmadan, checkbox/form ile calisir."""
+    token = request.form.get("token", "")
+    expected = os.getenv("ADMIN_TOKEN", "")
+    if not expected or token != expected:
+        abort(404)
+    slug = request.form.get("slug", "").strip()
+    product = get_product_by_slug(slug) if slug else None
+    if product:
+        toggle_showcase(product["id"])
+        # Vitrin degisikligi aninda yansisin diye admin cache'ini temizle
+        for k in list(_simple_caches.keys()):
+            if k.startswith("admin_"):
+                del _simple_caches[k]
+    return redirect(f"/admin?token={token}")
 
 
 @app.route("/go/<slug>")

@@ -360,6 +360,7 @@ def init_db():
         ("pricing_type", "TEXT"),
         ("affiliate_url", "TEXT"),
         ("is_partner", "INTEGER DEFAULT 0"),
+        ("is_showcase", "INTEGER DEFAULT 0"),
         ("last_checked_at", "TEXT"),
         ("is_broken", "INTEGER DEFAULT 0"),
         ("quality_score", "INTEGER DEFAULT 0"),
@@ -862,6 +863,33 @@ def get_all_subscribers():
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def get_showcase_products(limit=4):
+    """Admin panelinden 'Vitrinde Goster' ile isaretlenmis urunleri dondurur.
+    Vitrin widget'i bunlari, garantili affiliate kartlarinin (NordVPN/NordPass)
+    yanina, editoryel/organik secim olarak ekler."""
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT id, slug, original_name, thumbnail, summary_tr FROM products "
+        "WHERE is_showcase = 1 ORDER BY quality_score DESC LIMIT ?", (limit,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def toggle_showcase(product_id: int) -> bool:
+    """Bir urunun vitrin durumunu tersine cevirir, yeni durumu dondurur."""
+    conn = get_connection()
+    row = conn.execute("SELECT is_showcase FROM products WHERE id = ?", (product_id,)).fetchone()
+    if not row:
+        conn.close()
+        return False
+    new_val = 0 if dict(row)["is_showcase"] else 1
+    conn.execute("UPDATE products SET is_showcase = ? WHERE id = ?", (new_val, product_id))
+    conn.commit()
+    conn.close()
+    return bool(new_val)
 
 
 def get_admin_stats():

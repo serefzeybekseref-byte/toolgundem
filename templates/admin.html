@@ -69,6 +69,35 @@
     </div>
   </div>
 
+  <!-- VİTRİN YÖNETİMİ -->
+  <h2 style="font-size:1.15rem; margin-bottom:16px;">⭐ Vitrin Yönetimi</h2>
+  <p style="color: var(--text-secondary); font-size:0.85rem; margin-top:-8px; margin-bottom:16px;">
+    Sol-alt köşe widget'ında NordVPN/NordPass'ten sonra gösterilen, en fazla 4 editöryel ürün. Kod yazmadan slug ile ekle/çıkar.
+  </p>
+  <div style="padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:32px;">
+    <form method="POST" action="/admin/vitrin-toggle" style="display:flex; gap:8px; margin-bottom:16px;">
+      <input type="hidden" name="token" value="{{ admin_token }}">
+      <input type="text" name="slug" placeholder="ürün-slug-i (ör: canva-ai)" class="advisor-input" style="margin:0; flex:1;" required>
+      <button type="submit" class="btn btn-outline" style="padding:8px 16px; border-color:var(--accent); color:var(--accent);">Ekle / Çıkar (toggle)</button>
+    </form>
+    {% if showcase_products %}
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      {% for p in showcase_products %}
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(255,255,255,0.02); border-radius:var(--radius-md);">
+        <span><strong>{{ p.original_name }}</strong> <span class="mono" style="color:var(--text-secondary); font-size:0.8rem;">/{{ p.slug }}</span></span>
+        <form method="POST" action="/admin/vitrin-toggle" style="margin:0;">
+          <input type="hidden" name="token" value="{{ admin_token }}">
+          <input type="hidden" name="slug" value="{{ p.slug }}">
+          <button type="submit" class="btn btn-sm" style="color:#e5484d;">Kaldır</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--text-secondary); font-size:0.85rem;">Henüz editöryel vitrin ürünü eklenmedi (sadece NordVPN/NordPass gösteriliyor).</p>
+    {% endif %}
+  </div>
+
   <!-- CONTENT OS -->
   <h2 style="font-size:1.15rem; margin-bottom:16px;">🤖 Content OS (İçerik İşletim Sistemi)</h2>
   
