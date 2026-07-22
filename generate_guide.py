@@ -146,10 +146,10 @@ Baglam (bahsedilen araclar):
 Su JSON formatinda cevap ver (baska hicbir sey yazma, tam olarak 4 soru-cevap):
 {{
   "sss": [
-    {{"soru": "Soru 1 (dogal, Google'da aranacak turden)", "cevap": "EN FAZLA 40-60 kelimelik net cevap, direkt cevapla, uzatma"}},
-    {{"soru": "Soru 2", "cevap": "EN FAZLA 40-60 kelime"}},
-    {{"soru": "Soru 3", "cevap": "EN FAZLA 40-60 kelime"}},
-    {{"soru": "Soru 4", "cevap": "EN FAZLA 40-60 kelime"}}
+    {{"soru": "Soru 1 (dogal, Google'da aranacak turden)", "cevap": "TAM OLARAK 134-167 kelimelik, kendi basina eksiksiz bir cevap - AI arama motorlarinin (ChatGPT, Perplexity, Google AI Overviews) dogrudan alintilayabilecegi, baglam gerektirmeyen tam bir yanit olsun"}},
+    {{"soru": "Soru 2", "cevap": "TAM OLARAK 134-167 kelime, kendi basina eksiksiz"}},
+    {{"soru": "Soru 3", "cevap": "TAM OLARAK 134-167 kelime, kendi basina eksiksiz"}},
+    {{"soru": "Soru 4", "cevap": "TAM OLARAK 134-167 kelime, kendi basina eksiksiz"}}
   ]
 }}
 """

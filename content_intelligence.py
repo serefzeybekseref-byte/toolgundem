@@ -20,14 +20,14 @@ def discover_opportunities():
     """
     1. Son 30 gunluk click, search, trend verilerini toplar.
     2. Guide/Comparison/Collection eksiklerini tespit eder.
-    3. Eski rehberleri (180+ gun) Refresh icin belirler.
+    3. Eski rehberleri (120+ gun) Refresh icin belirler.
     4. Her firsat icin content_tasks tablosuna PENDING durumunda satir ekler.
     """
     init_db()
     conn = get_connection()
     now = datetime.utcnow()
     t_30d = (now - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    t_180d = (now - timedelta(days=180)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    t_120d = (now - timedelta(days=120)).strftime("%Y-%m-%dT%H:%M:%SZ")  # 180->120 gun: ceyreklik tazeleme yillikdan %42 daha iyi sonuc veriyor, AI cevap motorlari 393-458 gun daha taze icerigi orantisiz tercih ediyor (arastirma, Temmuz 2026)
 
     # 1. Urun bazinda son 30 gunluk genel metrikleri cek (Click, Search)
     stats_query = """
@@ -120,10 +120,10 @@ def discover_opportunities():
         # Guide/Refresh Firsati
         if slug in covered_in_guides:
             g_created = covered_in_guides[slug]["created_at"]
-            if g_created and g_created < t_180d:
+            if g_created and g_created < t_120d:
                 # Refresh Firsati
                 score_data = calculate_priority_score(clicks, searches, 0, orphan_bonus=0, penalty=0)
-                reason = f"Rehber 180 gunden eski ({clicks} tiklama)"
+                reason = f"Rehber 120 gunden eski ({clicks} tiklama)"
                 tasks_to_insert.append((pid, "REFRESH", score_data, reason))
         else:
             # Guide Firsati (Orphan) - multi_clicks sinyali burada "1'e1 comparison" DEGIL,

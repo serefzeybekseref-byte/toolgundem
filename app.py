@@ -842,7 +842,43 @@ def robots():
     base = "https://" + request.host
     txt = f"""User-agent: *
 Allow: /
+
+# AI cevap/arama botlari (egitim degil, gercek zamanli arama/alintilama) - acikca izinli
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+User-agent: Claude-User
+Allow: /
+
 Sitemap: {base}/sitemap.xml
+"""
+    return Response(txt, mimetype="text/plain")
+
+
+@app.route("/llms.txt")
+def llms_txt():
+    base = "https://" + request.host
+    txt = f"""# BulurumAI
+> Turkiye'nin AI arac kesif platformu. 400+ AI aracini Turkce icerikle karsilastirir, kategorilere ayirir ve kullanim rehberleri sunar.
+
+BulurumAI, kullanicilarin ihtiyaclarina en uygun yapay zeka aracini bulmalarina yardimci olan bir Turkce dizin ve karsilastirma platformudur. Her arac icin Turkce ozet, fiyatlandirma bilgisi, kategori etiketleri ve benzer/alternatif araclar sunulur.
+
+## Ana Sayfalar
+- [Ana Sayfa]({base}/): Trend ve son eklenen AI araclari
+- [Kategoriler]({base}/kategori): Konuya gore AI araci kesfi (yazi, gorsel, video, ses, kod, sunum, logo vb.)
+- [Karsilastirmalar]({base}/karsilastirma): Kategori bazli "en iyi AI araclari" siralamalari
+- [Rehberler]({base}/rehber): "AI ile X nasil yapilir" tarzinda adim adim kullanim rehberleri
+- [Arama]({base}/ara): Site ici arac arama
+
+## Notlar
+- Icerik Turkce'dir, birincil kullanici kitlesi Turkiye'deki AI arac arayanlardir.
+- Her arac sayfasinda: kisa tanim, fiyatlandirma tipi, kategori(ler), benzer araclar ve ilgili karsilastirma/rehber baglantilari bulunur.
+- Site duzenli olarak (gunluk) Product Hunt uzerinden yeni araclarla guncellenir.
 """
     return Response(txt, mimetype="text/plain")
 
