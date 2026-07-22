@@ -125,6 +125,54 @@
   </div>
 </footer>
 
+{% if not request.path.startswith('/admin') %}
+<div id="promo-widget" class="promo-widget">
+  <button id="promo-widget-close" class="promo-widget-close" aria-label="Kapat">✕</button>
+  <div class="promo-widget-title">🛍️ Önerdiklerimiz</div>
+  <a href="https://go.nordvpn.net/aff_c?offer_id=15&aff_id=153130&url_id=902" target="_blank" rel="noopener sponsored" class="promo-widget-item">
+    <img src="https://www.google.com/s2/favicons?domain=nordvpn.com&sz=64" alt="NordVPN" loading="lazy">
+    <div class="promo-widget-item-text">
+      <span class="promo-widget-item-name">NordVPN</span>
+      <span class="promo-widget-item-desc">Veri gizliliğinizi koruyun</span>
+    </div>
+  </a>
+  <a href="https://go.nordpass.io/aff_c?offer_id=488&aff_id=153130&url_id=9356" target="_blank" rel="noopener sponsored" class="promo-widget-item">
+    <img src="https://www.google.com/s2/favicons?domain=nordpass.com&sz=64" alt="NordPass" loading="lazy">
+    <div class="promo-widget-item-text">
+      <span class="promo-widget-item-name">NordPass</span>
+      <span class="promo-widget-item-desc">Şifrelerinizi güvenle saklayın</span>
+    </div>
+  </a>
+  <div class="promo-widget-disclosure">Ortaklık linki</div>
+</div>
+<script>
+(function () {
+  var KEY = "promo_widget_dismissed_until";
+  var widget = document.getElementById("promo-widget");
+  var closeBtn = document.getElementById("promo-widget-close");
+  if (!widget) return;
+  try {
+    var until = parseInt(localStorage.getItem(KEY) || "0", 10);
+    if (Date.now() < until) {
+      widget.style.display = "none";
+    } else {
+      widget.classList.add("promo-widget-visible");
+    }
+  } catch (e) {
+    widget.classList.add("promo-widget-visible");
+  }
+  closeBtn.addEventListener("click", function () {
+    widget.style.display = "none";
+    try {
+      var threeDays = 3 * 24 * 60 * 60 * 1000;
+      localStorage.setItem(KEY, String(Date.now() + threeDays));
+    } catch (e) {}
+  });
+})();
+</script>
+{% endif %}
+
+
 <script>
 document.getElementById("newsletter-form").addEventListener("submit", async function(e) {
   e.preventDefault();
