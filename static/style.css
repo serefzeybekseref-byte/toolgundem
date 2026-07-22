@@ -2237,11 +2237,16 @@ h1, h2, h3, h4 {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px;
+  padding: 9px 4px;
   border-radius: var(--radius-md);
   text-decoration: none;
   color: inherit;
   transition: background-color var(--transition-fast);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.promo-widget-item:last-of-type {
+  border-bottom: none;
 }
 
 .promo-widget-item:hover {
