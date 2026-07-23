@@ -1170,6 +1170,24 @@ def get_collections_for_product(product_id: int, limit: int = 3):
     conn.close()
     return [dict(r) for r in rows]
 
+def get_partner_products(limit: int = 6):
+    """
+    Ana sayfadaki 'Vitrin' (partner showcase) bolumu icin: is_partner=1
+    isaretli, affiliate anlasmasi olan urunleri dondurur. Bu urunler ayrica
+    normal kesif akisinda (trending, kategori vb.) da gorunmeye devam eder -
+    vitrin sadece EK bir one cikarma, gizli/yaniltici degildir (rozetle
+    acikca 'Sponsorlu/Partner' oldugu belirtilir - bkz. templates/index.html).
+    """
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT * FROM products
+        WHERE is_partner = 1 AND (is_broken IS NULL OR is_broken = 0)
+        ORDER BY created_at DESC LIMIT ?
+    """, (limit,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 def get_broken_products():
     """
     'Graveyard' sayfasi icin: kirik isaretli urunleri gizlemek yerine
