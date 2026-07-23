@@ -9,6 +9,18 @@ from quality_gate import check_guide
 load_dotenv()
 
 _SUSPICIOUS_WORDS = ["thus", "however", "mejores", "the ", " and ", "que ", "para ", "with ", "para el"]
+# Latin-disi herhangi bir alfabe (Arapca/Kiril/Vietnamca aksanli harfler/CJK vb.) - Systeme.io
+# rehberinde tespit edilen "phùr" gibi garip tek-kelime sizintilarini yakalamak icin
+# (23 Temmuz 2026). Turkce'nin kendi ozel karakterleri (ığüşöçİ) bu araligin DISINDA,
+# yanlislikla yakalanmazlar.
+_NON_LATIN_PATTERN = re.compile(r"[\u0600-\u06FF\u0400-\u04FF\u4e00-\u9fff\u1EA0-\u1EF9]")
+
+
+def _has_foreign_leak(text: str) -> bool:
+    lowered = text.lower()
+    if any(w in lowered for w in _SUSPICIOUS_WORDS):
+        return True
+    return bool(_NON_LATIN_PATTERN.search(text))
 
 
 def call_llm(prompt: str, temperature: float = 0.55, max_tokens: int = 2048) -> dict:
@@ -21,11 +33,11 @@ def call_llm(prompt: str, temperature: float = 0.55, max_tokens: int = 2048) -> 
 
 
 def generate_section(prompt: str, label: str, max_tokens: int = 2048) -> dict:
-    """Bir bolumu uretir, yabanci kelime sizintisi varsa bir kez daha dener."""
+    """Bir bolumu uretir, yabanci kelime/alfabe sizintisi varsa bir kez daha dener."""
     data = call_llm(prompt, max_tokens=max_tokens)
-    full_text = json.dumps(data, ensure_ascii=False).lower()
-    if any(w in full_text for w in _SUSPICIOUS_WORDS):
-        print(f"    ({label}: yabanci kelime sizintisi, tekrar deneniyor...)")
+    full_text = json.dumps(data, ensure_ascii=False)
+    if _has_foreign_leak(full_text):
+        print(f"    ({label}: yabanci kelime/alfabe sizintisi, tekrar deneniyor...)")
         data = call_llm(prompt, temperature=0.45, max_tokens=max_tokens)
     return data
 
@@ -163,7 +175,18 @@ def _tools_desc_text(tools: list) -> str:
 
 
 def _pricing_badge_html(pricing_text: str) -> str:
-    p = (pricing_text or "").lower()
+    """
+    NOT (23 Temmuz 2026 duzeltmesi): Bu fonksiyon onceden SADECE "ucretsiz" kelimesini
+    ariyordu - pricing_type alanindaki gercek degerler ise "Freemium"/"Ucretli"/"Bilinmiyor"
+    (Turkce "ucretsiz" kelimesini icermeyen degerler) oldugu icin HER "Freemium" ve
+    "Bilinmiyor" urun yanlislikla "Ucretli" olarak etiketleniyordu (HubSpot, Zapier,
+    ClickUp gibi ornekler bulundu). Artik once "freemium"/"bilinmiyor" kontrol ediliyor.
+    """
+    p = (pricing_text or "").lower().strip()
+    if not p or "bilinmiyor" in p:
+        return "<span class='badge' style='opacity:0.65;'>❔ Bilinmiyor</span>"
+    if "freemium" in p:
+        return "<span class='badge badge-freemium'>💎 Freemium</span>"
     if "ücretsiz" in p and "ücretli" not in p and "$" not in p and "/ay" not in p:
         return "<span class='badge badge-free'>🆓 Ücretsiz</span>"
     if "ücretsiz" in p:

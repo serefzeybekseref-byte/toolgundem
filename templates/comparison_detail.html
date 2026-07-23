@@ -91,9 +91,13 @@
         {% if item.pricing %}
         <div class="comparison-pricing">
           {% set p = item.pricing|lower %}
-          {% if 'ucretsiz' in p and ('$' not in p and 'ucretli' not in p and '/ay' not in p) %}
+          {% if 'bilinmiyor' in p or p.strip() == '' %}
+            <span class="badge" style="opacity:0.65;">❔ Bilinmiyor</span>
+          {% elif 'freemium' in p %}
+            <span class="badge badge-freemium">💎 Freemium</span>
+          {% elif 'ücretsiz' in p and ('$' not in p and 'ücretli' not in p and '/ay' not in p) %}
             <span class="badge badge-free">🆓 Ücretsiz</span>
-          {% elif 'ucretsiz' in p %}
+          {% elif 'ücretsiz' in p %}
             <span class="badge badge-freemium">💎 Freemium</span>
           {% else %}
             <span class="badge badge-paid">💰 Ücretli</span>
