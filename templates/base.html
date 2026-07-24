@@ -111,7 +111,6 @@
       <a href="/karsilastirma">En İyi AI Araçları</a>
       <a href="/rehber">Rehberler</a>
       <a href="/koleksiyonlar">Koleksiyonlar</a>
-      <a href="/artik-aktif-degil">Artık Aktif Değil</a>
       <a href="/hakkimizda">Hakkımızda</a>
       <a href="/iletisim">İletişim</a>
       <span class="footer-links-sep">·</span>
@@ -139,8 +138,7 @@
     }
   }
 </script>
-<div id="quick-picks" class="quick-picks">
-  <button id="quick-picks-close" class="quick-picks-close" aria-label="Kapat">✕</button>
+<div id="quick-picks" class="quick-picks quick-picks-visible">
   <div class="quick-picks-title">Vitrin</div>
   <p class="quick-picks-tagline">Ekibimizin düzenli olarak test ettiği ve güvenle önerdiği araçlar.</p>
   <a href="https://go.nordvpn.net/aff_c?offer_id=15&aff_id=153130&url_id=902" target="_blank" rel="noopener sponsored" class="quick-picks-item">
@@ -178,31 +176,6 @@
   </a>
   {% endfor %}
 </div>
-<script>
-(function () {
-  var KEY = "quick_picks_dismissed_until";
-  var widget = document.getElementById("quick-picks");
-  var closeBtn = document.getElementById("quick-picks-close");
-  if (!widget) return;
-  try {
-    var until = parseInt(localStorage.getItem(KEY) || "0", 10);
-    if (Date.now() < until) {
-      widget.style.display = "none";
-    } else {
-      widget.classList.add("quick-picks-visible");
-    }
-  } catch (e) {
-    widget.classList.add("quick-picks-visible");
-  }
-  closeBtn.addEventListener("click", function () {
-    widget.style.display = "none";
-    try {
-      var threeDays = 3 * 24 * 60 * 60 * 1000;
-      localStorage.setItem(KEY, String(Date.now() + threeDays));
-    } catch (e) {}
-  });
-})();
-</script>
 {% endif %}
 
 
