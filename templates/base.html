@@ -171,7 +171,7 @@
     {% endif %}
     <div class="quick-picks-item-text">
       <span class="quick-picks-item-name">{{ p.original_name }}</span>
-      <span class="quick-picks-item-desc">{{ p.summary_tr[:40] }}…</span>
+      <span class="quick-picks-item-desc">{{ p.summary_tr|smart_truncate(32) }}</span>
     </div>
   </a>
   {% endfor %}

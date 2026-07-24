@@ -376,6 +376,21 @@ def turkce_tarih(date_str):
         return None
 
 
+def smart_truncate(text, length=32):
+    """Metni kelime ortasindan kesmeden kisaltir (vitrin widget'i gibi dar alanlarda
+    'SaaS sirke...' gibi bozuk gorunumu onlemek icin)."""
+    if not text:
+        return ""
+    text = text.strip()
+    if len(text) <= length:
+        return text
+    cut = text[:length].rsplit(" ", 1)[0]
+    return cut.rstrip(",.;:") + "…"
+
+
+app.jinja_env.filters["smart_truncate"] = smart_truncate
+
+
 @app.context_processor
 def inject_globals():
     """Tum template'lerde kullanilabilecek global degiskenler.
