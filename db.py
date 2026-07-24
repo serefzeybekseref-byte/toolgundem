@@ -868,11 +868,17 @@ def get_all_subscribers():
 def get_showcase_products(limit=4):
     """Admin panelinden 'Vitrinde Goster' ile isaretlenmis urunleri dondurur.
     Vitrin widget'i bunlari, garantili affiliate kartlarinin (NordVPN/NordPass)
-    yanina, editoryel/organik secim olarak ekler."""
+    yanina, editoryel/organik secim olarak ekler.
+    Siralama: once affiliate/partner urunler (is_partner=1, gercek gelir kaynagi,
+    bilincli eklenmis), sonra organik/editoryel secimler kalite skoruna gore.
+    Onceki surumde tek sirlama kalite_skoru DESC idi - bu, yeni eklenen ama henuz
+    dusuk skorlu bir affiliate urunun (ör. Rewardful, 85 puan) organik yuksek
+    skorlu (100 puan) urunler yuzunden limit disinda kalmasina yol aciyordu
+    (24 Temmuz 2026 bug'i)."""
     conn = get_connection()
     rows = conn.execute(
         "SELECT id, slug, original_name, thumbnail, summary_tr FROM products "
-        "WHERE is_showcase = 1 ORDER BY quality_score DESC LIMIT ?", (limit,)
+        "WHERE is_showcase = 1 ORDER BY COALESCE(is_partner, 0) DESC, quality_score DESC LIMIT ?", (limit,)
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
