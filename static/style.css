@@ -732,7 +732,7 @@ h1, h2, h3, h4 {
      kucultuldu. */
   .advisor-box {
     padding: var(--space-5) var(--space-4);
-    margin-top: var(--space-10);
+    margin-top: var(--space-8);
   }
   .advisor-title {
     font-size: 1.15rem;
