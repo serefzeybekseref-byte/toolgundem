@@ -95,6 +95,48 @@ def _call_gemini_raw(prompt: str) -> dict:
     raise last_err
 
 
+def call_gemini_grounded(prompt: str, max_tokens: int = 800) -> str:
+    """
+    Gemini'yi GERCEK web arama (google_search grounding) araciyla cagirir - normal
+    _call_gemini_raw'dan farkli olarak bu, modelin egitim kesim tarihinin OTESINDE
+    guncel bilgiye erismesini saglar (bkz. 25 Temmuz 2026 tartismasi: "Gemini'nin web
+    erisimi yok" dedigimiz yer yanlisti - erisim var, sadece hic KULLANMIYORDUK).
+
+    ONEMLI KISITLAMALAR:
+    - response_mime_type=json ZORLANMAZ - google_search tool'uyla birlikte guvenilir
+      calismiyor (model arama yapip serbest metin donduruyor). Bu yuzden bu fonksiyon
+      JSON degil DUZ METIN dondurur - caller kendi ayrıstırmasını yapmali.
+    - Maliyeti normal cagridan yuksek (her grounded istek bir Google Search tetikliyor) -
+      bu yuzden SADECE gercekten guncel bilgi gerektiren, dusuk hacimli islerde
+      kullanilmali (ornek: karsilastirma tazelik kontrolu), rutin icerik uretiminde DEGIL.
+    - Sadece bu iş için ayrı tutuluyor - generate_turkish_content/generate_quickfacts
+      gibi mevcut JSON-tabanli akislara KARISTIRILMADI (onlar bozulmasin diye).
+    """
+    if not GEMINI_KEYS:
+        raise ValueError("Hic Gemini API key tanimli degil (.env).")
+
+    last_err = None
+    for _ in range(len(GEMINI_KEYS)):
+        key = GEMINI_KEYS[_gemini_idx["i"] % len(GEMINI_KEYS)]
+        _gemini_idx["i"] += 1
+        try:
+            resp = requests.post(
+                GEMINI_URL_TMPL.format(model=GEMINI_MODEL, key=key),
+                json={
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "tools": [{"google_search": {}}],
+                    "generationConfig": {"maxOutputTokens": max_tokens},
+                },
+                timeout=45,  # grounded istekler normalden yavas (once arama yapiyor)
+            )
+            resp.raise_for_status()
+            return resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err
+
+
 def _generate_with_fallback(prompt: str, groq_payload_extra: dict, max_tokens: int = 1024) -> dict:
     """
     Groq -> Gemini (5 key rotasyonlu) -> NVIDIA NIM sirasiyla dener. Ilk basarili olan sonucu dondurur.
