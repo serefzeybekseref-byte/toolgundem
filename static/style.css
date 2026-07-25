@@ -2233,6 +2233,13 @@ h1, h2, h3, h4 {
   display: inline-block;
 }
 
+.quick-picks-tagline {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  margin: -4px 0 8px;
+}
+
 .quick-picks-item {
   display: flex;
   align-items: center;
@@ -2289,10 +2296,22 @@ h1, h2, h3, h4 {
 
 @media (max-width: 640px) {
   .quick-picks {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
     width: auto;
+    max-height: 40vh;
+    padding: 10px 12px;
+  }
+  .quick-picks-tagline {
+    display: none;
+  }
+  .quick-picks-item {
+    padding: 7px 2px;
+  }
+  .quick-picks-item img {
+    width: 24px;
+    height: 24px;
   }
 }
 
@@ -2321,6 +2340,15 @@ h1, h2, h3, h4 {
 .scroll-top.visible {
   opacity: 1;
   visibility: visible;
+}
+
+@media (max-width: 640px) {
+  /* Vitrin widget'i mobilde alt bolgeyi kapladigi icin scroll-top butonu
+     onun ustune, uste tasiniyor (yoksa arkada kalip tiklanamaz hale geliyor) */
+  .scroll-top {
+    bottom: calc(40vh + 20px);
+    right: 14px;
+  }
 }
 
 .scroll-top:hover {
