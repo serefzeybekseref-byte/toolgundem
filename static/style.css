@@ -2225,12 +2225,27 @@ h1, h2, h3, h4 {
   padding-right: 20px;
   padding-bottom: 8px;
   border-bottom: 2px solid transparent;
-  border-image: linear-gradient(90deg, var(--accent, #6366f1), transparent) 1;
-  background: linear-gradient(90deg, var(--accent, #6366f1), var(--text, #fff) 140%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.quick-picks-toggle-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .quick-picks-tagline {
@@ -2313,6 +2328,45 @@ h1, h2, h3, h4 {
     width: 24px;
     height: 24px;
   }
+  .quick-picks-toggle-btn {
+    display: flex;
+  }
+  /* Kucultulmus (FAB) durum: sadece kucuk, basparmakla erisilebilir bir
+     daire olarak kalir, icerik listesi tamamen gizlenir. Buyuk sitelerin
+     mobil "floating action button" deseni - panel varsayilan olarak
+     ekrani kaplamaz, kullanici istediginde genisletir. */
+  .quick-picks.quick-picks-collapsed {
+    width: 52px;
+    height: 52px;
+    max-height: 52px;
+    padding: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .quick-picks.quick-picks-collapsed .quick-picks-body {
+    display: none;
+  }
+  .quick-picks.quick-picks-collapsed .quick-picks-title {
+    margin: 0;
+    padding: 0;
+    border: none;
+    flex-direction: column-reverse;
+  }
+  .quick-picks.quick-picks-collapsed .quick-picks-title > :not(.quick-picks-toggle-btn) {
+    display: none;
+  }
+  .quick-picks.quick-picks-collapsed .quick-picks-toggle-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
 }
 
 .scroll-top {
@@ -2343,11 +2397,16 @@ h1, h2, h3, h4 {
 }
 
 @media (max-width: 640px) {
-  /* Vitrin widget'i mobilde alt bolgeyi kapladigi icin scroll-top butonu
-     onun ustune, uste tasiniyor (yoksa arkada kalip tiklanamaz hale geliyor) */
+  /* Vitrin artik mobilde varsayilan olarak KUCUK (FAB, 52px) basladigi icin
+     scroll-top butonu normal konumunda (24px) kalabilir - sadece kullanici
+     vitrini GENISLETTIGINDE (collapsed class'i yoksa) yukari itilir.
+     :has() ile sibling durumuna gore stil (2026 itibariyle tum modern
+     tarayicilarda destekleniyor). */
   .scroll-top {
-    bottom: calc(40vh + 20px);
     right: 14px;
+  }
+  body:has(.quick-picks:not(.quick-picks-collapsed)) .scroll-top {
+    bottom: calc(40vh + 20px);
   }
 }
 

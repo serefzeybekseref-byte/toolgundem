@@ -139,7 +139,11 @@
   }
 </script>
 <div id="quick-picks" class="quick-picks quick-picks-visible">
-  <div class="quick-picks-title">Vitrin</div>
+  <div class="quick-picks-title">
+    Vitrin
+    <button id="quick-picks-toggle" class="quick-picks-toggle-btn" aria-label="Vitrini küçült/genişlet" onclick="document.getElementById('quick-picks').classList.toggle('quick-picks-collapsed')">−</button>
+  </div>
+  <div class="quick-picks-body">
   <p class="quick-picks-tagline">Ekibimizin düzenli olarak test ettiği ve güvenle önerdiği araçlar.</p>
   <a href="https://go.nordvpn.net/aff_c?offer_id=15&aff_id=153130&url_id=902" target="_blank" rel="noopener sponsored" class="quick-picks-item">
     <img src="/static/logos/nordvpn.png" alt="NordVPN" loading="lazy" width="28" height="28" onerror="logoFallback(this,'nordvpn.com','N')">
@@ -175,7 +179,33 @@
     </div>
   </a>
   {% endfor %}
+  </div>
 </div>
+<script>
+(function () {
+  // Mobilde vitrin varsayilan olarak KUCUK (FAB) baslar - buyuk sitelerin
+  // standart deseni (Material Design FAB): kucuk, basparmakla erisilebilir
+  // bir dugme, dokununca tam panel aciliyor. Kullanicinin son tercihi
+  // sessionStorage'da tutulur, sayfa gezisinde korunur.
+  var widget = document.getElementById("quick-picks");
+  var toggleBtn = document.getElementById("quick-picks-toggle");
+  if (!widget || !toggleBtn) return;
+  var KEY = "quick_picks_collapsed";
+  var isMobile = window.matchMedia("(max-width: 640px)").matches;
+  var saved = sessionStorage.getItem(KEY);
+  var startCollapsed = saved !== null ? saved === "1" : isMobile;
+  function apply(collapsed) {
+    widget.classList.toggle("quick-picks-collapsed", collapsed);
+    toggleBtn.textContent = collapsed ? "＋" : "−";
+  }
+  apply(startCollapsed);
+  toggleBtn.addEventListener("click", function () {
+    var nowCollapsed = !widget.classList.contains("quick-picks-collapsed");
+    apply(nowCollapsed);
+    sessionStorage.setItem(KEY, nowCollapsed ? "1" : "0");
+  });
+})();
+</script>
 {% endif %}
 
 
