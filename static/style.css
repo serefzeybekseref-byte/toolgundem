@@ -2202,6 +2202,79 @@ h1, h2, h3, h4 {
   border-color: var(--accent);
 }
 
+.related-hub {
+  margin-top: var(--space-8);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.related-hub-section {
+  padding: var(--space-5) var(--space-6);
+}
+
+.related-hub-section + .related-hub-section {
+  border-top: 1px solid var(--border);
+}
+
+.related-hub-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: var(--space-3);
+}
+
+.related-hub-icon {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--tag-bg);
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.related-hub-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.related-hub-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.related-hub-link span {
+  color: var(--accent);
+  transition: transform var(--transition-fast);
+}
+
+.related-hub-link:hover {
+  border-color: var(--accent);
+  background-color: var(--tag-bg);
+  transform: translateY(-1px);
+}
+
+.related-hub-link:hover span {
+  transform: translateX(2px);
+}
+
 /* AdSense reklam alanlari icin sabit yer ayirma - reklam gec yuklendiginde
    sayfanin tumu asagi kaymasin diye (CLS = 1 buradan kaynaklaniyordu, mobilde
    agir yuklenen reklam icerigi altindaki her seyi asagi itiyordu).

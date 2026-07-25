@@ -102,31 +102,33 @@
   </div>
   {% endif %}
 
-  {% if guide.related_topic %}
-  <div class="detail-related-box" style="margin-top: 16px;">
-    <span class="detail-related-label mono">📁 İlgili kategori:</span>
-    <div class="detail-related-links">
-      <a href="{{ url_for('category', topic=guide.related_topic) }}" class="btn btn-sm">{{ topic_labels.get(guide.related_topic, guide.related_topic) }} Araçları →</a>
+  <div class="related-hub">
+    {% if guide.related_topic %}
+    <div class="related-hub-section">
+      <div class="related-hub-label"><span class="related-hub-icon">📁</span> İlgili kategori</div>
+      <div class="related-hub-links">
+        <a href="{{ url_for('category', topic=guide.related_topic) }}" class="related-hub-link">{{ topic_labels.get(guide.related_topic, guide.related_topic) }} Araçları <span>→</span></a>
+      </div>
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
-  {% if related_guides %}
-  <div class="detail-related-box" style="margin-top: 16px;">
-    <span class="detail-related-label mono">📚 İlgili rehberler:</span>
-    <div class="detail-related-links">
-      {% for g in related_guides %}
-      <a href="{{ url_for('guide_detail', slug=g.slug) }}" class="btn btn-sm">{{ g.title }} →</a>
-      {% endfor %}
+    {% if related_guides %}
+    <div class="related-hub-section">
+      <div class="related-hub-label"><span class="related-hub-icon">📚</span> İlgili rehberler</div>
+      <div class="related-hub-links">
+        {% for g in related_guides %}
+        <a href="{{ url_for('guide_detail', slug=g.slug) }}" class="related-hub-link">{{ g.title }} <span>→</span></a>
+        {% endfor %}
+      </div>
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
-  <div class="detail-related-box" style="margin-top: 16px;">
-    <span class="detail-related-label mono">🔎 Daha fazla keşfet:</span>
-    <div class="detail-related-links">
-      <a href="/karsilastirma" class="btn btn-sm">Tüm Karşılaştırmalar →</a>
-      <a href="/" class="btn btn-sm">Tüm Araçları Keşfet →</a>
+    <div class="related-hub-section">
+      <div class="related-hub-label"><span class="related-hub-icon">🔎</span> Daha fazla keşfet</div>
+      <div class="related-hub-links">
+        <a href="/karsilastirma" class="related-hub-link">Tüm Karşılaştırmalar <span>→</span></a>
+        <a href="/" class="related-hub-link">Tüm Araçları Keşfet <span>→</span></a>
+      </div>
     </div>
   </div>
 </div>
