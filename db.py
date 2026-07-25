@@ -834,11 +834,13 @@ def record_visit():
 
 
 def get_visit_stats():
-    """Admin paneli icin: bugun, son 7 gun, toplam ziyaret."""
+    """Admin paneli icin: bugun, son 7 gun, son 30 gun, toplam ve son 30 gunun
+    gunluk kirilimi (trend grafigi icin)."""
     from datetime import date, timedelta
     conn = get_connection()
     today = date.today().isoformat()
     week_ago = (date.today() - timedelta(days=7)).isoformat()
+    month_ago = (date.today() - timedelta(days=30)).isoformat()
 
     today_row = conn.execute("SELECT count FROM daily_visits WHERE visit_date = ?", (today,)).fetchone()
     today_count = dict(today_row)["count"] if today_row else 0
@@ -848,11 +850,32 @@ def get_visit_stats():
     ).fetchone()
     week_count = dict(week_row)["c"]
 
+    month_row = conn.execute(
+        "SELECT COALESCE(SUM(count), 0) as c FROM daily_visits WHERE visit_date >= ?", (month_ago,)
+    ).fetchone()
+    month_count = dict(month_row)["c"]
+
     total_row = conn.execute("SELECT COALESCE(SUM(count), 0) as c FROM daily_visits").fetchone()
     total_count = dict(total_row)["c"]
 
+    # Son 30 gunun gun gun kirilimi (trend grafigi icin) - eksik gunler icin 0 doldur
+    rows = conn.execute(
+        "SELECT visit_date, count FROM daily_visits WHERE visit_date >= ? ORDER BY visit_date ASC", (month_ago,)
+    ).fetchall()
+    by_date = {dict(r)["visit_date"]: dict(r)["count"] for r in rows}
+    daily_breakdown = []
+    for i in range(29, -1, -1):
+        d = (date.today() - timedelta(days=i)).isoformat()
+        daily_breakdown.append({"date": d, "count": by_date.get(d, 0)})
+
     conn.close()
-    return {"today": today_count, "last_7_days": week_count, "total": total_count}
+    return {
+        "today": today_count,
+        "last_7_days": week_count,
+        "last_30_days": month_count,
+        "total": total_count,
+        "daily_breakdown": daily_breakdown,
+    }
 
 
 def get_all_subscribers():

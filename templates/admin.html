@@ -69,6 +69,75 @@
     </div>
   </div>
 
+  <!-- ZİYARETÇİ & ABONE İSTATİSTİKLERİ -->
+  <h2 style="font-size:1.15rem; margin-bottom:16px;">👥 Ziyaretçi & Abone İstatistikleri</h2>
+  <p style="color: var(--text-secondary); font-size:0.82rem; margin-top:-8px; margin-bottom:16px;">
+    Benzersiz ziyaretçi sayısı (çerez bazlı, aynı kişi bir günde birden fazla sayılmaz). Her gün 00:00'da (UTC) yeni gün başlar.
+  </p>
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-bottom:16px;">
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">BUGÜN</div>
+      <div style="font-size:2rem; font-weight:700; color: var(--text);">{{ visits.today }}</div>
+    </div>
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">SON 7 GÜN</div>
+      <div style="font-size:2rem; font-weight:700; color: var(--text);">{{ visits.last_7_days }}</div>
+    </div>
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">SON 30 GÜN</div>
+      <div style="font-size:2rem; font-weight:700; color: var(--accent);">{{ visits.last_30_days }}</div>
+    </div>
+    <div style="padding:20px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg);">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">TÜM ZAMANLAR</div>
+      <div style="font-size:2rem; font-weight:700; color: var(--text);">{{ visits.total }}</div>
+    </div>
+    <div id="sub-toggle-box" style="padding:20px; background: var(--surface); border:1px solid var(--accent); border-radius: var(--radius-lg); cursor:pointer;" onclick="document.getElementById('sub-list-box').style.display = document.getElementById('sub-list-box').style.display === 'none' ? 'block' : 'none';">
+      <div class="mono" style="font-size:0.75rem; color: var(--text-secondary);">BÜLTEN ABONESİ (tıkla)</div>
+      <div style="font-size:2rem; font-weight:700; color: var(--accent);">{{ subscribers|length }}</div>
+    </div>
+  </div>
+
+  <!-- 30 günlük trend grafiği -->
+  <div style="padding:20px 24px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); margin-bottom:16px;">
+    <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:12px;">Son 30 Gün Trendi</div>
+    {% set max_visit = (visits.daily_breakdown|map(attribute='count')|max) or 1 %}
+    <div style="display:flex; align-items:flex-end; gap:3px; height:90px;">
+      {% for d in visits.daily_breakdown %}
+      <div title="{{ d.date }}: {{ d.count }} ziyaretçi" style="flex:1; height:{{ ((d.count / max_visit) * 100)|round|int if max_visit > 0 else 0 }}%; min-height:2px; background: var(--accent); opacity:{{ 0.4 if loop.index0 < 23 else 1 }}; border-radius:2px 2px 0 0;"></div>
+      {% endfor %}
+    </div>
+    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.7rem; color:var(--text-secondary);" class="mono">
+      <span>{{ visits.daily_breakdown[0].date if visits.daily_breakdown else '' }}</span>
+      <span>Bugün</span>
+    </div>
+  </div>
+
+  <!-- Abone e-posta listesi (varsayılan gizli, kutuya tıklayınca açılır) -->
+  <div id="sub-list-box" style="display:none; padding:20px 24px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); margin-bottom:32px; max-height:320px; overflow-y:auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border); color:var(--text-secondary); text-align:left;">
+          <th style="padding:6px 0;">E-posta</th>
+          <th style="padding:6px 0;">Kayıt Tarihi</th>
+          <th style="padding:6px 0; text-align:right;">Durum</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in subscribers %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+          <td style="padding:8px 0;" class="mono">{{ s.email }}</td>
+          <td style="padding:8px 0; color:var(--text-secondary);" class="mono">{{ s.subscribed_at[:10] if s.subscribed_at else '-' }}</td>
+          <td style="padding:8px 0; text-align:right;">
+            {% if s.is_active %}<span style="color:#3fb950;">Aktif</span>{% else %}<span style="color:#e5484d;">Pasif</span>{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="padding:12px; text-align:center; color:var(--text-secondary);">Henüz abone yok.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
   <!-- VİTRİN YÖNETİMİ -->
   <h2 style="font-size:1.15rem; margin-bottom:16px;">⭐ Vitrin Yönetimi</h2>
   <p style="color: var(--text-secondary); font-size:0.85rem; margin-top:-8px; margin-bottom:16px;">
