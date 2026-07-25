@@ -990,7 +990,7 @@ def admin():
             zero_clicks=zero_clicks, orphans=orphans, ref_dist=ref_dist, entry_exit=entry_exit,
             multi_clicks=multi_clicks, recent_journeys=recent_journeys, avg_time=avg_time,
             today_clicks=today_clicks, showcase_full=showcase_full, traffic_sources=traffic_sources,
-            broken_products=broken_products,
+            broken_products=broken_products, ai_visibility=ai_visibility,
         )
 
     # Admin sayfasi cok agir (~18 ayri sorgu) oldugu icin kisa TTL cache
@@ -1034,6 +1034,7 @@ def admin():
         filter_device=device,
         showcase_products=[dict(r) for r in showcase_full],
         broken_products=data["broken_products"],
+        ai_visibility=data["ai_visibility"],
     )
 
 
