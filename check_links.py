@@ -10,6 +10,7 @@ Kullanim:
 import sys
 import time
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
 load_dotenv()
 from db import get_all_products_for_link_check, mark_link_checked, init_db
@@ -17,7 +18,12 @@ from db import get_all_products_for_link_check, mark_link_checked, init_db
 init_db()  # broken_reason gibi yeni kolonlarin var oldugundan emin olur
 
 TIMEOUT = 8
-SLEEP_BETWEEN = 0.5  # hedef sitelere yuklenmemek icin
+MAX_WORKERS = 15  # paralel kontrol - 432 urunde 30dk sinirini zorlamiyordu ama
+                   # katalog 688'e cikinca sirali (tek tek) kontrol GitHub Actions'in
+                   # 30 dakikalik zaman asimina takilip "cancelled" olmaya basladi
+                   # (24-25 Temmuz 2026). I/O-bound bir islem oldugu icin thread pool
+                   # ile paralellestirmek doğru cozum - her istek kendi baglantisini
+                   # actigindan (db.py, istek-disi kullanimda) thread-safe.
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
@@ -68,6 +74,15 @@ def check_url(url: str):
     return False, last_reason
 
 
+def _check_one(p):
+    """Tek bir urunu kontrol edip DB'ye isaretler. Thread pool'dan cagirilir."""
+    website = p.get("website") or p.get("ph_url")
+    was_broken = bool(p.get("is_broken"))
+    is_up, reason = check_url(website)
+    mark_link_checked(p["id"], is_broken=not is_up, reason=reason)
+    return p, website, was_broken, is_up, reason
+
+
 def run(limit=None):
     products = get_all_products_for_link_check()
     if limit:
@@ -75,21 +90,19 @@ def run(limit=None):
 
     broken, ok, recovered = 0, 0, 0
     reason_counts = {}
-    for p in products:
-        website = p.get("website") or p.get("ph_url")
-        was_broken = bool(p.get("is_broken"))
-        is_up, reason = check_url(website)
-        mark_link_checked(p["id"], is_broken=not is_up, reason=reason)
-        if is_up:
-            ok += 1
-            if was_broken:
-                recovered += 1
-                print(f"  [DUZELDI] {p['title_tr']} -> {website}")
-        else:
-            broken += 1
-            reason_counts[reason] = reason_counts.get(reason, 0) + 1
-            print(f"  [KIRIK: {reason}] {p['title_tr']} -> {website}")
-        time.sleep(SLEEP_BETWEEN)
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [executor.submit(_check_one, p) for p in products]
+        for future in as_completed(futures):
+            p, website, was_broken, is_up, reason = future.result()
+            if is_up:
+                ok += 1
+                if was_broken:
+                    recovered += 1
+                    print(f"  [DUZELDI] {p['title_tr']} -> {website}")
+            else:
+                broken += 1
+                reason_counts[reason] = reason_counts.get(reason, 0) + 1
+                print(f"  [KIRIK: {reason}] {p['title_tr']} -> {website}")
 
     print(f"\nTamamlandi. Calisan: {ok}, Kirik: {broken}, Duzelen: {recovered}, Toplam: {len(products)}")
     if reason_counts:
