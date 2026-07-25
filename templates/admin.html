@@ -252,6 +252,27 @@
     {% endif %}
   </div>
 
+  <!-- KIRIK LINKLER -->
+  <h2 style="font-size:1.15rem; margin-bottom:16px;">🔗 Kırık Linkler ({{ broken_products|length }})</h2>
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:32px;">
+    {% if broken_products %}
+    <div style="display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto;">
+      {% for p in broken_products %}
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(255,72,77,0.06); border-radius:var(--radius-md); border-left:3px solid #e5484d;">
+        <div>
+          <strong>{{ p.original_name }}</strong>
+          <span class="mono" style="color:var(--text-secondary); font-size:0.8rem;"> /{{ p.slug }}</span>
+          {% if p.broken_reason %}<div style="font-size:0.78rem; color:#e5484d; margin-top:2px;">{{ p.broken_reason }}</div>{% endif %}
+        </div>
+        <span class="mono" style="font-size:0.75rem; color:var(--text-secondary); white-space:nowrap;">{{ p.last_checked_at[:10] if p.last_checked_at else '?' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--text-secondary); font-size:0.85rem;">Kırık işaretli ürün yok — tüm linkler sağlıklı görünüyor. (Haftalık otomatik tarama tarafından güncelleniyor.)</p>
+    {% endif %}
+  </div>
+
   <!-- CONTENT OS -->
   <h2 style="font-size:1.15rem; margin-bottom:16px;">🤖 Content OS (İçerik İşletim Sistemi)</h2>
   

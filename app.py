@@ -973,6 +973,9 @@ def admin():
 
         content_os = get_content_os_dashboard()
 
+        from db import get_broken_products
+        broken_products = get_broken_products()
+
         from db import get_connection as _gc2
         showcase_full = [dict(r) for r in _gc2().execute(
             "SELECT id, slug, original_name FROM products WHERE is_showcase = 1 ORDER BY original_name"
@@ -984,6 +987,7 @@ def admin():
             zero_clicks=zero_clicks, orphans=orphans, ref_dist=ref_dist, entry_exit=entry_exit,
             multi_clicks=multi_clicks, recent_journeys=recent_journeys, avg_time=avg_time,
             today_clicks=today_clicks, showcase_full=showcase_full, traffic_sources=traffic_sources,
+            broken_products=broken_products,
         )
 
     # Admin sayfasi cok agir (~18 ayri sorgu) oldugu icin kisa TTL cache
@@ -1026,6 +1030,7 @@ def admin():
         filter_country=country,
         filter_device=device,
         showcase_products=[dict(r) for r in showcase_full],
+        broken_products=data["broken_products"],
     )
 
 
