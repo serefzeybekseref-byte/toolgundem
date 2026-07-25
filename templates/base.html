@@ -139,10 +139,12 @@
   }
 </script>
 <div id="quick-picks" class="quick-picks quick-picks-visible">
-  <div class="quick-picks-title">
-    Vitrin
-    <button id="quick-picks-toggle" class="quick-picks-toggle-btn" aria-label="Vitrini küçült/genişlet"></button>
-  </div>
+  <button id="quick-picks-toggle" class="quick-picks-header" type="button" aria-expanded="true" aria-controls="quick-picks-collapse">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="quick-picks-header-icon"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    <span class="quick-picks-header-label">Vitrin</span>
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="quick-picks-chevron"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div id="quick-picks-collapse" class="quick-picks-collapse">
   <div class="quick-picks-body">
   <p class="quick-picks-tagline">Ekibimizin düzenli olarak test ettiği ve güvenle önerdiği araçlar.</p>
   <a href="https://go.nordvpn.net/aff_c?offer_id=15&aff_id=153130&url_id=902" target="_blank" rel="noopener sponsored" class="quick-picks-item">
@@ -180,13 +182,16 @@
   </a>
   {% endfor %}
   </div>
+  </div>
 </div>
 <script>
 (function () {
-  // Mobilde vitrin varsayilan olarak KUCUK (FAB) baslar - buyuk sitelerin
-  // standart deseni (Material Design FAB): kucuk, basparmakla erisilebilir
-  // bir dugme, dokununca tam panel aciliyor. Kullanicinin son tercihi
-  // sessionStorage'da tutulur, sayfa gezisinde korunur.
+  // Vitrin basligi ("Vitrin" yazisi + ikon) artik TEK tiklanabilir alan -
+  // ayri bir kucultme kutusu yok. Icerik CSS grid-template-rows 0fr<->1fr
+  // teknigiyle akici bir sekilde acilip kapaniyor (JS ile yukseklik olcmeye
+  // gerek yok, saf CSS transition). Mobilde varsayilan KAPALI baslar (kucuk
+  // pill), masaustunde varsayilan ACIK baslar. Tercih sessionStorage'da
+  // tutulur, sayfa gezisinde korunur.
   var widget = document.getElementById("quick-picks");
   var toggleBtn = document.getElementById("quick-picks-toggle");
   if (!widget || !toggleBtn) return;
@@ -194,11 +199,9 @@
   var isMobile = window.matchMedia("(max-width: 640px)").matches;
   var saved = sessionStorage.getItem(KEY);
   var startCollapsed = saved !== null ? saved === "1" : isMobile;
-  var ICON_OPEN = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
-  var ICON_CLOSE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
   function apply(collapsed) {
     widget.classList.toggle("quick-picks-collapsed", collapsed);
-    toggleBtn.innerHTML = collapsed ? ICON_OPEN : ICON_CLOSE;
+    toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
   }
   apply(startCollapsed);
   toggleBtn.addEventListener("click", function () {

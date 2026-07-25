@@ -1630,13 +1630,21 @@ h1, h2, h3, h4 {
 .detail-related-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin-top: var(--space-2);
 }
 
 .btn-sm {
-  padding: 6px 14px;
-  font-size: 0.88rem;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  background-color: var(--surface-hover, rgba(255,255,255,0.06));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full, 999px);
+  white-space: nowrap;
+}
+.btn-sm:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ==========================================================================
@@ -2212,18 +2220,16 @@ h1, h2, h3, h4 {
   bottom: 24px;
   left: 24px;
   width: 260px;
-  max-height: 70vh;
-  overflow-y: auto;
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: 0 12px 32px -8px rgba(0,0,0,0.4);
-  padding: 14px;
   z-index: 999;
   opacity: 0;
   transform: translateY(12px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, width 0.35s ease, border-radius 0.35s ease, box-shadow 0.35s ease;
   pointer-events: none;
+  overflow: hidden;
 }
 
 .quick-picks.quick-picks-visible {
@@ -2232,65 +2238,66 @@ h1, h2, h3, h4 {
   pointer-events: auto;
 }
 
-.quick-picks-close {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-full);
-  background-color: var(--surface-hover);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: 0.7rem;
-  cursor: pointer;
+.quick-picks-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.quick-picks-close:hover {
-  color: var(--text);
-  border-color: var(--accent);
+.quick-picks-header-icon {
+  flex-shrink: 0;
+  color: var(--accent);
 }
 
-.quick-picks-title {
+.quick-picks-header-label {
+  flex: 1;
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  margin-bottom: 10px;
-  padding-right: 20px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid transparent;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
 }
 
-.quick-picks-toggle-btn {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid var(--border);
-  color: var(--text);
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  font-size: 0.85rem;
-  line-height: 1;
-  cursor: pointer;
+.quick-picks-chevron {
   flex-shrink: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
+  transition: transform 0.3s ease;
+}
+
+.quick-picks-header[aria-expanded="false"] .quick-picks-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Akici acilma/kapanma: CSS grid-template-rows 0fr<->1fr teknigi -
+   JS ile yukseklik olcmeye gerek yok, saf CSS transition ile buyuk
+   sitelerin kullandigi "buttery smooth" accordion animasyonu. */
+.quick-picks-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.35s ease;
+}
+
+.quick-picks.quick-picks-collapsed .quick-picks-collapse {
+  grid-template-rows: 0fr;
+}
+
+.quick-picks-body {
+  overflow: hidden;
+  min-height: 0;
+  padding: 0 14px 14px;
 }
 
 .quick-picks-tagline {
   font-size: 0.68rem;
   color: var(--text-secondary);
   line-height: 1.35;
-  margin: -4px 0 8px;
+  margin: 0 0 8px;
 }
 
 .quick-picks-item {
@@ -2354,10 +2361,17 @@ h1, h2, h3, h4 {
     bottom: 10px;
     width: auto;
     max-height: 40vh;
-    padding: 10px 12px;
+  }
+  .quick-picks-header {
+    padding: 12px;
   }
   .quick-picks-tagline {
     display: none;
+  }
+  .quick-picks-body {
+    padding: 0 12px 12px;
+    max-height: calc(40vh - 48px);
+    overflow-y: auto;
   }
   .quick-picks-item {
     padding: 7px 2px;
@@ -2366,55 +2380,40 @@ h1, h2, h3, h4 {
     width: 24px;
     height: 24px;
   }
-  .quick-picks-toggle-btn {
-    display: flex;
-  }
   /* Kucultulmus (FAB) durum: sadece kucuk, basparmakla erisilebilir bir
-     daire olarak kalir, icerik listesi tamamen gizlenir. Buyuk sitelerin
-     mobil "floating action button" deseni - panel varsayilan olarak
-     ekrani kaplamaz, kullanici istediginde genisletir. Modern gradient +
-     glow + nabiz animasyonu ile dikkat cekiyor (2026 FAB tasarim trendi). */
+     daire olarak kalir, icerik listesi tamamen gizlenir (grid-rows:0fr
+     zaten kapatiyor). Buyuk sitelerin mobil "floating action button"
+     deseni - panel varsayilan olarak ekrani kaplamaz, kullanici
+     istediginde genisletir. Modern gradient + glow + nabiz animasyonu
+     ile dikkat cekiyor (2026 FAB tasarim trendi). */
   .quick-picks.quick-picks-collapsed {
     width: 56px;
     height: 56px;
     max-height: 56px;
-    padding: 0;
     border-radius: 50%;
     overflow: visible;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background: linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6);
     border: none;
     box-shadow: 0 4px 20px -2px rgba(99,102,241,0.55), 0 0 0 0 rgba(99,102,241,0.5);
     animation: quickPicksPulse 2.8s ease-in-out infinite;
   }
-  .quick-picks.quick-picks-collapsed .quick-picks-body {
-    display: none;
-  }
-  .quick-picks.quick-picks-collapsed .quick-picks-title {
-    margin: 0;
+  .quick-picks.quick-picks-collapsed .quick-picks-header {
+    width: 100%;
+    height: 100%;
     padding: 0;
-    border: none;
-    width: 100%;
-    height: 100%;
+    justify-content: center;
   }
-  .quick-picks.quick-picks-collapsed .quick-picks-title > :not(.quick-picks-toggle-btn) {
+  .quick-picks.quick-picks-collapsed .quick-picks-header-label,
+  .quick-picks.quick-picks-collapsed .quick-picks-chevron {
     display: none;
   }
-  .quick-picks.quick-picks-collapsed .quick-picks-toggle-btn {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: transparent;
-    border: none;
+  .quick-picks.quick-picks-collapsed .quick-picks-header-icon {
     color: #fff;
+    width: 24px;
+    height: 24px;
   }
-  .quick-picks-toggle-btn {
-    transition: transform 0.15s ease;
-  }
-  .quick-picks-toggle-btn:active {
-    transform: scale(0.88);
+  .quick-picks-header:active {
+    transform: scale(0.97);
   }
   @keyframes quickPicksPulse {
     0%, 100% { box-shadow: 0 4px 20px -2px rgba(99,102,241,0.55), 0 0 0 0 rgba(99,102,241,0.45); }
@@ -2666,16 +2665,23 @@ h1, h2, h3, h4 {
 }
 .guide-learn-box ul {
   margin: 0;
-  padding-left: 20px;
-  columns: 2;
-  column-gap: 24px;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .guide-learn-box li {
-  margin-bottom: 6px;
-  break-inside: avoid;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.4;
 }
-@media (max-width: 640px) {
-  .guide-learn-box ul { columns: 1; }
+.guide-learn-box li::before {
+  content: "✓";
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .guide-benefits {
