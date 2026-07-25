@@ -723,6 +723,43 @@ h1, h2, h3, h4 {
   display: none;
 }
 
+@media (max-width: 640px) {
+  /* AI Danismani kutusu mobilde kadraja sigmiyordu: .advisor-form input'a
+     min-width:0 verilmemisti (flex cocuklarin varsayilan davranisi -
+     icerigin dogal genisligi kadar buzulmeyi reddeder), bu yuzden
+     input+buton yan yana sigmayip yatay tasma yapiyordu. Mobilde form
+     dikey (input ustte, buton altta tam genislik) diziliyor, padding'ler
+     kucultuldu. */
+  .advisor-box {
+    padding: var(--space-5) var(--space-4);
+    margin-top: var(--space-10);
+  }
+  .advisor-title {
+    font-size: 1.15rem;
+    gap: 8px;
+  }
+  .advisor-title span {
+    font-size: 1.3rem !important;
+  }
+  .advisor-subtitle {
+    font-size: 0.85rem;
+  }
+  .advisor-form {
+    flex-direction: column;
+  }
+  .advisor-input {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px 14px;
+    font-size: 0.95rem;
+  }
+  .advisor-submit {
+    width: 100%;
+    padding: 13px;
+  }
+}
+
 .advisor-message {
   margin-bottom: var(--space-4);
   font-weight: 500;
@@ -1934,6 +1971,7 @@ h1, h2, h3, h4 {
 
 .newsletter-input-row input {
   flex: 1;
+  min-width: 0;
   padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid var(--border, #2a2a35);
@@ -2334,17 +2372,22 @@ h1, h2, h3, h4 {
   /* Kucultulmus (FAB) durum: sadece kucuk, basparmakla erisilebilir bir
      daire olarak kalir, icerik listesi tamamen gizlenir. Buyuk sitelerin
      mobil "floating action button" deseni - panel varsayilan olarak
-     ekrani kaplamaz, kullanici istediginde genisletir. */
+     ekrani kaplamaz, kullanici istediginde genisletir. Modern gradient +
+     glow + nabiz animasyonu ile dikkat cekiyor (2026 FAB tasarim trendi). */
   .quick-picks.quick-picks-collapsed {
-    width: 52px;
-    height: 52px;
-    max-height: 52px;
+    width: 56px;
+    height: 56px;
+    max-height: 56px;
     padding: 0;
     border-radius: 50%;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6);
+    border: none;
+    box-shadow: 0 4px 20px -2px rgba(99,102,241,0.55), 0 0 0 0 rgba(99,102,241,0.5);
+    animation: quickPicksPulse 2.8s ease-in-out infinite;
   }
   .quick-picks.quick-picks-collapsed .quick-picks-body {
     display: none;
@@ -2353,19 +2396,29 @@ h1, h2, h3, h4 {
     margin: 0;
     padding: 0;
     border: none;
-    flex-direction: column-reverse;
+    width: 100%;
+    height: 100%;
   }
   .quick-picks.quick-picks-collapsed .quick-picks-title > :not(.quick-picks-toggle-btn) {
     display: none;
   }
   .quick-picks.quick-picks-collapsed .quick-picks-toggle-btn {
-    width: 52px;
-    height: 52px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
-    font-size: 1.4rem;
-    background-color: var(--accent);
-    border-color: var(--accent);
+    background: transparent;
+    border: none;
     color: #fff;
+  }
+  .quick-picks-toggle-btn {
+    transition: transform 0.15s ease;
+  }
+  .quick-picks-toggle-btn:active {
+    transform: scale(0.88);
+  }
+  @keyframes quickPicksPulse {
+    0%, 100% { box-shadow: 0 4px 20px -2px rgba(99,102,241,0.55), 0 0 0 0 rgba(99,102,241,0.45); }
+    50% { box-shadow: 0 4px 20px -2px rgba(99,102,241,0.55), 0 0 0 10px rgba(99,102,241,0); }
   }
 }
 

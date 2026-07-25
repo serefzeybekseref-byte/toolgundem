@@ -141,7 +141,7 @@
 <div id="quick-picks" class="quick-picks quick-picks-visible">
   <div class="quick-picks-title">
     Vitrin
-    <button id="quick-picks-toggle" class="quick-picks-toggle-btn" aria-label="Vitrini küçült/genişlet" onclick="document.getElementById('quick-picks').classList.toggle('quick-picks-collapsed')">−</button>
+    <button id="quick-picks-toggle" class="quick-picks-toggle-btn" aria-label="Vitrini küçült/genişlet"></button>
   </div>
   <div class="quick-picks-body">
   <p class="quick-picks-tagline">Ekibimizin düzenli olarak test ettiği ve güvenle önerdiği araçlar.</p>
@@ -194,9 +194,11 @@
   var isMobile = window.matchMedia("(max-width: 640px)").matches;
   var saved = sessionStorage.getItem(KEY);
   var startCollapsed = saved !== null ? saved === "1" : isMobile;
+  var ICON_OPEN = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+  var ICON_CLOSE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
   function apply(collapsed) {
     widget.classList.toggle("quick-picks-collapsed", collapsed);
-    toggleBtn.textContent = collapsed ? "＋" : "−";
+    toggleBtn.innerHTML = collapsed ? ICON_OPEN : ICON_CLOSE;
   }
   apply(startCollapsed);
   toggleBtn.addEventListener("click", function () {
