@@ -48,6 +48,11 @@ jobs:
         continue-on-error: true
         run: python backfill_quickfacts.py 20
 
+      - name: Backfill unknown pricing_type (40 products, gunde 3x = ~120/gun)
+        timeout-minutes: 8
+        continue-on-error: true
+        run: python backfill_pricing.py 40
+
       - name: Yeni urunleri IndexNow ile bildir (Bing/Yandex)
         continue-on-error: true
         run: python ping_search_engines.py --hours 10
