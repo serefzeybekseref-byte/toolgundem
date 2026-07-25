@@ -12,6 +12,7 @@ jobs:
     timeout-minutes: 30
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NVIDIA_NIM_API_KEY: ${{ secrets.NVIDIA_NIM_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,3 +27,7 @@ jobs:
 
       - name: Check broken links
         run: python check_links.py
+
+      - name: Verify connection_error false positives (NIM + web search)
+        run: python verify_connection_errors.py
+        continue-on-error: true
