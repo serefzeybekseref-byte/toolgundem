@@ -387,6 +387,7 @@ def init_db():
         ("gallery", "TEXT"),
         ("broken_reason", "TEXT"),
         ("broken_streak", "INTEGER DEFAULT 0"),
+        ("pricing_checked_at", "TEXT"),
     ]
     for col_name, col_type in new_columns:
         if USE_POSTGRES:
@@ -727,6 +728,52 @@ def update_product_quickfacts(product_id, why_use_it, key_features, platforms, p
     """, (why_use_it, key_features, platforms, pricing_type, product_id))
     conn.commit()
     conn.close()
+
+
+def get_products_with_unknown_pricing(limit: int = 30):
+    """
+    pricing_type = 'Bilinmiyor' (veya bos) olan urunleri dondurur - bunlar
+    get_products_missing_quickfacts()'in KACIRDIGI bir grup, cunku o fonksiyon
+    sadece why_use_it'in bos olup olmadigina bakiyor; 'Bilinmiyor' teknik olarak
+    dolu bir deger oldugu icin oraya hic yakalanmiyordu (23 Temmuz 2026'da bulundu -
+    363/921 urun etkilenmisti). Oy sayisina gore siralar (populer urunler once).
+
+    ONEMLI: hic denenmemis urunler (pricing_checked_at IS NULL) ONCE gelir. Aksi
+    halde, LLM'in de karar veremedigi gercekten belirsiz ama yuksek-oylu urunler
+    HER calistirmada tekrar tekrar denenip yeni urunlere hic sira gelmiyordu
+    (23 Temmuz 2026'da fark edildi - 363'ten 338'e inince ilerleme neredeyse durdu).
+    Daha once denenmis ama hala 'Bilinmiyor' kalanlar sadece hic denenmemis
+    kalmayinca, en son ne zaman denendiyse ona gore (en eski once) tekrar denenir.
+    """
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT * FROM products
+        WHERE pricing_type IS NULL OR pricing_type = '' OR pricing_type = 'Bilinmiyor'
+        ORDER BY
+            CASE WHEN pricing_checked_at IS NULL THEN 0 ELSE 1 END,
+            pricing_checked_at ASC,
+            votes DESC
+        LIMIT ?
+    """, (limit,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def update_product_pricing_type(product_id, pricing_type):
+    """Sadece pricing_type alanini gunceller (backfill_pricing.py tarafindan kullanilir) -
+    why_use_it/key_features/platforms'a dokunmaz, gereksiz LLM yeniden-uretimi/veri
+    kaybi riski olmadan sadece eksik olan tek alani tamamlar.
+    pricing_checked_at HER ZAMAN guncellenir (sonuc 'Bilinmiyor' olsa bile) - boylece
+    ayni belirsiz urun her calistirmada bosuna tekrar denenmez (bkz. get_products_with_unknown_pricing)."""
+    from datetime import datetime, timezone
+    conn = get_connection()
+    conn.execute(
+        "UPDATE products SET pricing_type = ?, pricing_checked_at = ? WHERE id = ?",
+        (pricing_type, datetime.now(timezone.utc).isoformat(), product_id)
+    )
+    conn.commit()
+    conn.close()
+    update_quality_score(product_id)
 
 
 def add_audit_flag(product_id, reason: str, conn=None):
