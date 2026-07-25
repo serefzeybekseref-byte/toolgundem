@@ -217,6 +217,17 @@ def init_db():
         )
     """)
     conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS ai_visibility_checks (
+            id {pk},
+            query TEXT,
+            provider TEXT,
+            mentioned INTEGER DEFAULT 0,
+            response_snippet TEXT,
+            checked_at TEXT
+        )
+    """)
+
+    conn.execute(f"""
         CREATE TABLE IF NOT EXISTS content_tasks (
             id {pk},
             product_id INTEGER,
@@ -1773,6 +1784,37 @@ def get_related_guides(current_slug: str, related_topic: str = "", limit: int = 
         result += [dict(r) for r in rows]
     conn.close()
     return result
+
+
+def save_ai_visibility_check(query: str, provider: str, mentioned: bool, response_snippet: str):
+    conn = get_connection()
+    conn.execute(
+        "INSERT INTO ai_visibility_checks (query, provider, mentioned, response_snippet, checked_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (query, provider, 1 if mentioned else 0, response_snippet, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_ai_visibility_stats(limit=30):
+    """Admin panel icin: son N kontrolun listesi + genel mention orani."""
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM ai_visibility_checks ORDER BY checked_at DESC LIMIT ?", (limit,)
+    ).fetchall()
+    total = conn.execute("SELECT COUNT(*) as c FROM ai_visibility_checks").fetchone()
+    mentioned_count = conn.execute("SELECT COUNT(*) as c FROM ai_visibility_checks WHERE mentioned = 1").fetchone()
+    conn.close()
+    total_c = dict(total)["c"]
+    mentioned_c = dict(mentioned_count)["c"]
+    rate = round((mentioned_c / total_c) * 100, 1) if total_c > 0 else 0
+    return {
+        "checks": [dict(r) for r in rows],
+        "total": total_c,
+        "mentioned": mentioned_c,
+        "rate": rate,
+    }
 
 
 def get_all_guides():

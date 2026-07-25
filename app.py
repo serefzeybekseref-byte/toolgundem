@@ -976,6 +976,9 @@ def admin():
         from db import get_broken_products
         broken_products = get_broken_products()
 
+        from db import get_ai_visibility_stats
+        ai_visibility = get_ai_visibility_stats()
+
         from db import get_connection as _gc2
         showcase_full = [dict(r) for r in _gc2().execute(
             "SELECT id, slug, original_name FROM products WHERE is_showcase = 1 ORDER BY original_name"
