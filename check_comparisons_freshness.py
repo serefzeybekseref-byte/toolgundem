@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 """
 Karsilastirma listelerini "canli" tutmak icin degisiklik-tetiklemeli kontrol.
-DIKKAT: Bu script LLM'e "Kling yeni surum cikardi mi?" gibi harici/gercek-zamanli
-bir soru SORMAZ - cunku Groq/NVIDIA/Gemini metin API'lerimizin web'e erisimi yok,
-byle bir soruya guvenilir cevap veremezler (halusinasyon riski). Bunun yerine
-SADECE kendi veritabanimizdaki objektif sinyalleri kontrol eder:
+NOT (25 Temmuz 2026 guncellemesi): Gemini'nin google_search grounding araci artik
+KULLANILIYOR ama SADECE staleness (90 gun) sinyali icin, sadece Issue metnini
+zenginlestirmek amaciyla - otomatik siralama degisikligi HALA YAPILMAZ. Sebep:
+"hangi arac gercekten daha iyi" nihai karari fiyat/versiyon/ozellik gibi cok
+boyutlu bir degerlendirme gerektirir, grounded arama bile bunun icin tek basina
+yeterli guven vermez - sadece insanin (senin) karar vermesini kolaylastiran bir
+"gorussun" olarak Issue'ya ekleniyor.
 
+Kontrol edilen sinyaller:
   1. Listedeki bir arac artik erisilemez mi? (is_broken)
   2. Ayni kategoride, listede OLMAYAN ama listedeki en dusuk siradakinden daha
      yuksek quality_score/votes'a sahip baska bir urunumuz var mi?
-  3. Liste 90 gunden eski mi? (staleness - review hatirlatmasi)
+  3. Liste 90 gunden eski mi? (staleness - review hatirlatmasi + artik grounded
+     arama notu ekleniyor)
 
 Sinyal bulunursa GitHub Issue acilir - LLM otomatik yeniden siralama YAPMAZ,
 cunku "hangi arac gercekten daha iyi" nihai karari icin (fiyat, versiyon,
@@ -25,6 +30,7 @@ print_db_target()
 from datetime import datetime, timezone, timedelta
 from db import init_db, get_all_comparisons, get_comparison_by_slug, get_all_products, save_comparison
 from quality_gate import check_comparison
+from generate_content import call_gemini_grounded
 
 STALE_DAYS = 90
 
@@ -181,6 +187,11 @@ def check_all():
             age_days = (datetime.now(timezone.utc) - updated).days
             if age_days > STALE_DAYS:
                 category_signals.append(f"Liste {age_days} gundur guncellenmedi (son: {comp['updated_at'][:10]}).")
+                tool_names = [t.get("name", "") for t in comp.get("tools", []) if t.get("name")]
+                if tool_names:
+                    grounded_note = get_grounded_freshness_note(comp["title"], tool_names)
+                    if grounded_note:
+                        category_signals.append(f"🔍 Gemini web arama notu: {grounded_note}")
         except Exception:
             pass
 
@@ -188,6 +199,28 @@ def check_all():
             signals.append({"title": comp["title"], "slug": comp["slug"], "issues": category_signals})
 
     return signals
+
+
+def get_grounded_freshness_note(title: str, current_tools: list) -> str:
+    """Staleness sinyali (90 gun) tetiklenen bir kategori icin, Gemini'nin gercek
+    web arama (grounding) araciyla 'bu liste hala guncel mi' sorusuna kisa bir
+    gorus alir. OTOMATIK DEGISIKLIK YAPMAZ - sadece Issue'ya eklenecek bir not
+    uretir, son karar insana (sana) ait kalir. Hata olursa sessizce bos string
+    doner (script'in geri kalanini bozmasin diye)."""
+    try:
+        tools_str = ", ".join(current_tools[:6])
+        ay_yil = datetime.now(timezone.utc).strftime("%B %Y")
+        prompt = (
+            f"Su an {ay_yil}. '{title}' konusunda su araclar listelenmis: {tools_str}. "
+            f"Guncel web bilgisine gore bu liste hala isabetli mi? Onemli yeni bir rakip "
+            f"cikti mi, listedeki araclardan biri kapandi/onemli olcude gerilendi mi? "
+            f"2-3 cumleyle, Turkce, kisa ve net cevap ver. Emin degilsen 'belirgin bir "
+            f"degisiklik bulamadim' de, uydurma."
+        )
+        note = call_gemini_grounded(prompt, max_tokens=300)
+        return note.strip()
+    except Exception as e:
+        return f"(Grounded arama basarisiz oldu, elle kontrol gerekli: {type(e).__name__})"
 
 
 def format_report(signals, fixed_slugs=None):
