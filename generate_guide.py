@@ -261,34 +261,34 @@ def generate_guide_content(topic_title: str, tools: list, tool_extra: dict = Non
             html_parts.append(f"<li>{madde}</li>")
         html_parts.append("</ul></div>")
     html_parts.append(f"<p>{intro['giris']}</p>")
-    html_parts.append("<h2>Neden Yapay Zeka Kullanmalısınız?</h2>")
+    html_parts.append("<h2 id=\"neden\">Neden Yapay Zeka Kullanmalısınız?</h2>")
     html_parts.append("<ul class='guide-benefits'>")
     for fayda in intro.get("neden_ai", []):
         html_parts.append(f"<li>{fayda}</li>")
     html_parts.append("</ul>")
 
-    html_parts.append(f"<h2>{steps.get('adimlar_baslik', 'Adım Adım Nasıl Yapılır?')}</h2>")
+    html_parts.append(f"<h2 id=\"adimlar\">{steps.get('adimlar_baslik', 'Adım Adım Nasıl Yapılır?')}</h2>")
     html_parts.append("<ol class='guide-steps'>")
     for adim in steps["adimlar"]:
         html_parts.append(f"<li>{adim}</li>")
     html_parts.append("</ol>")
 
-    html_parts.append("<h2>En İyi Araçlar</h2>")
+    html_parts.append("<h2 id=\"araclar\">En İyi Araçlar</h2>")
     tools_by_name = {t["name"]: t for t in tools}
     for t in tools_section["en_iyi_araclar"]:
         tool_meta = tools_by_name.get(t["isim"])
         html_parts.append(_render_tool_card(t["isim"], t["aciklama"], tool_meta, tool_extra))
 
-    html_parts.append("<h2>Ücretsiz Alternatifler</h2>")
+    html_parts.append("<h2 id=\"ucretsiz\">Ücretsiz Alternatifler</h2>")
     html_parts.append(f"<p>{alt_mistakes['ucretsiz_alternatif_notu']}</p>")
 
-    html_parts.append("<h2>Sık Yapılan Hatalar</h2>")
+    html_parts.append("<h2 id=\"hatalar\">Sık Yapılan Hatalar</h2>")
     html_parts.append("<ul class='guide-mistakes'>")
     for h in alt_mistakes["hatalar"]:
         html_parts.append(f"<li>{h}</li>")
     html_parts.append("</ul>")
 
-    html_parts.append("<h2>Sık Sorulan Sorular</h2>")
+    html_parts.append("<h2 id=\"sss\">Sık Sorulan Sorular</h2>")
     for qa in faq["sss"]:
         html_parts.append(f"<h3>{qa['soru']}</h3>")
         html_parts.append(f"<p>{qa['cevap']}</p>")

@@ -17,6 +17,7 @@ from db import (
     get_admin_stats, get_all_guides, get_guide_by_slug, get_related_guides,
     get_showcase_products, toggle_showcase,
     record_visit, get_visit_stats, get_all_subscribers,
+    record_traffic_source, categorize_referrer, get_traffic_source_stats,
     get_guides_for_topic, get_guides_for_tool_slug, get_guides_for_comparison_slug,
     get_products_by_slugs, get_comparisons_by_slugs, get_broken_products,
     BEST_FOR_TYPES, record_outbound_click_event,
@@ -127,6 +128,7 @@ def _track_visit():
         return  # bu tarayici bugun zaten sayildi, tekrar sayma
     try:
         record_visit()
+        record_traffic_source(categorize_referrer(request.referrer))
     except Exception:
         pass
     g._mark_visit_cookie = today
@@ -935,6 +937,7 @@ def admin():
     def _load_admin_data():
         stats = get_admin_stats()
         visits = get_visit_stats()
+        traffic_sources = get_traffic_source_stats(days=30)
         subscribers = get_all_subscribers()
 
         from db import (
@@ -980,7 +983,7 @@ def admin():
             top_clicked=top_clicked, category_clicks=category_clicks, search_queries=search_queries,
             zero_clicks=zero_clicks, orphans=orphans, ref_dist=ref_dist, entry_exit=entry_exit,
             multi_clicks=multi_clicks, recent_journeys=recent_journeys, avg_time=avg_time,
-            today_clicks=today_clicks, showcase_full=showcase_full,
+            today_clicks=today_clicks, showcase_full=showcase_full, traffic_sources=traffic_sources,
         )
 
     # Admin sayfasi cok agir (~18 ayri sorgu) oldugu icin kisa TTL cache
@@ -1018,6 +1021,7 @@ def admin():
         conv_rate=conv_rate,
         avg_comm=avg_comm,
         today_clicks=data["today_clicks"],
+        traffic_sources=data["traffic_sources"],
         filter_days=days,
         filter_country=country,
         filter_device=device,

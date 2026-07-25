@@ -270,6 +270,15 @@ def init_db():
         )
     """)
     conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS traffic_sources (
+            id {pk},
+            visit_date TEXT NOT NULL,
+            source TEXT NOT NULL,
+            count INTEGER DEFAULT 0,
+            UNIQUE(visit_date, source)
+        )
+    """)
+    conn.execute(f"""
         CREATE TABLE IF NOT EXISTS comparison_items (
             id {pk},
             comparison_id INTEGER NOT NULL,
@@ -802,6 +811,76 @@ def mark_queue_item(queue_id: int, status: str):
     )
     conn.commit()
     conn.close()
+
+
+_AI_REFERRER_DOMAINS = {
+    "chatgpt.com": "ChatGPT",
+    "chat.openai.com": "ChatGPT",
+    "openai.com": "ChatGPT",
+    "perplexity.ai": "Perplexity",
+    "claude.ai": "Claude",
+    "gemini.google.com": "Gemini",
+    "copilot.microsoft.com": "Copilot",
+    "bing.com": "Bing",
+}
+
+
+def categorize_referrer(referrer_url: str) -> str:
+    """Gelen HTTP Referer basligini kategorize eder: AI sohbet botlari (GEO yatiriminin
+    gercekten trafik getirip getirmedigini gormek icin ayri sayilir), Google, dogrudan/diger."""
+    if not referrer_url:
+        return "Doğrudan/Bilinmiyor"
+    ref = referrer_url.lower()
+    for domain, label in _AI_REFERRER_DOMAINS.items():
+        if domain in ref:
+            return label
+    if "google." in ref:
+        return "Google"
+    if "bulurumai.com" in ref or "bulurumai-" in ref:
+        return "Site İçi"
+    return "Diğer"
+
+
+def record_traffic_source(source: str):
+    """Bugunun trafik kaynagi sayacini bir artirir (record_visit ile ayni gun-basi
+    tekillestirme mantigiyla, app.py'deki before_request hook'undan cagrilir)."""
+    from datetime import date
+    today = date.today().isoformat()
+    conn = get_connection()
+    try:
+        if USE_POSTGRES:
+            conn.execute("""
+                INSERT INTO traffic_sources (visit_date, source, count) VALUES (?, ?, 1)
+                ON CONFLICT (visit_date, source) DO UPDATE SET count = traffic_sources.count + 1
+            """, (today, source))
+        else:
+            conn.execute("""
+                INSERT INTO traffic_sources (visit_date, source, count) VALUES (?, ?, 1)
+                ON CONFLICT(visit_date, source) DO UPDATE SET count = count + 1
+            """, (today, source))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        logger.exception("record_traffic_source basarisiz oldu, transaction geri alindi")
+    finally:
+        conn.close()
+
+
+def get_traffic_source_stats(days: int = 30):
+    """Son N gundeki trafik kaynagi dagilimini dondurur (buyukten kucuge siralı)."""
+    from datetime import date, timedelta
+    conn = get_connection()
+    since = (date.today() - timedelta(days=days)).isoformat()
+    rows = conn.execute(
+        "SELECT source, SUM(count) as total FROM traffic_sources WHERE visit_date >= ? GROUP BY source ORDER BY total DESC",
+        (since,)
+    ).fetchall()
+    conn.close()
+    result = [dict(r) for r in rows]
+    grand_total = sum(r["total"] for r in result) or 1
+    for r in result:
+        r["percent"] = round((r["total"] / grand_total) * 100, 1)
+    return result
 
 
 def record_visit():

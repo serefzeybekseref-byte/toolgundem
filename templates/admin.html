@@ -138,6 +138,34 @@
     </table>
   </div>
 
+  <!-- Trafik Kaynaklari (Google vs AI sohbet botlari vs Dogrudan) -->
+  <div style="padding:20px 24px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); margin-bottom:32px;">
+    <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:4px;">🤖 Trafik Kaynakları (Son 30 Gün)</div>
+    <p style="font-size:0.75rem; color:var(--text-secondary); margin-top:0; margin-bottom:16px;">
+      ChatGPT/Perplexity/Claude gibi AI sohbet botlarından gelen ziyaretçiler ayrı sayılır — llms.txt ve robots.txt AI izinlerinin gerçekten trafik getirip getirmediğini burada görürsün.
+    </p>
+    {% if traffic_sources %}
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      {% for t in traffic_sources %}
+      <div>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
+          <span style="font-weight:600;">
+            {% if t.source in ['ChatGPT', 'Perplexity', 'Claude', 'Gemini', 'Copilot'] %}✨{% endif %}
+            {{ t.source }}
+          </span>
+          <span class="mono" style="color:var(--text-secondary);">{{ t.total }} (%{{ t.percent }})</span>
+        </div>
+        <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+          <div style="height:100%; width:{{ t.percent }}%; background:{% if t.source in ['ChatGPT', 'Perplexity', 'Claude', 'Gemini', 'Copilot'] %}#a78bfa{% else %}var(--accent){% endif %}; border-radius:3px;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--text-secondary); font-size:0.85rem;">Henüz veri yok.</p>
+    {% endif %}
+  </div>
+
   <!-- VİTRİN YÖNETİMİ -->
   <h2 style="font-size:1.15rem; margin-bottom:16px;">⭐ Vitrin Yönetimi</h2>
   <p style="color: var(--text-secondary); font-size:0.85rem; margin-top:-8px; margin-bottom:16px;">
