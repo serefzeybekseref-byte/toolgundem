@@ -441,6 +441,14 @@ def inject_globals():
     }
 
 
+@app.route("/onerdiklerimiz")
+def onerdiklerimiz_redirect():
+    """Eski /onerdiklerimiz sayfasi kaldirildi (icerik artik ana sayfadaki
+    'Vitrin' widget'inda). Google'da indexli olabilecek veya yer imlerinde
+    kalmis eski linkler icin sert 404 yerine 301 ile ana sayfaya yonlendiriyoruz."""
+    return redirect("/", code=301)
+
+
 @app.route("/")
 def home():
     now = time.time()
