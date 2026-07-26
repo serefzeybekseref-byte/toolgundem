@@ -15,7 +15,10 @@ from ddgs import DDGS
 
 NVIDIA_NIM_API_KEY = os.environ.get("NVIDIA_NIM_API_KEY")
 NVIDIA_NIM_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-NVIDIA_NIM_MODEL = "qwen/qwen3-next-80b-a3b-instruct"
+NVIDIA_NIM_MODEL = "meta/llama-3.3-70b-instruct"  # qwen3-next-80b tool-calling'de sik sik
+# 45sn+ timeout veriyordu (gercek testle dogrulandi); llama-3.3-70b hem ~5-10x daha hizli
+# (~2sn) hem tutarli sekilde dogru arac cagrisi yapiyor, NVIDIA'nin resmi olarak
+# function-calling destekledigini beyan ettigi modellerden biri.
 
 _SEARCH_TOOL_SCHEMA = [{
     "type": "function",

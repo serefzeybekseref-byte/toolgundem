@@ -19,7 +19,9 @@ NVIDIA_NIM_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 # qwen3-next-80b-a3b-instruct: qwen3.5-122b-a10b kaldirilmis/adi degismisti (410 Gone hatasi
 # verdi), bu 'instruct' varyanti gercek 'content' alani donduruyor (bazi qwen3.5 varyantlari
 # 'reasoning' tipinde olup content'i bos birakiyor, dikkat).
-NVIDIA_NIM_MODEL = "qwen/qwen3-next-80b-a3b-instruct"
+NVIDIA_NIM_MODEL = "meta/llama-3.3-70b-instruct"  # qwen3-next-80b hem duz metinde hem
+# tool-calling'de sik sik 30-45sn+ timeout veriyordu (gercek A/B testle dogrulandi,
+# ~5-10x daha yavas ve guvenilmezdi). llama-3.3-70b tutarli sekilde ~2-3sn'de yanit veriyor.
 
 
 def _call_nvidia_nim(prompt: str, max_tokens: int = 1024) -> dict:
