@@ -1615,16 +1615,18 @@ h1, h2, h3, h4 {
 }
 
 .detail-related-box {
-  margin: var(--space-5) 0;
-  padding: var(--space-4) var(--space-5);
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  margin: var(--space-4) 0;
+  padding: var(--space-4) 0 var(--space-4) var(--space-5);
+  border-left: 2px solid var(--border);
 }
 
 .detail-related-label {
-  font-size: 0.85rem;
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--text-secondary);
 }
 
@@ -1632,7 +1634,7 @@ h1, h2, h3, h4 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .btn-sm {
@@ -2221,39 +2223,35 @@ h1, h2, h3, h4 {
 
 .related-hub {
   margin-top: var(--space-8);
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-2);
 }
 
 .related-hub-section {
-  padding: var(--space-5) var(--space-6);
+  padding: var(--space-5) 0 var(--space-5) var(--space-5);
+  border-left: 2px solid var(--border);
 }
 
 .related-hub-section + .related-hub-section {
-  border-top: 1px solid var(--border);
+  margin-top: var(--space-1);
 }
 
 .related-hub-label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 0.9rem;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
   margin-bottom: var(--space-3);
 }
 
 .related-hub-icon {
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--tag-bg);
-  border-radius: var(--radius-full);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1;
   flex-shrink: 0;
 }
 
@@ -2269,7 +2267,7 @@ h1, h2, h3, h4 {
   gap: 6px;
   padding: 8px 14px;
   border-radius: var(--radius-full);
-  background-color: var(--bg);
+  background-color: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
   font-size: 0.85rem;
