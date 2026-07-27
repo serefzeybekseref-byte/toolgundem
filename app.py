@@ -269,7 +269,7 @@ TOPIC_ICONS = {
     "Open Source": "🔓",
 }
 
-_FALLBACK_ICONS = ["✨", "🧩", "🔧", "🌐", "📦", "💡", "🎯", "🔹"]
+_FALLBACK_ICONS = ["🏷️"]
 
 # Ana sayfa "Ne yapmak istiyorsun?" CTA izgarasi - rules.json'daki ayni use_case
 # sozlugunu (rules_engine.py) referans alir, boylece rule engine ile ayni dilde konusur.

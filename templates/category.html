@@ -18,7 +18,7 @@
       <span class="detail-related-label mono">📘 İlgili Rehber:</span>
       <div class="detail-related-links">
         {% for g in related_guides %}
-        <a href="/rehber/{{ g.slug }}" class="btn btn-sm">{{ g.title }} →</a>
+        <a href="/rehber/{{ g.slug }}" class="btn btn-sm">{{ g.title[:45] }}{% if g.title|length > 45 %}…{% endif %} →</a>
         {% endfor %}
       </div>
     </div>
