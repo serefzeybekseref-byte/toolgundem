@@ -1114,9 +1114,10 @@ h1, h2, h3, h4 {
 
 .tag {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
-  padding: 2px 8px;
+  font-size: 0.72rem;
+  padding: 4px 10px;
   background-color: var(--tag-bg);
+  border: 1px solid transparent;
   color: var(--accent);
   border-radius: var(--radius-full);
   font-weight: 500;
