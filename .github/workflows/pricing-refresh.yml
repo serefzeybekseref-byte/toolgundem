@@ -1,0 +1,35 @@
+name: Daily Pricing Refresh
+
+on:
+  schedule:
+    # Her gun 10:00 UTC - kucuk parti (grounded arama kotasi siki, gunluk 8 urun ile
+    # 307 "Bilinmiyor" urun yaklasik 1-2 ayda kapanir, kota asimini riske atmadan)
+    - cron: "0 10 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  refresh-pricing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+      GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+      GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
+      GEMINI_API_KEY_5: ${{ secrets.GEMINI_API_KEY_5 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Refresh unknown pricing (grounded search)
+        run: python refresh_pricing.py 8
