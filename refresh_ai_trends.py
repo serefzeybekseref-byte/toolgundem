@@ -35,11 +35,14 @@ Bize TAM OLARAK asagidaki JSON formatinda bir yanit ver. Baska hicbir giris veya
 ]
 """
     try:
-        response_text = call_nim_with_search(prompt, max_tokens=600)
-        # Clean potential markdown block formatting ```json ... ```
-        clean_json = response_text.strip()
-        if clean_json.startswith("```"):
-            clean_json = clean_json.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+        import re
+        match = re.search(r'\[\s*\{.*\}\s*\]', response_text, re.DOTALL)
+        if match:
+            clean_json = match.group(0).strip()
+        else:
+            clean_json = response_text.strip()
+            if clean_json.startswith("```"):
+                clean_json = clean_json.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
 
         items = json.loads(clean_json)
         if isinstance(items, list) and len(items) > 0:
