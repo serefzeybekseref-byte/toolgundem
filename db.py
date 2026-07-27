@@ -228,6 +228,17 @@ def init_db():
     """)
 
     conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS ai_trends (
+            id {pk},
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            trend_type TEXT DEFAULT 'viral',
+            source_url TEXT,
+            created_at TEXT
+        )
+    """)
+
+    conn.execute(f"""
         CREATE TABLE IF NOT EXISTS content_tasks (
             id {pk},
             product_id INTEGER,
@@ -1863,6 +1874,24 @@ def get_ai_visibility_stats(limit=30):
         "rate": rate,
     }
 
+
+def save_ai_trend(title: str, summary: str, trend_type: str = "viral", source_url: str = ""):
+    """Yeni bir AI trend haberini/gelişmesini kaydeder."""
+    conn = get_connection()
+    now_str = datetime.utcnow().isoformat()
+    conn.execute(
+        "INSERT INTO ai_trends (title, summary, trend_type, source_url, created_at) VALUES (?, ?, ?, ?, ?)",
+        (title, summary, trend_type, source_url, now_str)
+    )
+    conn.commit()
+    conn.close()
+
+def get_latest_ai_trends(limit: int = 5):
+    """En son eklenen AI trend ve gelişmelerini döndürür."""
+    conn = get_connection()
+    rows = conn.execute("SELECT * FROM ai_trends ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 def get_all_guides():
     conn = get_connection()

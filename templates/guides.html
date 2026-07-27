@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}AI Rehberleri — Kullanım Kılavuzları ve Karşılaştırmalar — BulurumAI{% endblock %}
 {% block description %}Yapay zeka araçlarını seçmek, karşılaştırmak ve verimli kullanmak için hazırlanan kapsamlı, düzenli güncellenen Türkçe rehberler.{% endblock %}
 
@@ -15,20 +15,36 @@
     <p class="page-subtitle">Yapay zeka araçlarını seçmek, karşılaştırmak ve verimli kullanmak için hazırlanan kapsamlı rehberler. Düzenli olarak güncellenen içerikler ve gerçek araç önerileriyle doğru seçimi yapın.</p>
   </div>
 
-  <div class="category-grid" style="margin-bottom: var(--space-6);">
-    <button class="category-chip guide-filter-btn active" data-filter="all">🗂️ Tümü</button>
-    <button class="category-chip guide-filter-btn" data-filter="guide">📖 Rehberler</button>
-    <button class="category-chip guide-filter-btn" data-filter="alternative">🔄 Alternatifler</button>
+  <div class="category-grid" style="margin-bottom: var(--space-6); flex-wrap:wrap; gap:8px;">
+    <button class="category-chip guide-filter-btn active" data-filter="all" data-topic="all">🗂️ Tümü</button>
+    <button class="category-chip guide-filter-btn" data-filter="guide" data-topic="all">📖 Rehberler</button>
+    <button class="category-chip guide-filter-btn" data-filter="alternative" data-topic="all">🔄 Alternatifler</button>
+    <span style="border-left: 1px solid var(--border); margin: 0 4px;"></span>
+    <button class="category-chip guide-topic-btn" data-topic="Kod">💻 Kodlama</button>
+    <button class="category-chip guide-topic-btn" data-topic="Gorsel">🎨 Görsel</button>
+    <button class="category-chip guide-topic-btn" data-topic="Video">🎬 Video</button>
+    <button class="category-chip guide-topic-btn" data-topic="Yazi">✍️ Yazı</button>
+    <button class="category-chip guide-topic-btn" data-topic="Chatbot">💬 Chatbot</button>
+    <button class="category-chip guide-topic-btn" data-topic="SEO">📈 SEO</button>
   </div>
 
   <div class="card-grid">
     {% for g in guides %}
-    <a href="/rehber/{{ g.slug }}" class="compare-card fade-in" data-type="{{ 'alternative' if g.is_alternative else 'guide' }}">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="collection-icon">{{ '🔄' if g.is_alternative else '📖' }}</div>
-        <span class="compare-date mono">{{ g.created_at[:10] }}</span>
+    {% set topic_key = g.related_topic or '' %}
+    <a href="/rehber/{{ g.slug }}" class="compare-card fade-in" data-type="{{ 'alternative' if g.is_alternative else 'guide' }}" data-topic="{{ topic_key }}">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          {% if topic_key and topic_labels.get(topic_key) %}
+          <span class="tag" style="background:rgba(99,102,241,0.12); color:var(--accent); border:1px solid rgba(99,102,241,0.25);">
+            {{ topic_icons.get(topic_key, '📁') }} {{ topic_labels.get(topic_key, topic_key) }}
+          </span>
+          {% endif %}
+          {% if g.is_alternative %}
+          <span class="tag" style="background:rgba(52,211,153,0.12); color:var(--green); border:1px solid rgba(52,211,153,0.25);">🔄 Alternatif</span>
+          {% endif %}
+        </div>
+        <span class="compare-date mono">{{ g.created_at[:10] if g.created_at else '' }}</span>
       </div>
-      {% if g.is_alternative %}<span class="tag" style="margin-bottom:6px;">Alternatif Rehberi</span>{% endif %}
       <h3 class="compare-title">{{ g.title }}</h3>
       {% if g.excerpt %}
       <p class="compare-intro">{{ g.excerpt[:120] }}{% if g.excerpt|length > 120 %}...{% endif %}</p>
@@ -42,14 +58,37 @@
   </div>
 </div>
 <script>
+let currentFilter = 'all';
+let currentTopic = 'all';
+
+function filterCards() {
+  document.querySelectorAll('.card-grid [data-type]').forEach(card => {
+    const typeMatch = (currentFilter === 'all' || card.dataset.type === currentFilter);
+    const topicMatch = (currentTopic === 'all' || card.dataset.topic === currentTopic);
+    card.style.display = (typeMatch && topicMatch) ? '' : 'none';
+  });
+}
+
 document.querySelectorAll('.guide-filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.guide-filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    const filter = btn.dataset.filter;
-    document.querySelectorAll('[data-type]').forEach(card => {
-      card.style.display = (filter === 'all' || card.dataset.type === filter) ? '' : 'none';
-    });
+    currentFilter = btn.dataset.filter;
+    filterCards();
+  });
+});
+
+document.querySelectorAll('.guide-topic-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('active')) {
+      btn.classList.remove('active');
+      currentTopic = 'all';
+    } else {
+      document.querySelectorAll('.guide-topic-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTopic = btn.dataset.topic;
+    }
+    filterCards();
   });
 });
 </script>

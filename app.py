@@ -15,7 +15,7 @@ from db import (
     subscribe_email, unsubscribe_email,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
     get_admin_stats, get_all_guides, get_guide_by_slug, get_related_guides,
-    get_showcase_products, toggle_showcase,
+    get_showcase_products, toggle_showcase, get_latest_ai_trends,
     record_visit, get_visit_stats, get_all_subscribers,
     record_traffic_source, categorize_referrer, get_traffic_source_stats,
     get_guides_for_topic, get_guides_for_tool_slug, get_guides_for_comparison_slug,
@@ -475,12 +475,13 @@ def home():
             "SELECT COUNT(*) as cnt FROM products WHERE created_at >= ?", (today_str,)
         ).fetchone())["cnt"]
         conn.close()
-        three_days_ago = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%d")
+        ai_trends = get_latest_ai_trends(4)
 
         _home_cache["data"] = dict(
             trending=trending, recent=recent, weekly_top=weekly_top, monthly_top=monthly_top,
             topics=topics, comparisons=comparisons, total_products=total_products,
             new_last_30d=new_last_30d, new_today=new_today, new_cutoff=three_days_ago,
+            ai_trends=ai_trends,
         )
         _home_cache["ts"] = now
 

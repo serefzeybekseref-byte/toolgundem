@@ -5,6 +5,12 @@ temizler. Orijinal Ingilizce veri saklanmadigi icin, mevcut Turkce metni referan
 alip sadece yabanci kelimeleri temizleyen bir "duzeltme" cagrisi yapar (sifirdan
 uretim degil - anlam/veri tutarliligini bozmadan).
 """
+import sys
+import io
+# Windows konsolu (cp1254 vb.) bazi urun isimlerindeki Cince/Rusca karakterleri
+# yazdiramayip UnicodeEncodeError ile cokebiliyor - stdout'u utf-8'e zorla.
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 from dotenv import load_dotenv
 load_dotenv()
 from db_target import print_db_target, guard_postgres
