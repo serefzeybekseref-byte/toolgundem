@@ -102,7 +102,10 @@
           {% else %}
             <span class="badge badge-paid">💰 Ücretli</span>
           {% endif %}
+          {% set p_bare = item.pricing.strip().lower() %}
+          {% if p_bare not in ['ücretsiz', 'ücretli', 'freemium', 'bilinmiyor', ''] %}
           <span class="pricing-detail mono">{{ item.pricing }}</span>
+          {% endif %}
         </div>
         {% endif %}
 
@@ -132,7 +135,7 @@
   <p class="detail-meta mono">Son güncelleme: {{ comparison.updated_at[:10] }}</p>
 
   {% if related_guides %}
-  <div class="detail-related-box" style="margin-top: 24px;">
+  <div class="detail-related-box">
     <span class="detail-related-label mono">📘 İlgili rehber:</span>
     <div class="detail-related-links">
       {% for g in related_guides %}
