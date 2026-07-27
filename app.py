@@ -467,6 +467,7 @@ def home():
         conn = get_connection()
         total_products = dict(conn.execute("SELECT COUNT(*) as cnt FROM products").fetchone())["cnt"]
         thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+        three_days_ago = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%d")
         new_last_30d = dict(conn.execute(
             "SELECT COUNT(*) as cnt FROM products WHERE created_at >= ?", (thirty_days_ago,)
         ).fetchone())["cnt"]
