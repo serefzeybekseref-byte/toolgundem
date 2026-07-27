@@ -2229,8 +2229,20 @@ h1, h2, h3, h4 {
 .guide-filter-btn {
   cursor: pointer;
   font-family: inherit;
+  color: var(--text);
 }
 .guide-filter-btn.active {
+  background-color: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.guide-topic-btn {
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text);
+}
+.guide-topic-btn.active {
   background-color: var(--accent);
   color: #fff;
   border-color: var(--accent);
