@@ -56,7 +56,7 @@
   <p class="detail-byline mono">
     {{ olusturma_tarihi }}{% if product.is_broken %} · <span class="meta-warn">bağlantı şu anda erişilemiyor olabilir</span>{% endif %}
     {% if product.last_checked_at and not product.is_broken %}
-    · <span class="verified-badge" title="Bağlantının çalıştığını düzenli olarak otomatik kontrol ediyoruz">✅ Bağlantı doğrulandı: {{ turkce_tarih(product.last_checked_at) }}</span>
+    · <span class="verified-badge" title="Bağlantının çalıştığını düzenli olarak otomatik kontrol ediyoruz - son kontrol: {{ turkce_tarih(product.last_checked_at) }}">✅</span>
     {% endif %}
   </p>
   {% endif %}

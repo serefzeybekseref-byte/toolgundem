@@ -107,7 +107,7 @@
     <div class="related-hub-section">
       <div class="related-hub-label"><span class="related-hub-icon">📁</span> İlgili kategori</div>
       <div class="related-hub-links">
-        <a href="{{ url_for('category', topic=guide.related_topic) }}" class="related-hub-link">{{ topic_labels.get(guide.related_topic, guide.related_topic) }} Araçları <span>→</span></a>
+        <a href="{{ url_for('category', topic=guide.related_topic) }}" class="related-hub-link">{{ topic_labels.get(guide.related_topic, guide.related_topic) }} <span>→</span></a>
       </div>
     </div>
     {% endif %}

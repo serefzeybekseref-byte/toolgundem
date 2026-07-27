@@ -70,7 +70,7 @@
               {% if item.website %}<a href="{% if item.internal_slug %}/go/{{ item.internal_slug }}?type=website&ref=comparison{% else %}{{ item.website }}{% endif %}" target="_blank" rel="noopener">{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}
             </h3>
             {% if item.internal_slug %}
-            <a href="{{ url_for('detail', slug=item.internal_slug) }}" class="mono" style="font-size:0.82rem; color: var(--accent);">Detaylı incelemeyi oku →</a>
+            <a href="{{ url_for('detail', slug=item.internal_slug) }}" class="mono comparison-review-link">Detaylı incelemeyi oku →</a>
             {% endif %}
             {% if item.best_for_type and item.best_for_type in best_for_types %}
             {% set icon, label = best_for_types[item.best_for_type] %}
