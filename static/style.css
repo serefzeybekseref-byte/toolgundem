@@ -1720,6 +1720,15 @@ h1, h2, h3, h4 {
   margin-bottom: var(--space-4);
 }
 
+.guide-card-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
 .compare-title {
   font-size: 1.25rem;
   margin-bottom: var(--space-3);

@@ -32,18 +32,20 @@
     {% for g in guides %}
     {% set topic_key = g.related_topic or '' %}
     <a href="/rehber/{{ g.slug }}" class="compare-card fade-in" data-type="{{ 'alternative' if g.is_alternative else 'guide' }}" data-topic="{{ topic_key }}">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-          {% if topic_key and topic_labels.get(topic_key) %}
-          <span class="tag" style="background:rgba(99,102,241,0.12); color:var(--accent); border:1px solid rgba(99,102,241,0.25);">
-            {{ topic_icons.get(topic_key, '📁') }} {{ topic_labels.get(topic_key, topic_key) }}
-          </span>
-          {% endif %}
           {% if g.is_alternative %}
           <span class="tag" style="background:rgba(52,211,153,0.12); color:var(--green); border:1px solid rgba(52,211,153,0.25);">🔄 Alternatif</span>
           {% endif %}
         </div>
         <span class="compare-date mono">{{ g.created_at[:10] if g.created_at else '' }}</span>
+      </div>
+      <div class="guide-card-eyebrow mono">
+        {% if topic_key and topic_labels.get(topic_key) %}
+        {{ topic_icons.get(topic_key, '📁') }} {{ topic_labels.get(topic_key, topic_key) }}
+        {% else %}
+        📖 Rehber
+        {% endif %}
       </div>
       <h3 class="compare-title">{{ g.title }}</h3>
       {% if g.excerpt %}
