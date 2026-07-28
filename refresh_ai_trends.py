@@ -19,23 +19,28 @@ def fetch_latest_ai_trends():
     print("[NIM Trend Radar] Canli web aramasiyla gunun AI trendleri taraniyor...")
 
     prompt = """
-Web aramasi (web_search) aracini kullanarak, TANINMIS/POPULER bir AI aracinin (ChatGPT,
+Web araması (web_search) aracını kullanarak, tanınmış/popüler bir AI aracının (ChatGPT,
 Claude, Gemini, Midjourney, Canva, Notion, Perplexity, ElevenLabs, Runway, Grammarly gibi
-cok bilinen, yaygin kullanilan araclardan biri - kucuk/bilinmeyen yeni lansmanlar DEGIL)
-son birkac gundeki somut bir guncelleme/ozellik haberini bul. 3 farkli TANINMIS arac icin
-ayri ayri ara.
+çok bilinen, yaygın kullanılan araçlardan biri — küçük/bilinmeyen yeni lansmanlar DEĞİL)
+son birkaç gündeki somut bir güncelleme/özellik haberini bul. 3 farklı tanınmış araç için
+ayrı ayrı ara.
 
-ONEMLI: "AI Araclari 2026" gibi genel/soyut baslik UYDURMA - her baslikta MUTLAKA
-yukaridaki gibi TANINMIS, gercek bir arac ismi gecmeli.
+ÖNEMLİ KURALLAR:
+- "AI Araçları 2026" gibi genel/soyut başlık UYDURMA — her başlıkta MUTLAKA yukarıdaki
+  gibi tanınmış, gerçek bir araç ismi geçmeli.
+- SADECE düzgün, eksiksiz Türkçe yaz. Türkçe'ye özgü harfleri (ı, ğ, ü, ş, ö, ç) MUTLAKA
+  doğru kullan — "gelistirdi" değil "geliştirdi", "ozellik" değil "özellik", "duzeltti"
+  değil "düzeltti" yaz. Türkçe karakterleri ASCII'ye (i, g, u, s, o, c) indirgeme.
+- Hiçbir İngilizce kelime kullanma.
 
-Bize TAM OLARAK asagidaki JSON formatinda bir yanit ver. Baska hicbir giris veya aciklama yazma, SADECE gecerli bir JSON array dondur:
+Bize TAM OLARAK aşağıdaki JSON formatında bir yanıt ver. Başka hiçbir giriş veya açıklama yazma, SADECE geçerli bir JSON array döndür:
 
 [
   {
-    "title": "Taninmis arac ismi gecen, spesifik gelisme basligi (Turkce, max 60 karakter)",
-    "summary": "Ne oldugunu ve neden onemli oldugunu anlatan kisa ozet (Turkce, 1-2 cumle, max 200 karakter)",
+    "title": "Tanınmış araç ismi geçen, spesifik gelişme başlığı (düzgün Türkçe, max 60 karakter)",
+    "summary": "Ne olduğunu ve neden önemli olduğunu anlatan kısa özet (düzgün Türkçe, 1-2 cümle, max 200 karakter)",
     "trend_type": "viral",
-    "source_url": "Gercek kaynak URL (arama sonucundan, uydurma degil)"
+    "source_url": "Gerçek kaynak URL (arama sonucundan, uydurma değil)"
   }
 ]
 """
