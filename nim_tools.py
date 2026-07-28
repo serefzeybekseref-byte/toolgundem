@@ -70,7 +70,13 @@ def call_nim_with_search(prompt: str, max_tokens: int = 500, max_iterations: int
 
         tool_calls = msg.get("tool_calls")
         if not tool_calls:
-            return (msg.get("content") or "").strip()
+            content = (msg.get("content") or "").strip()
+            if content:
+                return content
+            # Bazen model arama sonuclarini aldiktan sonra content=None ile "stop" diyor
+            # (bilinen bir Llama-3.3 tool-use kuriyu). Bos donmek yerine bir kez daha,
+            # acikca "simdi cevap ver" diye zorluyoruz (asagidaki son-care mantigiyla ayni).
+            break
 
         # Modelin istegini ve arama sonuclarini konusma gecmisine ekleyip devam ediyoruz
         messages.append(msg)

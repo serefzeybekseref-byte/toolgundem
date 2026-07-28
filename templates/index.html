@@ -58,27 +58,25 @@
   </div>
 </section>
 
-<!-- AI Trend Radar -->
+<!-- AI Trend Aracı -->
 {% if ai_trends %}
 <section class="section" style="padding-top: var(--space-4);">
   <div class="container">
     <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-      <h2 class="section-title">⚡ Günün AI Trendleri <span class="badge" style="background:rgba(99,102,241,0.12); color:var(--accent); font-size:0.75rem; border:1px solid rgba(99,102,241,0.25);">NIM Radar</span></h2>
+      <h2 class="section-title">⚡ Günün AI Trendleri</h2>
       <span class="mono" style="font-size:0.75rem; color:var(--text-secondary);">🌐 Canlı Web Aramasıyla Doğrulandı</span>
     </div>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
       {% for t in ai_trends %}
-      <div class="compare-card fade-in" style="border-left: 3px solid var(--accent); padding:16px;">
+      <a href="{{ url_for('detail', slug=t.internal_slug) }}" class="compare-card fade-in" style="border-left: 3px solid var(--accent); padding:16px; text-decoration:none; color:inherit; display:block;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <span class="badge" style="background:rgba(255,255,255,0.06); font-size:0.7rem; color:var(--accent);">🔥 Trend Gelişme</span>
           <span class="compare-date mono" style="font-size:0.7rem;">{{ t.created_at[:10] if t.created_at else '' }}</span>
         </div>
         <h3 style="font-size:0.95rem; font-weight:600; margin:0 0 6px; color:var(--text);">{{ t.title }}</h3>
         <p style="font-size:0.82rem; color:var(--text-secondary); margin:0; line-height:1.5;">{{ t.summary }}</p>
-        {% if t.source_url %}
-        <a href="{{ t.source_url }}" target="_blank" rel="noopener" class="mono" style="font-size:0.72rem; color:var(--accent); display:inline-block; margin-top:8px;">Kaynak ➔</a>
-        {% endif %}
-      </div>
+        <span class="mono" style="font-size:0.72rem; color:var(--accent); display:inline-block; margin-top:8px;">İncelemeyi Gör ➔</span>
+      </a>
       {% endfor %}
     </div>
   </div>

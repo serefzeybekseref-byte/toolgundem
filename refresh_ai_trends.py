@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from nim_tools import call_nim_with_search
-from db import init_db, save_ai_trend, get_latest_ai_trends
+from db import init_db, save_ai_trend, get_latest_ai_trends, find_internal_slug_for_trend
 
 
 def fetch_latest_ai_trends():
@@ -19,22 +19,29 @@ def fetch_latest_ai_trends():
     print("[NIM Trend Radar] Canli web aramasiyla gunun AI trendleri taraniyor...")
 
     prompt = """
-Lutfen web aramasi (web_search) aracini kullanarak son 48 saat icinde AI (Yapay Zeka) dunyasinda yaşanan en onemli 3 viral gelismeyi veya trend AI aracini ara ve bul.
+Web aramasi (web_search) aracini kullanarak, TANINMIS/POPULER bir AI aracinin (ChatGPT,
+Claude, Gemini, Midjourney, Canva, Notion, Perplexity, ElevenLabs, Runway, Grammarly gibi
+cok bilinen, yaygin kullanilan araclardan biri - kucuk/bilinmeyen yeni lansmanlar DEGIL)
+son birkac gundeki somut bir guncelleme/ozellik haberini bul. 3 farkli TANINMIS arac icin
+ayri ayri ara.
 
-Arama sorgun: "latest trending AI tools news viral AI update 2026"
+ONEMLI: "AI Araclari 2026" gibi genel/soyut baslik UYDURMA - her baslikta MUTLAKA
+yukaridaki gibi TANINMIS, gercek bir arac ismi gecmeli.
 
 Bize TAM OLARAK asagidaki JSON formatinda bir yanit ver. Baska hicbir giris veya aciklama yazma, SADECE gecerli bir JSON array dondur:
 
 [
   {
-    "title": "Gelisme veya Arac Basligi (Turkce, vurucu, max 60 karakter)",
-    "summary": "Ne hakkinda oldugunu ve neden onemli oldugunu anlatan kisa ozet (Turkce, 1-2 cumle, max 200 karakter)",
+    "title": "Taninmis arac ismi gecen, spesifik gelisme basligi (Turkce, max 60 karakter)",
+    "summary": "Ne oldugunu ve neden onemli oldugunu anlatan kisa ozet (Turkce, 1-2 cumle, max 200 karakter)",
     "trend_type": "viral",
-    "source_url": "Varsa kaynak URL veya bos metin"
+    "source_url": "Gercek kaynak URL (arama sonucundan, uydurma degil)"
   }
 ]
 """
     try:
+        response_text = call_nim_with_search(prompt, max_tokens=900)
+
         import re
         match = re.search(r'\[\s*\{.*\}\s*\]', response_text, re.DOTALL)
         if match:
@@ -47,29 +54,38 @@ Bize TAM OLARAK asagidaki JSON formatinda bir yanit ver. Baska hicbir giris veya
         items = json.loads(clean_json)
         if isinstance(items, list) and len(items) > 0:
             count = 0
+            # Diger icerik uretim script'lerimizle ayni yabanci-kelime-sizintisi kontrolu
+            suspicious_words = ["thus", "however", "mejores", " and ", "para ", "with ",
+                                 "release", "update", "launch", "feature", "first "]
             for item in items[:4]:
                 title = item.get("title", "").strip()
                 summary = item.get("summary", "").strip()
                 url = item.get("source_url", "").strip()
                 t_type = item.get("trend_type", "viral").strip()
-                if title and summary:
-                    save_ai_trend(title, summary, t_type, url)
-                    count += 1
+                combined = f"{title} {summary}".lower()
+                if any(w in combined for w in suspicious_words):
+                    print(f"[NIM Trend Radar] Atlandi (yabanci kelime sizintisi supheli): {title}")
+                    continue
+                if not (title and summary):
+                    continue
+                # Kendi katalogumuzda eslesen bir urun yoksa bu trend'i kaydetme -
+                # her gosterilen trend kendi inceleme sayfamiza yonlenmeli, dis linke degil.
+                internal_slug = find_internal_slug_for_trend(title, summary)
+                if not internal_slug:
+                    print(f"[NIM Trend Radar] Atlandi (katalogumuzda eslesen urun yok): {title}")
+                    continue
+                save_ai_trend(title, summary, t_type, url, internal_slug=internal_slug)
+                count += 1
             print(f"[NIM Trend Radar] {count} yeni trend gelisme kaydedildi!")
-            return True
+            return count > 0
         else:
             print("[NIM Trend Radar] Uyari: Yanit beklenen JSON dizisi formatinda gelmedi.")
     except Exception as e:
         print(f"[NIM Trend Radar] Hata olustu: {e}")
-        # Fallback default item if NIM quota/network issue
-        existing = get_latest_ai_trends(1)
-        if not existing:
-            save_ai_trend(
-                "NVIDIA NIM & Llama 3.3 Entegrasyonu Aktifleşti",
-                "BulurumAI, en güncel yapay zeka araçlarını canlı web aramasıyla otomatik olarak tarayıp doğrulamaya başladı.",
-                "update",
-                "https://bulurumai.com"
-            )
+        # NIM/arama basarisiz olursa: kendi sistemimizden bahseden bir mesaj yerine,
+        # hicbir sey eklemiyoruz - mevcut (varsa) eski trendler ekranda kalmaya devam eder,
+        # yanlis/anlamsiz bir "trend" gostermek gostermemekten daha kotu.
+        print("[NIM Trend Radar] Yeni trend eklenmedi, mevcut kayitlar korunuyor.")
     return False
 
 

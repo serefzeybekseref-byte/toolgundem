@@ -234,9 +234,17 @@ def init_db():
             summary TEXT NOT NULL,
             trend_type TEXT DEFAULT 'viral',
             source_url TEXT,
+            internal_slug TEXT,
             created_at TEXT
         )
     """)
+    if USE_POSTGRES:
+        conn.execute("ALTER TABLE ai_trends ADD COLUMN IF NOT EXISTS internal_slug TEXT")
+    else:
+        try:
+            conn.execute("ALTER TABLE ai_trends ADD COLUMN internal_slug TEXT")
+        except sqlite3.OperationalError:
+            pass
 
     conn.execute(f"""
         CREATE TABLE IF NOT EXISTS content_tasks (
@@ -1875,21 +1883,48 @@ def get_ai_visibility_stats(limit=30):
     }
 
 
-def save_ai_trend(title: str, summary: str, trend_type: str = "viral", source_url: str = ""):
-    """Yeni bir AI trend haberini/gelişmesini kaydeder."""
+def save_ai_trend(title: str, summary: str, trend_type: str = "viral", source_url: str = "", internal_slug: str = None):
+    """Yeni bir AI trend haberini/gelismesini kaydeder. internal_slug: eslesen bir
+    urunumuz varsa slug'i (kart tiklaninca oraya yonlendirmek icin)."""
     conn = get_connection()
     now_str = datetime.utcnow().isoformat()
     conn.execute(
-        "INSERT INTO ai_trends (title, summary, trend_type, source_url, created_at) VALUES (?, ?, ?, ?, ?)",
-        (title, summary, trend_type, source_url, now_str)
+        "INSERT INTO ai_trends (title, summary, trend_type, source_url, internal_slug, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (title, summary, trend_type, source_url, internal_slug, now_str)
     )
     conn.commit()
     conn.close()
 
-def get_latest_ai_trends(limit: int = 5):
-    """En son eklenen AI trend ve gelişmelerini döndürür."""
+
+def find_internal_slug_for_trend(title: str, summary: str):
+    """Bir trend basligi/ozetinde gecen bilinen bir urun ismini bulup slug'ini dondurur.
+    Eslesme yoksa None (bu durumda trend gosterilmez - her trend kendi inceleme
+    sayfamiza yonlendirmeli)."""
     conn = get_connection()
-    rows = conn.execute("SELECT * FROM ai_trends ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+    rows = conn.execute("SELECT slug, original_name, normalized_name FROM products").fetchall()
+    conn.close()
+    combined = f"{title} {summary}".lower()
+    best_match = None
+    best_len = 0
+    for r in rows:
+        r = dict(r)
+        name = (r.get("original_name") or "").strip()
+        if len(name) < 3:
+            continue
+        if name.lower() in combined and len(name) > best_len:
+            best_match = r["slug"]
+            best_len = len(name)
+    return best_match
+
+def get_latest_ai_trends(limit: int = 5):
+    """En son eklenen AI trend ve gelişmelerini döndürür. Sadece kendi kataloğumuzda
+    eşleşen bir ürünü olan (internal_slug dolu) trendler gösterilir - dış kaynağa
+    yönlendirmek yerine her zaman kendi inceleme sayfamıza gitsin diye."""
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM ai_trends WHERE internal_slug IS NOT NULL AND internal_slug != '' ORDER BY created_at DESC LIMIT ?",
+        (limit,)
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
