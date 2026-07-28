@@ -15,11 +15,14 @@
     <p class="page-subtitle">Yapay zeka araçlarını seçmek, karşılaştırmak ve verimli kullanmak için hazırlanan kapsamlı rehberler. Düzenli olarak güncellenen içerikler ve gerçek araç önerileriyle doğru seçimi yapın.</p>
   </div>
 
-  <div class="category-grid" style="margin-bottom: var(--space-6); flex-wrap:wrap; gap:8px;">
-    <button class="category-chip guide-filter-btn active" data-filter="all" data-topic="all">🗂️ Tümü</button>
-    <button class="category-chip guide-filter-btn" data-filter="guide" data-topic="all">📖 Rehberler</button>
-    <button class="category-chip guide-filter-btn" data-filter="alternative" data-topic="all">🔄 Alternatifler</button>
-    <span style="border-left: 1px solid var(--border); margin: 0 4px;"></span>
+  <div class="guide-primary-tabs" style="margin-bottom: 14px; display:flex; gap:8px; flex-wrap:wrap;">
+    <button class="guide-tab guide-filter-btn active" data-filter="all" data-topic="all">🗂️ Tümü</button>
+    <button class="guide-tab guide-filter-btn" data-filter="guide" data-topic="all">📖 Rehberler</button>
+    <button class="guide-tab guide-filter-btn" data-filter="alternative" data-topic="all">🔄 Alternatifler</button>
+  </div>
+
+  <div id="guide-topic-filters" class="guide-topic-filters" style="margin-bottom: var(--space-6); display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 14px; background: var(--surface); border:1px dashed var(--border); border-radius: var(--radius-md);">
+    <span class="mono" style="font-size:0.78rem; color: var(--text-secondary); white-space:nowrap;">↳ Kategoriye göre daralt:</span>
     <button class="category-chip guide-topic-btn" data-topic="Kod">💻 Kodlama</button>
     <button class="category-chip guide-topic-btn" data-topic="Gorsel">🎨 Görsel</button>
     <button class="category-chip guide-topic-btn" data-topic="Video">🎬 Video</button>
@@ -77,6 +80,11 @@ document.querySelectorAll('.guide-filter-btn').forEach(btn => {
     btn.classList.add('active');
     currentFilter = btn.dataset.filter;
     filterCards();
+    const topicBox = document.getElementById('guide-topic-filters');
+    if (topicBox) {
+      topicBox.style.borderStyle = (currentFilter === 'all') ? 'dashed' : 'solid';
+      topicBox.style.borderColor = (currentFilter === 'all') ? 'var(--border)' : 'var(--accent)';
+    }
   });
 });
 
