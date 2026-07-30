@@ -1,5 +1,6 @@
 import sys
 import argparse
+import re
 import time
 from datetime import datetime, timezone
 from dotenv import load_dotenv
@@ -7,16 +8,46 @@ load_dotenv()
 from db import get_connection, init_db
 from content_intelligence import discover_opportunities
 
+# Bir gorev basarisiz oldugunda, hatanin GECICI ALTYAPI sorunu (kota/rate-limit/timeout)
+# mu yoksa GERCEK ICERIK sorunu (kalite kapisi, uydurma bilgi vb.) mu oldugunu ayirt
+# ederiz. Gecici olanlari PENDING'e geri dondururuz ki bir sonraki calistirmada
+# (bos/az yogun saatlerde) otomatik tekrar denensin - bunlari sonsuza kadar
+# FAILED birakmak, kota dolu oldugu icin basarisiz olan gorevleri bir daha asla
+# denenmeyecek sekilde "kaybetmek" anlamina geliyordu (30 Temmuz 2026'da 8/10
+# rehberin bu yuzden elle tekrar calistirilmasi gerekmisti).
+_TRANSIENT_ERROR_PATTERNS = re.compile(
+    r"429|503|502|504|rate.?limit|too many requests|service unavailable|"
+    r"read timed out|connection.?(error|reset|refused)|timeout",
+    re.IGNORECASE,
+)
+MAX_RETRIES = 5
+
+
+def _is_transient_error(error_msg: str) -> bool:
+    return bool(error_msg) and bool(_TRANSIENT_ERROR_PATTERNS.search(str(error_msg)))
+
 
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
-def _mark_task(conn, task_id, status, error=None):
-    conn.execute(
-        "UPDATE content_tasks SET status = ?, last_error = ?, finished_at = ? WHERE id = ?",
-        (status, error, _now_iso(), task_id)
-    )
+def _mark_task(conn, task_id, status, error=None, retry_count=0):
+    """
+    status='FAILED' + hata GECICI (kota/timeout) + hala deneme hakki varsa:
+    gorevi PENDING'e geri dondurup retry_count'u artiriyoruz - boylece bir
+    sonraki pipeline calistirmasinda (gunde 3x veya gece) otomatik tekrar
+    denenir, elle mudahale gerekmez.
+    """
+    if status == "FAILED" and _is_transient_error(error) and retry_count < MAX_RETRIES:
+        conn.execute(
+            "UPDATE content_tasks SET status = 'PENDING', last_error = ?, retry_count = ?, finished_at = ? WHERE id = ?",
+            (f"[gecici hata, {retry_count + 1}. deneme sonrasi tekrar kuyruga alindi] {error}", retry_count + 1, _now_iso(), task_id)
+        )
+    else:
+        conn.execute(
+            "UPDATE content_tasks SET status = ?, last_error = ?, finished_at = ? WHERE id = ?",
+            (status, error, _now_iso(), task_id)
+        )
     conn.commit()
 
 
@@ -96,7 +127,7 @@ def run_pipeline(dry_run=False, max_tasks=3):
 
     conn = get_connection()
     tasks = conn.execute("""
-        SELECT t.id, t.task_type, t.priority_score, t.reason, t.product_id, p.original_name, p.slug
+        SELECT t.id, t.task_type, t.priority_score, t.reason, t.product_id, t.retry_count, p.original_name, p.slug
         FROM content_tasks t
         JOIN products p ON t.product_id = p.id
         WHERE t.status = 'PENDING'
@@ -136,10 +167,10 @@ def run_pipeline(dry_run=False, max_tasks=3):
         conn.commit()
         try:
             ok, error = processor(t)
-            _mark_task(conn, t["id"], "SUCCESS" if ok else "FAILED", error)
+            _mark_task(conn, t["id"], "SUCCESS" if ok else "FAILED", error, retry_count=t.get("retry_count", 0))
             print(f"  -> {'BASARILI' if ok else 'BASARISIZ: ' + str(error)}")
         except Exception as e:
-            _mark_task(conn, t["id"], "FAILED", str(e))
+            _mark_task(conn, t["id"], "FAILED", str(e), retry_count=t.get("retry_count", 0))
             print(f"  -> HATA: {e}")
         processed += 1
         time.sleep(8)  # AI saglayicilarinin dakikalik rate-limit'ini zorlamamak icin
