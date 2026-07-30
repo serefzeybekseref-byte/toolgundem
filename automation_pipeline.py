@@ -153,12 +153,24 @@ def run_pipeline(dry_run=False, max_tasks=3):
 
     print("\n--- GERCEK CALISMA MODU ---")
     processed = 0
+    consecutive_transient_failures = 0
+    CIRCUIT_BREAKER_THRESHOLD = 3  # ust uste bu kadar "gecici hata" gorulurse, muhtemelen
+    # tum saglayicilar (Groq+Gemini+NVIDIA) ayni anda kota/rate-limit sorunu yasiyor demektir -
+    # kalan gorevleri denemeye devam etmek (30 Temmuz 2026'da oldugu gibi 55dk boyunca
+    # HEPSI basarisiz olup GitHub'in kendi is zaman asimina takilmak) sadece zaman/kota
+    # israf eder. Erken durup kalan gorevleri PENDING birakiyoruz - bir sonraki
+    # calistirmada (kota muhtemelen toparlanmisken) otomatik denenecekler.
+
     for t in tasks:
         processor = _PROCESSORS.get(t["task_type"])
         if not processor:
             continue  # AFFILIATE gibi otomatik islenmeyen tipler atlanir, PENDING kalir
         if processed >= max_tasks:
             print(f"\nBu calistirmada max_tasks={max_tasks} sinirina ulasildi, kalanlar bir sonraki calistirmada islenecek.")
+            break
+        if consecutive_transient_failures >= CIRCUIT_BREAKER_THRESHOLD:
+            print(f"\n!!! DEVRE KESICI: ust uste {CIRCUIT_BREAKER_THRESHOLD} gecici hata (muhtemel tum-saglayici kesintisi). "
+                  f"Kalan gorevler PENDING birakilip calistirma erken sonlandiriliyor.")
             break
 
         print(f"\n[{t['task_type']}] {t['original_name']} isleniyor (skor: {t['priority_score']})...")
@@ -169,9 +181,17 @@ def run_pipeline(dry_run=False, max_tasks=3):
             ok, error = processor(t)
             _mark_task(conn, t["id"], "SUCCESS" if ok else "FAILED", error, retry_count=t.get("retry_count", 0))
             print(f"  -> {'BASARILI' if ok else 'BASARISIZ: ' + str(error)}")
+            if not ok and _is_transient_error(error):
+                consecutive_transient_failures += 1
+            else:
+                consecutive_transient_failures = 0
         except Exception as e:
             _mark_task(conn, t["id"], "FAILED", str(e), retry_count=t.get("retry_count", 0))
             print(f"  -> HATA: {e}")
+            if _is_transient_error(str(e)):
+                consecutive_transient_failures += 1
+            else:
+                consecutive_transient_failures = 0
         processed += 1
         time.sleep(8)  # AI saglayicilarinin dakikalik rate-limit'ini zorlamamak icin
         # gorevler arasi kucuk bir bekleme - onceden hic yoktu, art arda gelen
@@ -179,7 +199,11 @@ def run_pipeline(dry_run=False, max_tasks=3):
 
     print(f"\n=== Pipeline bitti. {processed} gorev islendi. ===")
 
-    _run_collection_and_comparison_generators(dry_run=dry_run)
+    if consecutive_transient_failures >= CIRCUIT_BREAKER_THRESHOLD:
+        print("Devre kesici tetiklendigi icin COLLECTION/COMPARISON generator'lari da bu calistirmada atlaniyor "
+              "(muhtemelen ayni saglayici kesintisine carpip vakit kaybederlerdi).")
+    else:
+        _run_collection_and_comparison_generators(dry_run=dry_run)
 
     conn.close()
 
