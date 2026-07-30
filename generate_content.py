@@ -57,7 +57,7 @@ GEMINI_KEYS = [
 _gemini_idx = {"i": 0}
 
 
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.6-flash"
 GEMINI_URL_TMPL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
 
 
@@ -65,7 +65,8 @@ def _call_gemini_raw(prompt: str) -> dict:
     """
     Gemini'ye native REST ile istek atar (deprecated google-generativeai kutuphanesi
     KULLANILMIYOR - AQ. formatli yeni key'lerle sorun cikariyordu). Key havuzunda rotasyon yapar.
-    NOT: gemini-2.0-flash bu key'lerde kotasiz (429); gemini-2.5-flash calisiyor.
+    NOT: gemini-2.0-flash bu key'lerde kotasiz (429) idi; su an gemini-3.6-flash kullaniliyor
+    (Google'in 21 Temmuz 2026'da GA yaptigi guncel Flash modeli, test edildi ve calisiyor).
     """
     if not GEMINI_KEYS:
         raise ValueError("Hic Gemini API key tanimli degil (.env).")
