@@ -142,7 +142,7 @@ def run_pipeline(dry_run=False, max_tasks=3):
             _mark_task(conn, t["id"], "FAILED", str(e))
             print(f"  -> HATA: {e}")
         processed += 1
-        time.sleep(3)  # AI saglayicilarinin dakikalik rate-limit'ini zorlamamak icin
+        time.sleep(8)  # AI saglayicilarinin dakikalik rate-limit'ini zorlamamak icin
         # gorevler arasi kucuk bir bekleme - onceden hic yoktu, art arda gelen
         # istekler Groq/Gemini/NVIDIA'yi ayni anda kotaya takiyordu.
 
