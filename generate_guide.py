@@ -8,7 +8,17 @@ from quality_gate import check_guide
 
 load_dotenv()
 
-_SUSPICIOUS_WORDS = ["thus", "however", "mejores", "the ", " and ", "que ", "para ", "with ", "para el"]
+_SUSPICIOUS_WORDS = [
+    "thus", "however", "the", "and", "with", "your", "this", "that",
+    "will", "now", "successfully", "successful", "were", "its", "onto",
+    "erfolgreich", "und", "mit", "für", "das", "die", "der", "ist", "nicht", "auch",
+    "mejores", "que", "con", "los", "las", "una", "esta", "para", "el",
+    "avec", "pour", "dans",
+]
+_suspicious_pattern = re.compile(
+    r"\b(" + "|".join(re.escape(w) for w in _SUSPICIOUS_WORDS) + r")\b",
+    flags=re.IGNORECASE,
+)
 # Latin-disi herhangi bir alfabe (Arapca/Kiril/Vietnamca aksanli harfler/CJK vb.) - Systeme.io
 # rehberinde tespit edilen "phùr" gibi garip tek-kelime sizintilarini yakalamak icin
 # (23 Temmuz 2026). Turkce'nin kendi ozel karakterleri (ığüşöçİ) bu araligin DISINDA,
@@ -17,8 +27,11 @@ _NON_LATIN_PATTERN = re.compile(r"[\u0600-\u06FF\u0400-\u04FF\u4e00-\u9fff\u1EA0
 
 
 def _has_foreign_leak(text: str) -> bool:
-    lowered = text.lower()
-    if any(w in lowered for w in _SUSPICIOUS_WORDS):
+    # "benöt-" koku (Almanca "benötigen" fiilinin herhangi bir Turkce ek almis hali,
+    # ornegin "benötiyorsanız") kelime-sinirli listeye uymuyor, ayrica kok bazinda ariyoruz.
+    if "benöt" in text.lower():
+        return True
+    if _suspicious_pattern.search(text):
         return True
     return bool(_NON_LATIN_PATTERN.search(text))
 
