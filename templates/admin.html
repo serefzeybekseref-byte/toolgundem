@@ -273,6 +273,48 @@
     {% endif %}
   </div>
 
+  <!-- URL ONARIM ONERILERI -->
+  <h2 style="font-size:1.15rem; margin-bottom:16px;">🩹 URL Onarım Önerileri ({{ url_suggestions|length }})</h2>
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:32px;">
+    {% if url_suggestions %}
+    <div style="display:flex; flex-direction:column; gap:10px; max-height:400px; overflow-y:auto;">
+      {% for s in url_suggestions %}
+      <div style="padding:12px 14px; background:rgba(99,102,241,0.06); border-radius:var(--radius-md); border-left:3px solid var(--accent);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:220px;">
+            <strong>{{ s.original_name }}</strong>
+            <span class="mono" style="color:var(--text-secondary); font-size:0.8rem;"> /{{ s.slug }}</span>
+            <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:4px;">
+              Eski: <span class="mono">{{ s.current_website or '(yok)' }}</span>
+            </div>
+            <div style="font-size:0.78rem; color:#3fb950; margin-top:2px;">
+              Önerilen: <a href="{{ s.suggested_website }}" target="_blank" rel="noopener" class="mono">{{ s.suggested_website }}</a>
+            </div>
+            {% if s.reason %}<div style="font-size:0.76rem; color:var(--text-secondary); margin-top:4px; font-style:italic;">{{ s.reason }}</div>{% endif %}
+          </div>
+          <div style="display:flex; gap:8px; flex-shrink:0;">
+            <form method="POST" action="/admin/url-suggestion-action">
+              <input type="hidden" name="token" value="{{ admin_token }}">
+              <input type="hidden" name="suggestion_id" value="{{ s.id }}">
+              <input type="hidden" name="action" value="apply">
+              <button type="submit" style="background:#3fb950; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:0.8rem; font-weight:600; cursor:pointer;">Onayla</button>
+            </form>
+            <form method="POST" action="/admin/url-suggestion-action">
+              <input type="hidden" name="token" value="{{ admin_token }}">
+              <input type="hidden" name="suggestion_id" value="{{ s.id }}">
+              <input type="hidden" name="action" value="reject">
+              <button type="submit" style="background:transparent; color:var(--text-secondary); border:1px solid var(--border); border-radius:6px; padding:6px 14px; font-size:0.8rem; cursor:pointer;">Reddet</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--text-secondary); font-size:0.85rem;">Bekleyen URL onarım önerisi yok.</p>
+    {% endif %}
+  </div>
+
   <!-- AI VISIBILITY -->
   <h2 style="font-size:1.15rem; margin-bottom:16px;">🔍 AI Görünürlük Takibi ({{ ai_visibility.rate }}% mention oranı, {{ ai_visibility.total }} kontrol)</h2>
   <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:32px;">

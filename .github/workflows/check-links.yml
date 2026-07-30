@@ -31,3 +31,7 @@ jobs:
       - name: Verify connection_error false positives (NIM + web search)
         run: python verify_connection_errors.py
         continue-on-error: true
+
+      - name: Suggest URL repairs for still-broken products (NIM + web search)
+        run: python suggest_url_repairs.py
+        continue-on-error: true

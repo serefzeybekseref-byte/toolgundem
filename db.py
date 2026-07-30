@@ -372,6 +372,18 @@ def init_db():
             processed_at TEXT
         )
     """)
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS url_repair_suggestions (
+            id {pk},
+            product_id INTEGER NOT NULL,
+            current_website TEXT,
+            suggested_website TEXT NOT NULL,
+            reason TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TEXT NOT NULL,
+            resolved_at TEXT
+        )
+    """)
 
     conn.execute(f"""
         CREATE TABLE IF NOT EXISTS outbound_click_events (
@@ -885,6 +897,71 @@ def mark_queue_item(queue_id: int, status: str):
     conn.execute(
         "UPDATE product_generation_queue SET status = ?, processed_at = ? WHERE id = ?",
         (status, datetime.utcnow().isoformat(), queue_id)
+    )
+    conn.commit()
+    conn.close()
+
+
+def add_url_repair_suggestion(product_id: int, current_website: str, suggested_website: str, reason: str):
+    """Kirik bir urun icin bulunan olasi yeni URL'yi oneri kuyruguna ekler (otomatik
+    UYGULAMAZ - admin panelden onay bekler, URL degisikligi riskli bir islem)."""
+    from datetime import datetime
+    conn = get_connection()
+    # Ayni urun icin zaten bekleyen bir oneri varsa tekrar ekleme
+    existing = conn.execute(
+        "SELECT id FROM url_repair_suggestions WHERE product_id = ? AND status = 'pending'", (product_id,)
+    ).fetchone()
+    if existing:
+        conn.close()
+        return
+    conn.execute(
+        "INSERT INTO url_repair_suggestions (product_id, current_website, suggested_website, reason, status, created_at) "
+        "VALUES (?, ?, ?, ?, 'pending', ?)",
+        (product_id, current_website, suggested_website, reason, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_pending_url_suggestions():
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT u.*, p.original_name, p.slug FROM url_repair_suggestions u
+        JOIN products p ON p.id = u.product_id
+        WHERE u.status = 'pending' ORDER BY u.created_at ASC
+    """).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def apply_url_suggestion(suggestion_id: int):
+    """Admin onayladi: onerilen URL'yi urune uygular, kirik isaretini kaldirir."""
+    from datetime import datetime
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM url_repair_suggestions WHERE id = ?", (suggestion_id,)).fetchone()
+    if not row:
+        conn.close()
+        return False
+    row = dict(row)
+    conn.execute(
+        "UPDATE products SET website = ?, is_broken = 0, broken_reason = NULL WHERE id = ?",
+        (row["suggested_website"], row["product_id"])
+    )
+    conn.execute(
+        "UPDATE url_repair_suggestions SET status = 'applied', resolved_at = ? WHERE id = ?",
+        (datetime.utcnow().isoformat(), suggestion_id)
+    )
+    conn.commit()
+    conn.close()
+    return True
+
+
+def reject_url_suggestion(suggestion_id: int):
+    from datetime import datetime
+    conn = get_connection()
+    conn.execute(
+        "UPDATE url_repair_suggestions SET status = 'rejected', resolved_at = ? WHERE id = ?",
+        (datetime.utcnow().isoformat(), suggestion_id)
     )
     conn.commit()
     conn.close()

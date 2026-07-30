@@ -18,6 +18,7 @@ from db import (
     get_showcase_products, toggle_showcase, get_latest_ai_trends,
     record_visit, get_visit_stats, get_all_subscribers,
     record_traffic_source, categorize_referrer, get_traffic_source_stats,
+    get_pending_url_suggestions, apply_url_suggestion, reject_url_suggestion,
     get_guides_for_topic, get_guides_for_tool_slug, get_guides_for_comparison_slug,
     get_products_by_slugs, get_comparisons_by_slugs, get_broken_products,
     BEST_FOR_TYPES, record_outbound_click_event,
@@ -1001,6 +1002,7 @@ def admin():
             multi_clicks=multi_clicks, recent_journeys=recent_journeys, avg_time=avg_time,
             today_clicks=today_clicks, showcase_full=showcase_full, traffic_sources=traffic_sources,
             broken_products=broken_products, ai_visibility=ai_visibility,
+            url_suggestions=get_pending_url_suggestions(),
         )
 
     # Admin sayfasi cok agir (~18 ayri sorgu) oldugu icin kisa TTL cache
@@ -1045,7 +1047,28 @@ def admin():
         showcase_products=[dict(r) for r in showcase_full],
         broken_products=data["broken_products"],
         ai_visibility=data["ai_visibility"],
+        url_suggestions=data["url_suggestions"],
     )
+
+
+@app.route("/admin/url-suggestion-action", methods=["POST"])
+def admin_url_suggestion_action():
+    """Kirik link icin onerilen yeni URL'yi admin onaylar/reddeder. Otomatik uygulanmaz -
+    URL degisikligi riskli oldugu icin bilerek insan onayi gerektirir."""
+    token = request.form.get("token", "")
+    expected = os.getenv("ADMIN_TOKEN", "")
+    if not expected or token != expected:
+        abort(404)
+    suggestion_id = request.form.get("suggestion_id", type=int)
+    action = request.form.get("action", "")
+    if suggestion_id and action == "apply":
+        apply_url_suggestion(suggestion_id)
+    elif suggestion_id and action == "reject":
+        reject_url_suggestion(suggestion_id)
+    for k in list(_simple_caches.keys()):
+        if k.startswith("admin_"):
+            del _simple_caches[k]
+    return redirect(f"/admin?token={token}")
 
 
 @app.route("/admin/vitrin-toggle", methods=["POST"])
