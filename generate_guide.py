@@ -32,19 +32,47 @@ def call_llm(prompt: str, temperature: float = 0.55, max_tokens: int = 2048) -> 
     )
 
 
-def generate_section(prompt: str, label: str, max_tokens: int = 2048) -> dict:
-    """Bir bolumu uretir, yabanci kelime/alfabe sizintisi varsa bir kez daha dener."""
-    data = call_llm(prompt, max_tokens=max_tokens)
-    full_text = json.dumps(data, ensure_ascii=False)
-    if _has_foreign_leak(full_text):
-        print(f"    ({label}: yabanci kelime/alfabe sizintisi, tekrar deneniyor...)")
-        data = call_llm(prompt, temperature=0.45, max_tokens=max_tokens)
-    return data
+def _strip_foreign_chars(obj):
+    """Son care guvenlik agi: recursive olarak butun string degerlerdeki yabanci
+    alfabe karakterlerini siler (Kiril/Cince/Arapca/Vietnamca tonlu harfler).
+    Ideal olan asla buraya dusmemek (retry'larla temiz metin almak) ama tum
+    denemeler basarisiz olursa, kullaniciya bozuk karakter gostermektense
+    onlari sessizce cikarmak daha iyi."""
+    if isinstance(obj, str):
+        return _NON_LATIN_PATTERN.sub("", obj)
+    if isinstance(obj, list):
+        return [_strip_foreign_chars(v) for v in obj]
+    if isinstance(obj, dict):
+        return {k: _strip_foreign_chars(v) for k, v in obj.items()}
+    return obj
+
+
+def generate_section(prompt: str, label: str, max_tokens: int = 2048, max_attempts: int = 3) -> dict:
+    """Bir bolumu uretir, yabanci kelime/alfabe sizintisi varsa TEKRAR TEKRAR dener
+    (her denemeyi de kontrol ederek - eskiden sadece 1 kez deniyordu ve o denemenin
+    sonucu kontrol edilmiyordu, bu yuzden sizintilar siliniyordu). Butun denemeler
+    basarisiz olursa, son care olarak yabanci karakterleri temizleyip donduruyoruz."""
+    data = None
+    for attempt in range(max_attempts):
+        temperature = 0.55 if attempt == 0 else 0.45
+        data = call_llm(prompt, temperature=temperature, max_tokens=max_tokens)
+        full_text = json.dumps(data, ensure_ascii=False)
+        if not _has_foreign_leak(full_text):
+            return data
+        print(f"    ({label}: yabanci kelime/alfabe sizintisi - deneme {attempt + 1}/{max_attempts} basarisiz)")
+
+    print(f"    ({label}: {max_attempts} denemede de sizinti temizlenemedi, guvenlik agi devrede)")
+    return _strip_foreign_chars(data)
 
 
 _COMMON_RULES = """
 KURALLAR (cok onemli, kesinlikle uy):
-- SADECE ve SADECE Turkce yaz. Baska hicbir dilden tek kelime bile kullanma.
+- SADECE ve SADECE Turkce yaz. Baska hicbir dilden tek kelime, tek harf veya tek karakter bile
+  kullanma - Kiril (rusca), Cince, Arapca gibi alfabelerden HICBIR karakter Turkce kelimelerin
+  icine KARISTIRMA.
+- Turkce'ye ozgu harfleri (i, s, g, u, o, c harflerinin noktali/cengelli hallerini) DOGRU ve
+  TUTARLI kullan - "arac" degil "araç", "adim" degil "adım" yaz. ASCII'ye
+  (ozel karaktersiz) indirgeme YAPMA.
 - Sadece asagida verilen araclardan bahset, baska arac ismi UYDURMA veya ekleme.
 - Fiyat bilgisi olarak SADECE verilen bilgiyi kullan, uydurma rakam verme.
 - Dogal, akici, samimi ama profesyonel bir uslup kullan (reklam gibi degil, tekrar eden cumleler kurma).
@@ -90,7 +118,7 @@ Bahsedilecek araclar (baglam icin, adimlarda genel gecer/arac-bagimsiz bir surec
 Su JSON formatinda cevap ver (baska hicbir sey yazma):
 {{
   "adimlar_baslik": "Bu bolumun kisa (1 cumle) giris cumlesi",
-  "adimlar": ["TEK BIR STRING icinde 'Kisa Baslik: Ayrintili aciklama (EN FAZLA 30-40 kelime)' formatinda - basligi ve aciklamayi AYRI array elemanlari yapma, TEK string olarak birlestir", "Adim 2 - ayni format, TEK string", "Adim 3 - ayni format, TEK string", "Adim 4 - ayni format, TEK string (4-5 adim arasi olsun, HER adim kendi icinde baslik+aciklama birlesik TEK string olmali, KISA tut)"]
+  "adimlar": ["TEK BIR STRING icinde 'Kisa Baslik: Ayrintili aciklama (EN FAZLA 30-40 kelime)' formatinda - basligi ve aciklamayi AYRI array elemanlari yapma, TEK string olarak birlestir", "Adım 2 - ayni format, TEK string", "Adım 3 - ayni format, TEK string", "Adım 4 - ayni format, TEK string (4-5 adim arasi olsun, HER adim kendi icinde baslik+aciklama birlesik TEK string olmali, KISA tut)"]
 }}
 """
 
@@ -135,7 +163,7 @@ Baglam (bahsedilen araclar):
 Su JSON formatinda cevap ver (baska hicbir sey yazma):
 {{
   "ucretsiz_alternatif_notu": "EN FAZLA 70-90 kelimelik, ucretsiz/dusuk butceli secenekler hakkinda kisa bir not. Hangi araclarin ucretsiz katmani oldugunu kisaca soyle.",
-  "hatalar": ["Sik yapilan hata 1 - EN FAZLA 20-30 kelime aciklamali", "Hata 2 - 20-30 kelime", "Hata 3 - 20-30 kelime", "Hata 4 - 20-30 kelime (3-4 hata arasi, kisa tut)"]
+  "hatalar": ["Sık yapılan hata 1 - EN FAZLA 20-30 kelime aciklamali", "Hata 2 - 20-30 kelime", "Hata 3 - 20-30 kelime", "Hata 4 - 20-30 kelime (3-4 hata arasi, kisa tut)"]
 }}
 """
 
