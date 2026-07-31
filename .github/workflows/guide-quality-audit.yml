@@ -42,6 +42,10 @@ jobs:
         continue-on-error: true
         run: python audit_guides.py --max-fixes 4
 
+      - name: Rehber -> karsilastirma internal link backfill
+        continue-on-error: true
+        run: python backfill_guide_comparison_links.py
+
       - name: Basarisiz olursa issue ac
         if: steps.audit.outcome == 'failure'
         uses: actions/github-script@v7
