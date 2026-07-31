@@ -119,6 +119,25 @@ def _run_collection_and_comparison_generators(dry_run=False):
         print(f"[COMPARISON] HATA: {e}")
 
 
+def _recover_stuck_running_tasks(conn):
+    """
+    GitHub Actions bir isi zorla iptal ederse (is-zaman-asimi, cancel vb.), o an islenmekte
+    olan gorev 'RUNNING' durumunda sonsuza dek takili kalir - cunku bizim kodumuz _mark_task'a
+    hic ulasamadan surec oldurulur. Bu gorevler PENDING sorgusuna hic girmedigi icin BIR DAHA
+    ASLA islenmez (30 Temmuz 2026'da bulundu - iptal olan bir calistirmadan kalan 1 gorev
+    boyle sonsuza kadar takili kalmisti). Bu fonksiyon, 30 dakikadan eski RUNNING gorevleri
+    (herhangi bir normal gorev bu kadar surmez) PENDING'e geri dondurur.
+    """
+    from datetime import timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+    result = conn.execute(
+        "UPDATE content_tasks SET status = 'PENDING', last_error = '[onceki calistirma yarida kesildi, otomatik kurtarildi]' "
+        "WHERE status = 'RUNNING' AND started_at < ?",
+        (cutoff,)
+    )
+    conn.commit()
+
+
 def run_pipeline(dry_run=False, max_tasks=3):
     print("=== Content OS Pipeline Basliyor ===")
 
@@ -126,6 +145,7 @@ def run_pipeline(dry_run=False, max_tasks=3):
     discover_opportunities()
 
     conn = get_connection()
+    _recover_stuck_running_tasks(conn)
     tasks = conn.execute("""
         SELECT t.id, t.task_type, t.priority_score, t.reason, t.product_id, t.retry_count, p.original_name, p.slug
         FROM content_tasks t
