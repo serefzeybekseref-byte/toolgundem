@@ -15,7 +15,7 @@ from db import (
     subscribe_email, unsubscribe_email,
     get_products_paginated, get_comparisons_for_product, get_collections_for_product,
     get_admin_stats, get_all_guides, get_guide_by_slug, get_related_guides,
-    get_showcase_products, toggle_showcase, get_latest_ai_trends,
+    get_showcase_products, toggle_showcase, get_latest_ai_trends, get_topic_labels_map,
     record_visit, get_visit_stats, get_all_subscribers,
     record_traffic_source, categorize_referrer, get_traffic_source_stats,
     get_pending_url_suggestions, apply_url_suggestion, reject_url_suggestion,
@@ -297,9 +297,10 @@ def get_merged_topics():
     o ham topic'e gore filtreliyor), sadece goruntu/sayim birlesiyor.
     """
     raw_topics = get_all_topics()  # [(raw_topic, count), ...]
+    labels_map = {**TOPIC_LABELS, **get_topic_labels_map()}
     merged = {}
     for raw_topic, count in raw_topics:
-        label = TOPIC_LABELS.get(raw_topic, raw_topic)
+        label = labels_map.get(raw_topic, raw_topic)
         if label not in merged:
             merged[label] = {"raw_topic": raw_topic, "label": label, "count": 0, "_best": 0}
         merged[label]["count"] += count
@@ -407,12 +408,18 @@ def inject_globals():
             "footer_comparisons": get_all_comparisons()[:5],
             "footer_topics": [(t["raw_topic"], t["count"]) for t in get_merged_topics()[:6]],
             "showcase_products": get_showcase_products(limit=4),
+            # Statik TOPIC_LABELS sozlugu + DB'deki topic_labels tablosu (AI-cevirili,
+            # migrate_and_backfill_topic_labels.py ile doldurulur) BIRLESTIRILIR.
+            # DB'deki degerler oncelikli (daha guncel/kapsamli olabilir), ama statik
+            # sozluk hep bir fallback olarak kalir - tablo bos/yoksa bile site kirilmaz.
+            "merged_topic_labels": {**TOPIC_LABELS, **get_topic_labels_map()},
         }
         _footer_cache["ts"] = now
     footer_guides = _footer_cache["data"]["footer_guides"]
     footer_comparisons = _footer_cache["data"]["footer_comparisons"]
     footer_topics = _footer_cache["data"]["footer_topics"]
     showcase_products = _footer_cache["data"]["showcase_products"]
+    merged_topic_labels = _footer_cache["data"]["merged_topic_labels"]
     try:
         # Vercel her deploy'da VERCEL_GIT_COMMIT_SHA'yi otomatik enjekte eder - bu deploy'a
         # gore gercekten degisir. Dosya mtime'ina guvenmiyoruz cunku Vercel'in build sureci
@@ -426,7 +433,7 @@ def inject_globals():
         asset_version = "1"
     return {
         "asset_version": asset_version,
-        "topic_labels": TOPIC_LABELS,
+        "topic_labels": merged_topic_labels,
         "topic_icons": TOPIC_ICONS,
         "get_topic_icon": get_topic_icon,
         "get_comparison_icon": get_comparison_icon,
@@ -622,7 +629,7 @@ def category(topic):
     fiyat = request.args.get("fiyat", "").strip()
     if fiyat:
         products = [p for p in products if p.get("pricing_type") == fiyat]
-    label = TOPIC_LABELS.get(topic, topic)
+    label = _footer_cache["data"]["merged_topic_labels"].get(topic, topic) if _footer_cache["data"] else TOPIC_LABELS.get(topic, topic)
     icon = TOPIC_ICONS.get(topic, "📁")
     all_topics = get_merged_topics()
     related_guides = get_guides_for_topic(topic)

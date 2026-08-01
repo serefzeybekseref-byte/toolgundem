@@ -1154,6 +1154,20 @@ def toggle_showcase(product_id: int) -> bool:
     return bool(new_val)
 
 
+def get_topic_labels_map():
+    """DB'deki topic_labels tablosundan (raw_topic -> label_tr) sozlugunu dondurur.
+    Tablo yoksa (migration hic calistirilmamissa) sessizce bos sozluk doner - app.py
+    zaten kendi statik TOPIC_LABELS sozlugunu bununla BIRLESTIRIP kullanir, tek basina
+    kirilmaz."""
+    try:
+        conn = get_connection()
+        rows = conn.execute("SELECT raw_topic, label_tr FROM topic_labels").fetchall()
+        conn.close()
+        return {dict(r)["raw_topic"]: dict(r)["label_tr"] for r in rows}
+    except Exception:
+        return {}
+
+
 def get_admin_stats():
     """Admin paneli icin ozet istatistikler (tek sorgu setiyle)."""
     conn = get_connection()
