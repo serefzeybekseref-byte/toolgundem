@@ -1616,17 +1616,25 @@ h1, h2, h3, h4 {
 
 .detail-related-box {
   margin: var(--space-4) 0;
-  padding: var(--space-4) 0 var(--space-4) var(--space-5);
-  border-left: 2px solid var(--border);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  border-left: 3px solid var(--accent);
+  transition: border-color var(--transition-fast);
+}
+
+.detail-related-box + .detail-related-box {
+  margin-top: var(--space-3);
 }
 
 .detail-related-label {
   display: block;
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   color: var(--text-secondary);
 }
 
@@ -1635,6 +1643,16 @@ h1, h2, h3, h4 {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: var(--space-3);
+}
+
+.detail-related-links .btn-sm {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.detail-related-links .btn-sm:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
 }
 
 .btn-sm {
