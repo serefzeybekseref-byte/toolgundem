@@ -38,7 +38,7 @@ jobs:
       - name: Content OS Pipeline Calistir
         id: pipeline
         continue-on-error: true
-        run: python automation_pipeline.py --max-tasks 12
+        run: python automation_pipeline.py --max-tasks 20
 
       - name: NIM ile Gunun AI Trendlerini Yenile
         continue-on-error: true
