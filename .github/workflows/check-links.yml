@@ -3,7 +3,7 @@ name: Link Check (haftada 3)
 on:
   schedule:
     # Pazartesi, Carsamba, Cuma 05:00 UTC
-    - cron: "0 5 * * 1,3,5"
+    - cron: "0 3 * * 1,3,5"
   workflow_dispatch: {}
 
 jobs:

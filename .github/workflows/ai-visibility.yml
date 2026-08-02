@@ -3,7 +3,7 @@ name: AI Gorunurluk Takibi (haftalik)
 on:
   schedule:
     # Her Pazar 08:00 UTC
-    - cron: "0 8 * * 0"
+    - cron: "0 10 * * 0"
   workflow_dispatch: {}
 
 jobs:

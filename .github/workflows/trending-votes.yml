@@ -3,7 +3,7 @@ name: Trending Vote Refresh (haftada 3)
 on:
   schedule:
     # Pazartesi, Carsamba, Cuma 09:45 UTC - pipeline saatleriyle (06/14/20 UTC) carpismasin
-    - cron: "45 9 * * 1,3,5"
+    - cron: "30 4 * * 1,3,5"
   workflow_dispatch: {}
 
 jobs:

@@ -6,8 +6,8 @@ on:
     # 05:00, 06:00, 08:00, 14:00, 20:00 UTC) bilerek uzak tutuldu - cakisma yok.
     # 12 saat arayla calisip 12'ser urun isleyerek (gunde 24 toplam) 306 "Bilinmiyor"
     # urunu ~1-2 ay yerine ~13 gunde kapatir, kota-dostu 4sn araligi korunarak.
-    - cron: "30 4 * * *"
-    - cron: "30 16 * * *"
+    - cron: "30 1 * * *"
+    - cron: "0 17 * * *"
   workflow_dispatch: {}
 
 jobs:
