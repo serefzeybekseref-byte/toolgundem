@@ -123,6 +123,9 @@ def _track_visit():
 
     if request.endpoint not in _TRACKED_ENDPOINTS:
         return
+    if is_bot(request.headers.get("User-Agent", "")):
+        return  # bot/crawler ziyaretleri sayaca dahil edilmez (cerez donmedikleri icin
+                # her sayfa taramasi 'yeni benzersiz ziyaretci' gibi gorunup sayiyi sisirir)
     from datetime import date
     today = date.today().isoformat()
     if request.cookies.get("tg_visited") == today:
