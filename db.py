@@ -1987,6 +1987,34 @@ def save_ai_trend(title: str, summary: str, trend_type: str = "viral", source_ur
     conn.close()
 
 
+def has_recent_trend_for_slug(internal_slug: str, days: int = 14) -> bool:
+    """
+    Ayni urun (internal_slug) icin son X gun icinde zaten bir trend kaydedilmis mi?
+    Amac: 'Grammarly Duzeltmeleri' gibi jenerik basliklarin birkac gunde bir tekrar
+    tekrar eklenmesini (birikmesini) onlemek - 23 Temmuz 2026'da fark edilen sorun.
+    """
+    conn = get_connection()
+    cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+    row = conn.execute(
+        "SELECT 1 FROM ai_trends WHERE internal_slug = ? AND created_at >= ? LIMIT 1",
+        (internal_slug, cutoff)
+    ).fetchone()
+    conn.close()
+    return row is not None
+
+
+def prune_old_ai_trends(keep_latest: int = 20):
+    """ai_trends tablosunun sinirsiz buyumesini onlemek icin sadece en yeni N kaydi tutar."""
+    conn = get_connection()
+    conn.execute("""
+        DELETE FROM ai_trends WHERE id NOT IN (
+            SELECT id FROM ai_trends ORDER BY created_at DESC LIMIT ?
+        )
+    """, (keep_latest,))
+    conn.commit()
+    conn.close()
+
+
 def find_internal_slug_for_trend(title: str, summary: str):
     """Bir trend basligi/ozetinde gecen bilinen bir urun ismini bulup slug'ini dondurur.
     Eslesme yoksa None (bu durumda trend gosterilmez - her trend kendi inceleme

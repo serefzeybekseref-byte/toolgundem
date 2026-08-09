@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from nim_tools import call_nim_with_search
-from db import init_db, save_ai_trend, get_latest_ai_trends, find_internal_slug_for_trend
+from db import init_db, save_ai_trend, get_latest_ai_trends, find_internal_slug_for_trend, has_recent_trend_for_slug, prune_old_ai_trends
 
 
 def fetch_latest_ai_trends():
@@ -19,15 +19,23 @@ def fetch_latest_ai_trends():
     print("[NIM Trend Radar] Canli web aramasiyla gunun AI trendleri taraniyor...")
 
     prompt = """
-Web araması (web_search) aracını kullanarak, tanınmış/popüler bir AI aracının (ChatGPT,
-Claude, Gemini, Midjourney, Canva, Notion, Perplexity, ElevenLabs, Runway, Grammarly gibi
-çok bilinen, yaygın kullanılan araçlardan biri — küçük/bilinmeyen yeni lansmanlar DEĞİL)
-son birkaç gündeki somut bir güncelleme/özellik haberini bul. 3 farklı tanınmış araç için
-ayrı ayrı ara.
+Web araması (web_search) aracını kullanarak, gerçek/doğrulanabilir bir AI aracının son
+birkaç gündeki somut bir güncelleme, yeni özellik veya gelişme haberini bul. 3 FARKLI
+araç için ayrı ayrı ara.
 
-ÖNEMLİ KURALLAR:
-- "AI Araçları 2026" gibi genel/soyut başlık UYDURMA — her başlıkta MUTLAKA yukarıdaki
-  gibi tanınmış, gerçek bir araç ismi geçmeli.
+ÖNEMLİ - ÇEŞİTLİLİK KURALI: Aracı sınırlı bir listeyle kısıtlama. Kataloğumuzda 1000'den
+fazla AI aracı var (ChatGPT, Claude, Gemini, Midjourney, Canva, Notion, Perplexity,
+ElevenLabs, Runway, Grammarly gibi çok bilinenlerin YANI SIRA; Cursor, Zapier, HubSpot,
+Suno, Ideogram, Krea, Descript, Otter.ai, Jasper, Copy.ai gibi orta ölçekli/niş ama gerçek
+ve tanınan araçlar da dahil). HER ÇALIŞTIRMADA aynı 2-3 en bilinen aracı (özellikle
+ChatGPT ve Grammarly) tekrar tekrar seçme — farklı kategorilerden (görsel, video, kod,
+otomasyon, yazı, ses vb.) farklı araçlar aramaya çalış.
+
+DİĞER KURALLAR:
+- "AI Araçları 2026" gibi genel/soyut başlık UYDURMA — her başlıkta MUTLAKA gerçek bir
+  araç ismi geçmeli.
+- Gerçekten yeni kurulmuş, henüz kimsenin duymadığı çok küçük/bilinmeyen lansmanlar değil;
+  makul ölçüde tanınan, gerçek bir kullanıcı kitlesi olan araçlar tercih edilir.
 - SADECE düzgün, eksiksiz Türkçe yaz. Türkçe'ye özgü harfleri (ı, ğ, ü, ş, ö, ç) MUTLAKA
   doğru kullan — "gelistirdi" değil "geliştirdi", "ozellik" değil "özellik", "duzeltti"
   değil "düzeltti" yaz. Türkçe karakterleri ASCII'ye (i, g, u, s, o, c) indirgeme.
@@ -79,8 +87,12 @@ Bize TAM OLARAK aşağıdaki JSON formatında bir yanıt ver. Başka hiçbir gir
                 if not internal_slug:
                     print(f"[NIM Trend Radar] Atlandi (katalogumuzda eslesen urun yok): {title}")
                     continue
+                if has_recent_trend_for_slug(internal_slug, days=14):
+                    print(f"[NIM Trend Radar] Atlandi (bu urun icin son 14 gunde zaten trend var - birikmeyi onluyoruz): {title}")
+                    continue
                 save_ai_trend(title, summary, t_type, url, internal_slug=internal_slug)
                 count += 1
+            prune_old_ai_trends(keep_latest=20)
             print(f"[NIM Trend Radar] {count} yeni trend gelisme kaydedildi!")
             return count > 0
         else:
