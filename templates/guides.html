@@ -41,7 +41,7 @@
           <span class="tag" style="background:rgba(52,211,153,0.12); color:var(--green); border:1px solid rgba(52,211,153,0.25);">🔄 Alternatif</span>
           {% endif %}
         </div>
-        <span class="compare-date mono">{{ g.created_at[:10] if g.created_at else '' }}</span>
+        <span class="compare-date mono">{{ turkce_tarih(g.created_at) if g.created_at else '' }}</span>
       </div>
       <div class="guide-card-eyebrow mono">
         {% if topic_key and topic_labels.get(topic_key) %}

@@ -38,7 +38,7 @@
             ⚠️ {% if p.broken_reason == '404' %}Sayfa bulunamadı{% elif p.broken_reason == 'dns_error' %}Alan adı erişilemez{% elif p.broken_reason == 'timeout' %}Yanıt vermiyor{% elif p.broken_reason == 'ssl_error' %}Güvenlik sertifikası hatalı{% else %}Erişilemiyor{% endif %}
           </span>
           {% if p.last_checked_at %}
-          <span class="mono" style="font-size:0.75rem; color: var(--text-secondary);">Son kontrol: {{ p.last_checked_at[:10] }}</span>
+          <span class="mono" style="font-size:0.75rem; color: var(--text-secondary);">Son kontrol: {{ turkce_tarih(p.last_checked_at) }}</span>
           {% endif %}
         </div>
       </div>

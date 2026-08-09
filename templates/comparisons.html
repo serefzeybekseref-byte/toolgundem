@@ -24,7 +24,7 @@
       {% if c.intro %}
       <p class="compare-intro">{{ c.intro[:100] }}{% if c.intro|length > 100 %}...{% endif %}</p>
       {% endif %}
-      <span class="compare-date mono">Güncellendi: {{ c.updated_at[:10] }}</span>
+      <span class="compare-date mono">Güncellendi: {{ turkce_tarih(c.updated_at) }}</span>
     </a>
     {% else %}
     <div class="empty-state">

@@ -70,7 +70,7 @@
       <a href="{{ url_for('detail', slug=t.internal_slug) }}" class="compare-card fade-in" style="border-left: 3px solid var(--accent); padding:16px; text-decoration:none; color:inherit; display:block;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <span class="badge" style="background:rgba(255,255,255,0.06); font-size:0.7rem; color:var(--accent);">🔥 Trend Gelişme</span>
-          <span class="compare-date mono" style="font-size:0.7rem;">{{ t.created_at[:10] if t.created_at else '' }}</span>
+          <span class="compare-date mono" style="font-size:0.7rem;">{{ turkce_tarih(t.created_at) if t.created_at else '' }}</span>
         </div>
         <h3 style="font-size:0.95rem; font-weight:600; margin:0 0 6px; color:var(--text);">{{ t.title }}</h3>
         <p style="font-size:0.82rem; color:var(--text-secondary); margin:0; line-height:1.5;">{{ t.summary }}</p>
