@@ -1974,6 +1974,23 @@ def get_ai_visibility_stats(limit=30):
     }
 
 
+def upsert_ai_trend_for_slug(title: str, summary: str, trend_type: str, source_url: str, internal_slug: str):
+    """
+    Bir urun/sirket icin en fazla TEK trend kaydi tutar - yigin olusmasin diye.
+    Ayni internal_slug icin eski kayit varsa SILINIP yerine yenisi yazilir (upsert).
+    Boylece her sirketin sadece EN SON guncellemesi gorunur, oncekiler birikmez.
+    """
+    conn = get_connection()
+    now_str = datetime.utcnow().isoformat()
+    conn.execute("DELETE FROM ai_trends WHERE internal_slug = ?", (internal_slug,))
+    conn.execute(
+        "INSERT INTO ai_trends (title, summary, trend_type, source_url, internal_slug, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (title, summary, trend_type, source_url, internal_slug, now_str)
+    )
+    conn.commit()
+    conn.close()
+
+
 def save_ai_trend(title: str, summary: str, trend_type: str = "viral", source_url: str = "", internal_slug: str = None):
     """Yeni bir AI trend haberini/gelismesini kaydeder. internal_slug: eslesen bir
     urunumuz varsa slug'i (kart tiklaninca oraya yonlendirmek icin)."""

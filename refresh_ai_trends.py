@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from nim_tools import call_nim_with_search
-from db import init_db, save_ai_trend, get_latest_ai_trends, find_internal_slug_for_trend, has_recent_trend_for_slug, prune_old_ai_trends
+from db import init_db, get_latest_ai_trends, find_internal_slug_for_trend, upsert_ai_trend_for_slug, prune_old_ai_trends
 
 
 def fetch_latest_ai_trends():
@@ -87,10 +87,10 @@ Bize TAM OLARAK aşağıdaki JSON formatında bir yanıt ver. Başka hiçbir gir
                 if not internal_slug:
                     print(f"[NIM Trend Radar] Atlandi (katalogumuzda eslesen urun yok): {title}")
                     continue
-                if has_recent_trend_for_slug(internal_slug, days=14):
-                    print(f"[NIM Trend Radar] Atlandi (bu urun icin son 14 gunde zaten trend var - birikmeyi onluyoruz): {title}")
-                    continue
-                save_ai_trend(title, summary, t_type, url, internal_slug=internal_slug)
+                # Ayni sirket/urun icin ESKI kayit varsa uzerine yazilir (upsert) -
+                # boylece hicbir zaman ayni urunun 2 farkli tarihli kaydi birikmez,
+                # her zaman sadece EN GUNCEL guncelleme gorunur.
+                upsert_ai_trend_for_slug(title, summary, t_type, url, internal_slug)
                 count += 1
             prune_old_ai_trends(keep_latest=20)
             print(f"[NIM Trend Radar] {count} yeni trend gelisme kaydedildi!")
