@@ -122,6 +122,19 @@ def print_report(report: dict, out=None):
 
 
 if __name__ == "__main__":
+    import sys
     r = run_data_audit()
     with open("_data_audit_result.txt", "w", encoding="utf-8") as f:
         print_report(r, out=f)
+    print_report(r)  # ayrica konsola/CI logina da yaz (dosyayi actirmadan gorulebilsin)
+    real_issues = (
+        sum(r[f"missing_{f}"] for f in ["thumbnail", "website", "pricing_type", "summary_tr", "slug"])
+        + len(r["duplicate_slugs"])
+        + len(r["orphan_collection_items"])
+        + len(r["orphan_guide_refs"])
+    )
+    # Onceden bu script hicbir zaman hata koduyla cikmiyordu - iyi yazilmis olmasina
+    # ragmen hic zamanlanmamisti, yani gercek veri sorunlari elle calistirilana kadar
+    # sessizce birikebiliyordu. Artik gercek sorun sayisi esigi (10) asarsa CI adimi
+    # "failed" olarak isaretlenir, workflow bunu yakalayip GitHub Issue acar.
+    sys.exit(1 if real_issues > 10 else 0)

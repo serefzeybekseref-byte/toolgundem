@@ -1,0 +1,52 @@
+name: Data Integrity Audit (haftalik)
+
+on:
+  schedule:
+    # Her Persembe 09:00 UTC - diger tum zamanlanmis islerden (00:30, 03:00, 04:30,
+    # 05:00, 06:00, 08:00, 10:00, 14:00, 16:30, 20:00, 22:30 UTC) uzak, cakisma yok.
+    # data_audit.py iyi yazilmis ama daha once HIC zamanlanmamisti - bu yuzden gercek
+    # veri butunlugu sorunlari (yetim collection_items, kirik rehber referanslari,
+    # duplicate slug) elle calistirilana kadar sessizce birikebiliyordu.
+    - cron: "0 9 * * 4"
+  workflow_dispatch: {}
+
+jobs:
+  data-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Veri butunlugu denetimi calistir
+        id: audit
+        continue-on-error: true
+        run: python data_audit.py
+
+      - name: Gercek sorun sayisi esigi asilirsa issue ac
+        if: steps.audit.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = 'Detayli rapor CI loglarinda.';
+            try { body = '```\n' + fs.readFileSync('_data_audit_result.txt', 'utf8').slice(0, 6000) + '\n```'; } catch (e) {}
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: `Veri butunlugu denetimi: esik asildi - ${new Date().toISOString().slice(0,10)}`,
+              body: body + `\n\nLog: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ["veri-butunlugu"],
+            });
