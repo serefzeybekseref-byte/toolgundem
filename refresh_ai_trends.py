@@ -5,13 +5,30 @@ trendlerini ve sosyal medyada viral olan araçları tarar, ozetler ve ai_trends 
 """
 import os
 import json
+import re
 from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
 
 from nim_tools import call_nim_with_search
+from generate_content import call_gemini_grounded
 from db import init_db, get_latest_ai_trends, find_internal_slug_for_trend, upsert_ai_trend_for_slug, prune_old_ai_trends
+
+
+def _extract_json_array(text: str):
+    """NIM/Gemini'den gelen (bazen fazladan aciklama iceren) metinden JSON dizisini
+    ayiklar. Gemini'nin grounded modu JSON zorlamasini desteklemedigi icin (bkz.
+    call_gemini_grounded docstring), her iki saglayici icin de bu esnek ayiklama
+    kullaniliyor."""
+    match = re.search(r'\[\s*\{.*\}\s*\]', text, re.DOTALL)
+    if match:
+        clean_json = match.group(0).strip()
+    else:
+        clean_json = text.strip()
+        if clean_json.startswith("```"):
+            clean_json = clean_json.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+    return json.loads(clean_json)
 
 
 def fetch_latest_ai_trends():
@@ -52,19 +69,22 @@ Bize TAM OLARAK aşağıdaki JSON formatında bir yanıt ver. Başka hiçbir gir
   }
 ]
 """
+    provider_used = "NIM"
     try:
         response_text = call_nim_with_search(prompt, max_tokens=900)
+        items = _extract_json_array(response_text)
+    except Exception as nim_err:
+        print(f"[NIM Trend Radar] NIM basarisiz oldu ({nim_err}), Gemini (grounded web arama) ile tekrar deneniyor...")
+        try:
+            provider_used = "Gemini"
+            response_text = call_gemini_grounded(prompt, max_tokens=900)
+            items = _extract_json_array(response_text)
+        except Exception as gemini_err:
+            print(f"[NIM Trend Radar] Gemini de basarisiz oldu: {gemini_err}")
+            print("[NIM Trend Radar] Yeni trend eklenmedi, mevcut kayitlar korunuyor.")
+            return False
 
-        import re
-        match = re.search(r'\[\s*\{.*\}\s*\]', response_text, re.DOTALL)
-        if match:
-            clean_json = match.group(0).strip()
-        else:
-            clean_json = response_text.strip()
-            if clean_json.startswith("```"):
-                clean_json = clean_json.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
-
-        items = json.loads(clean_json)
+    try:
         if isinstance(items, list) and len(items) > 0:
             count = 0
             # Diger icerik uretim script'lerimizle ayni yabanci-kelime-sizintisi kontrolu
@@ -93,7 +113,7 @@ Bize TAM OLARAK aşağıdaki JSON formatında bir yanıt ver. Başka hiçbir gir
                 upsert_ai_trend_for_slug(title, summary, t_type, url, internal_slug)
                 count += 1
             prune_old_ai_trends(keep_latest=20)
-            print(f"[NIM Trend Radar] {count} yeni trend gelisme kaydedildi!")
+            print(f"[NIM Trend Radar] ({provider_used}) {count} yeni trend gelisme kaydedildi!")
             return count > 0
         else:
             print("[NIM Trend Radar] Uyari: Yanit beklenen JSON dizisi formatinda gelmedi.")

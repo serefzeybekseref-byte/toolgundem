@@ -64,7 +64,7 @@ def call_nim_with_search(prompt: str, max_tokens: int = 500, max_iterations: int
             "max_tokens": max_tokens,
             "temperature": 0.2,
         }
-        resp = requests.post(NVIDIA_NIM_URL, headers=headers, json=payload, timeout=90)
+        resp = requests.post(NVIDIA_NIM_URL, headers=headers, json=payload, timeout=150)
         resp.raise_for_status()
         msg = resp.json()["choices"][0]["message"]
 
@@ -97,6 +97,6 @@ def call_nim_with_search(prompt: str, max_tokens: int = 500, max_iterations: int
     # max_iterations'a ulasildi, modelden zorla nihai cevap iste (tool erisimi olmadan)
     messages.append({"role": "user", "content": "Simdi elindeki bilgiyle kisa bir nihai cevap ver, baska arama yapma."})
     payload = {"model": NVIDIA_NIM_MODEL, "messages": messages, "max_tokens": max_tokens, "temperature": 0.2}
-    resp = requests.post(NVIDIA_NIM_URL, headers=headers, json=payload, timeout=90)
+    resp = requests.post(NVIDIA_NIM_URL, headers=headers, json=payload, timeout=150)
     resp.raise_for_status()
     return (resp.json()["choices"][0]["message"].get("content") or "").strip()
