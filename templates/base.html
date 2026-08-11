@@ -171,7 +171,7 @@
   {% for p in showcase_products %}
   <a href="{{ url_for('detail', slug=p.slug) }}" class="quick-picks-item">
     {% if p.thumbnail %}
-    <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+    <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy" width="28" height="28">
     {% else %}
     <span class="leaderboard-logo-fallback" style="width:28px;height:28px;font-size:0.8rem;">{{ p.original_name[0]|upper }}</span>
     {% endif %}

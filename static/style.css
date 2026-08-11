@@ -1502,6 +1502,7 @@ h1, h2, h3, h4 {
 
 .detail-logo-card {
   width: 200px;
+  height: 200px;
   flex-shrink: 0;
   background-color: var(--surface);
   border: 1px solid var(--border);
@@ -1515,7 +1516,7 @@ h1, h2, h3, h4 {
 
 .detail-logo-card img {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   object-fit: cover;
 }
