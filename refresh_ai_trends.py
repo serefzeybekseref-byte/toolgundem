@@ -127,4 +127,12 @@ Bize TAM OLARAK aşağıdaki JSON formatında bir yanıt ver. Başka hiçbir gir
 
 
 if __name__ == "__main__":
-    fetch_latest_ai_trends()
+    import sys
+    ok = fetch_latest_ai_trends()
+    # Onceden bu script basarisiz olsa bile HER ZAMAN exit code 0 donduruyordu -
+    # workflow adimi bu yuzden gercekte hicbir sey eklenmese/gunlerce sessizce
+    # basarisiz olsa bile daima "success" gorunuyordu (10 Agustos 2026'da NIM
+    # timeout'unun gunlerce fark edilmemesinin kok nedeni tam buydu). Artik yeni
+    # trend eklenemezse exit(1) ile CI adimini gercekten "failed" isaretliyoruz,
+    # boylece workflow'daki issue-acma adimi bunu yakalayabilir.
+    sys.exit(0 if ok else 1)

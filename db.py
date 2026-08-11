@@ -2020,14 +2020,26 @@ def has_recent_trend_for_slug(internal_slug: str, days: int = 14) -> bool:
     return row is not None
 
 
-def prune_old_ai_trends(keep_latest: int = 20):
-    """ai_trends tablosunun sinirsiz buyumesini onlemek icin sadece en yeni N kaydi tutar."""
+def prune_old_ai_trends(keep_latest: int = 20, max_age_days: int = 5):
+    """ai_trends tablosunu iki kritere gore temizler:
+    1) Sinirsiz buyumeyi onlemek icin sadece en yeni N kaydi tutar (eski davranis).
+    2) YENI: uretim gunlerce sessizce basarisiz olursa (bkz. 10 Agustos 2026 NIM
+       timeout sorunu) eski kayitlar "en yeni 20" limitine hala sigdigi icin
+       ekranda GUNLERCE eskimis/guncel-olmayan halde kalabiliyordu - "Gunun AI
+       Trendleri" widget'i adindan beklenenin aksine bayat gorunuyordu. Artik
+       max_age_days'ten (varsayilan 5 gun) eski TUM kayitlar da silinir, kalan
+       az sayida (hatta sifir) olsa bile - yanlis/eski bilgi gostermek hic
+       gostermemekten daha kotu (bkz. refresh_ai_trends.py'deki ayni ilke)."""
     conn = get_connection()
     conn.execute("""
         DELETE FROM ai_trends WHERE id NOT IN (
             SELECT id FROM ai_trends ORDER BY created_at DESC LIMIT ?
         )
     """, (keep_latest,))
+    if USE_POSTGRES:
+        conn.execute("DELETE FROM ai_trends WHERE created_at::timestamp < NOW() - (? || ' days')::interval", (max_age_days,))
+    else:
+        conn.execute("DELETE FROM ai_trends WHERE created_at < datetime('now', ? || ' days')", (f"-{max_age_days}",))
     conn.commit()
     conn.close()
 
