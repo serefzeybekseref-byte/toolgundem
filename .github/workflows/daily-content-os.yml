@@ -35,15 +35,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Content OS Pipeline Calistir
-        id: pipeline
-        continue-on-error: true
-        run: python automation_pipeline.py --max-tasks 20
-
       - name: NIM ile Gunun AI Trendlerini Yenile
         id: trends
         continue-on-error: true
         run: python refresh_ai_trends.py
+
+      - name: Content OS Pipeline Calistir
+        id: pipeline
+        continue-on-error: true
+        run: python automation_pipeline.py --max-tasks 20
 
       - name: Yeni/guncellenen sayfalari IndexNow ile bildir (Bing/Yandex)
         continue-on-error: true
