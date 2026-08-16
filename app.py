@@ -659,7 +659,7 @@ def hakkimizda():
 
 @app.route("/gizlilik")
 def gizlilik():
-    return render_template("gizlilik.html", page_title="Gizlilik Politikası", page_updated="17 Temmuz 2026")
+    return render_template("gizlilik.html", page_title="Gizlilik Politikası", page_updated="16 Ağustos 2026")
 
 
 @app.route("/kvkk")

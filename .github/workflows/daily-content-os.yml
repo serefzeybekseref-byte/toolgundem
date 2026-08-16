@@ -2,9 +2,15 @@ name: Daily Content OS
 
 on:
   schedule:
-    # Her Gece 00:30 UTC (TR 03:30) - pipeline'in gece calistirmasindan (20:00 UTC)
-    # yeterli bosluk birakilarak, kota catisma riskini azaltmak icin kaydirildi.
-    - cron: "30 0 * * *"
+    # Her Gun 07:15 UTC (TR 10:15) - 2026-08-15'te 00:30 UTC'den buraya kaydirildi.
+    # Sebep: Gemini ucretsiz kotasi genelde Pasifik gece yarisinda (~07:00-08:00 UTC)
+    # sifirlanir. Eski 00:30 UTC calistirma, gunun 06:00/14:00/20:00 UTC'deki 3
+    # pipeline.yml kosusunun AYNI Gemini key'lerini zaten tukettigi bir ana denk
+    # geliyordu (5 gun ust uste NIM+Gemini ikisi de basarisiz oldu, GitHub Issue
+    # #7-#11). 07:15 UTC: pipeline'in 06:00 kosusundan sonra (o an bitmis olur),
+    # 08:00'deki haftalik islerden (comparison-freshness/ai-visibility) once,
+    # kota muhtemelen taze. Ayrica bkz. Groq 3. yedek saglayici (refresh_ai_trends.py).
+    - cron: "15 7 * * *"
   workflow_dispatch: {}
 
 jobs:

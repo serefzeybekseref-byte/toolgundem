@@ -6,6 +6,7 @@ trendlerini ve sosyal medyada viral olan araçları tarar, ozetler ve ai_trends 
 import os
 import json
 import re
+import requests
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -14,6 +15,39 @@ load_dotenv()
 from nim_tools import call_nim_with_search
 from generate_content import call_gemini_grounded
 from db import init_db, get_latest_ai_trends, find_internal_slug_for_trend, upsert_ai_trend_for_slug, prune_old_ai_trends
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+
+
+def call_groq_last_resort(prompt: str, max_tokens: int = 900) -> str:
+    """UCUNCU/SON CARE saglayici. NIM ve Gemini (ikisi de CANLI WEB ARAMASI yapan
+    "grounded" saglayicilar) basarisiz olduğunda devreye girer. Groq'un canli web
+    aramasi YOKTUR - bu yuzden prompt'a ozel bir uyari ekleniyor: sadece egitim
+    verisinden EMIN oldugu, iyi bilinen guncellemelerden bahsetsin, EMIN DEGILSE
+    BOS DIZI dondursun. Amac: NIM/Gemini ikisi de coktuğu gunlerde sayfanin
+    tamamen guncellenmeden kalmasini onlemek, ama halusinasyon riskini de
+    (uydurma haber/URL) mumkun oldugunca dusuk tutmak."""
+    if not GROQ_API_KEY:
+        raise RuntimeError("GROQ_API_KEY tanimli degil")
+    uyari = (
+        "\n\nONEMLI EK KURAL: Senin canli web arama erisimin YOK. SADECE egitim "
+        "verinden gercekten EMIN oldugun, iyi bilinen bir guncellemeden bahset. "
+        "Eger hicbir konuda yeterince emin degilsen, uydurma yapma - SADECE bos "
+        "bir JSON dizisi ([]) dondur. Kaynak URL'sini de uydurma; emin olmadigin "
+        "bir URL yazacaksan onun yerine o urunun bilinen resmi sitesini yaz."
+    )
+    headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [{"role": "user", "content": prompt + uyari}],
+        "max_tokens": max_tokens,
+        "temperature": 0.3,
+    }
+    resp = requests.post(GROQ_URL, headers=headers, json=payload, timeout=60)
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
 
 
 def _extract_json_array(text: str):
@@ -80,9 +114,16 @@ Bize TAM OLARAK aşağıdaki JSON formatında bir yanıt ver. Başka hiçbir gir
             response_text = call_gemini_grounded(prompt, max_tokens=900)
             items = _extract_json_array(response_text)
         except Exception as gemini_err:
-            print(f"[NIM Trend Radar] Gemini de basarisiz oldu: {gemini_err}")
-            print("[NIM Trend Radar] Yeni trend eklenmedi, mevcut kayitlar korunuyor.")
-            return False
+            print(f"[NIM Trend Radar] Gemini de basarisiz oldu ({gemini_err}), son care Groq deneniyor "
+                  f"(canli arama yok, sadece emin oldugu bilgiyle - bkz. call_groq_last_resort)...")
+            try:
+                provider_used = "Groq"
+                response_text = call_groq_last_resort(prompt, max_tokens=900)
+                items = _extract_json_array(response_text)
+            except Exception as groq_err:
+                print(f"[NIM Trend Radar] Groq da basarisiz oldu: {groq_err}")
+                print("[NIM Trend Radar] Yeni trend eklenmedi, mevcut kayitlar korunuyor.")
+                return False
 
     try:
         if isinstance(items, list) and len(items) > 0:
