@@ -274,6 +274,30 @@ if (galleryRoot && lightboxOverlay && lightboxImg) {
   });
 }
 
+// Cookie Consent Banner (Google AdSense EEA/UK riza politikasi)
+(function () {
+  const CONSENT_KEY = 'cookie_consent_v1';
+  const banner = document.getElementById('cookie-consent');
+  if (!banner) return;
+
+  const stored = localStorage.getItem(CONSENT_KEY);
+  if (!stored) {
+    banner.classList.add('active');
+  }
+
+  const acceptBtn = document.getElementById('cookie-accept');
+  const declineBtn = document.getElementById('cookie-decline');
+
+  function hideAndStore(value) {
+    localStorage.setItem(CONSENT_KEY, value);
+    localStorage.setItem(CONSENT_KEY + '_date', new Date().toISOString());
+    banner.classList.remove('active');
+  }
+
+  if (acceptBtn) acceptBtn.addEventListener('click', () => hideAndStore('accepted'));
+  if (declineBtn) declineBtn.addEventListener('click', () => hideAndStore('essential-only'));
+})();
+
 // Scroll to top button
 const scrollBtn = document.getElementById('scroll-top');
 if (scrollBtn) {
