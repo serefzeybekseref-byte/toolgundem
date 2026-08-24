@@ -189,16 +189,18 @@
   // Vitrin basligi ("Vitrin" yazisi + ikon) artik TEK tiklanabilir alan -
   // ayri bir kucultme kutusu yok. Icerik CSS grid-template-rows 0fr<->1fr
   // teknigiyle akici bir sekilde acilip kapaniyor (JS ile yukseklik olcmeye
-  // gerek yok, saf CSS transition). Mobilde varsayilan KAPALI baslar (kucuk
-  // pill), masaustunde varsayilan ACIK baslar. Tercih sessionStorage'da
-  // tutulur, sayfa gezisinde korunur.
+  // gerek yok, saf CSS transition). VARSAYILAN artik HEM mobilde HEM
+  // masaustunde KAPALI baslar (kucuk pill) - eskiden masaustunde acik
+  // basliyordu ve sabit konumlandigi icin ("Ocak Cikan Araclar" basligi,
+  // urun kartlari, "Kategoriler" basligi vb.) sayfa icerigini kapsiyordu.
+  // Tiklaninca hala aciliyor, affiliate gelir ozelligi degismedi. Tercih
+  // sessionStorage'da tutulur, sayfa gezisinde korunur.
   var widget = document.getElementById("quick-picks");
   var toggleBtn = document.getElementById("quick-picks-toggle");
   if (!widget || !toggleBtn) return;
   var KEY = "quick_picks_collapsed";
-  var isMobile = window.matchMedia("(max-width: 640px)").matches;
   var saved = sessionStorage.getItem(KEY);
-  var startCollapsed = saved !== null ? saved === "1" : isMobile;
+  var startCollapsed = saved !== null ? saved === "1" : true;
   function apply(collapsed) {
     widget.classList.toggle("quick-picks-collapsed", collapsed);
     toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
