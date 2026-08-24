@@ -515,14 +515,73 @@ h1, h2, h3, h4 {
   top: -280px;
   left: 50%;
   transform: translateX(-50%);
-  width: 900px;
-  height: 700px;
+  width: 1100px;
+  height: 800px;
   background:
-    radial-gradient(circle at 35% 30%, rgba(99, 102, 241, 0.35), transparent 55%),
-    radial-gradient(circle at 65% 40%, rgba(168, 85, 247, 0.28), transparent 55%);
-  filter: blur(50px);
+    radial-gradient(circle at 35% 30%, rgba(99, 102, 241, 0.55), transparent 55%),
+    radial-gradient(circle at 65% 40%, rgba(168, 85, 247, 0.48), transparent 55%),
+    radial-gradient(circle at 50% 65%, rgba(56, 189, 248, 0.22), transparent 60%);
+  filter: blur(45px);
   pointer-events: none;
   z-index: 0;
+  animation: heroGlowDrift 14s ease-in-out infinite alternate;
+}
+
+@keyframes heroGlowDrift {
+  0%   { transform: translateX(-52%) translateY(0) scale(1); }
+  100% { transform: translateX(-48%) translateY(24px) scale(1.1); }
+}
+
+/* Futuristik izgara katmani: perspektifle uzaklasan, hafifce kayan cizgiler.
+   Saf CSS - React/shadcn bagimliligi yok, mevcut Flask/Jinja yapisina uyumlu. */
+.hero-grid-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(129, 140, 248, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(129, 140, 248, 0.22) 1px, transparent 1px);
+  background-size: 42px 42px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 15%, #000 45%, transparent 100%);
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 15%, #000 45%, transparent 100%);
+  animation: heroGridDrift 22s linear infinite;
+}
+
+@keyframes heroGridDrift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 42px 84px, 84px 42px; }
+}
+
+/* Fare hareketiyle takip eden yumusak glow - app.js icindeki hero-glow-cursor
+   scriptiyle beraber calisir. JS calismazsa (devre disi vb.) sadece gorunmez
+   kalir, hicbir islevi bozmaz (progressive enhancement). Varsayilan olarak
+   hafifce gorunur (opacity .5), hover'da tam parlar - boylece kullanici
+   fareyi hic hareket ettirmese bile efekt fark edilir. */
+.hero-glow-cursor {
+  position: absolute;
+  z-index: 0;
+  width: 640px;
+  height: 640px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.32), rgba(99, 102, 241, 0.14) 45%, transparent 72%);
+  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 30%;
+  opacity: 0.55;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.hero:hover .hero-glow-cursor {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero::before,
+  .hero-grid-bg {
+    animation: none;
+  }
 }
 
 .hero .container {

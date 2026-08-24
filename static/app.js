@@ -398,3 +398,20 @@ if (advisorForm) {
     }
   });
 }
+
+// --- Hero fare-takipli glow efekti (progressive enhancement) ---
+// prefers-reduced-motion tercih edenlerde ve dokunmatik cihazlarda calismaz,
+// mevcut hicbir islevi etkilemez - sadece varsa gorsel bir katman ekler.
+(function () {
+  const hero = document.getElementById('hero');
+  const glow = document.getElementById('hero-glow-cursor');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  if (!hero || !glow || reduceMotion || isTouch) return;
+
+  hero.addEventListener('mousemove', (e) => {
+    const rect = hero.getBoundingClientRect();
+    glow.style.left = (e.clientX - rect.left) + 'px';
+    glow.style.top = (e.clientY - rect.top) + 'px';
+  });
+})();
