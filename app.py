@@ -56,6 +56,30 @@ def cached(key, fn, ttl=300):
     return _simple_caches[key]["data"]
 
 
+# --- IP-BAZLI RATE LIMITER: bellek-ici, basit kayan pencere (sliding window). ---
+# Amac: /api/advisor gibi maliyetli (Groq API cagrisi yapan) veya /abone gibi
+# spam'e acik uc noktalarini, gizli bir formla tetiklenen toplu istek
+# saldirilarindan (CSRF benzeri istismar) korumak. cached() ile ayni felsefe:
+# Vercel serverless'ta instance soguyunca bellek sifirlanabilir - "best effort"
+# bir koruma, kesin garanti degil, ama maliyeti dusuk ve gercek fayda sagliyor.
+_rate_limit_buckets = {}
+
+def rate_limited(bucket_adi, max_istek, pencere_saniye):
+    """max_istek kadar istegi pencere_saniye icinde IP basina sinirlar. Asilirsa
+    (True, None) yerine (False, "cok fazla istek") dondurur - cagiran yer buna
+    gore 429 donebilir."""
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "bilinmiyor").split(",")[0].strip()
+    anahtar = f"{bucket_adi}:{ip}"
+    simdi = time.time()
+    kayitlar = _rate_limit_buckets.setdefault(anahtar, [])
+    # Pencere disina cikan eski kayitlari temizle
+    kayitlar[:] = [t for t in kayitlar if simdi - t < pencere_saniye]
+    if len(kayitlar) >= max_istek:
+        return False
+    kayitlar.append(simdi)
+    return True
+
+
 _TRACKED_ENDPOINTS = {
     "home", "detail", "category", "comparisons_list", "comparison_detail",
     "guides_list", "guide_detail", "collections_list", "collection_detail",
@@ -595,6 +619,13 @@ def unsubscribe():
 @app.route("/abone", methods=["POST"])
 def subscribe():
     """Bulten kaydi - hem normal form submit (JS'siz) hem fetch/JSON destekler."""
+    if not rate_limited("subscribe", max_istek=3, pencere_saniye=60):
+        message = "Cok fazla deneme yapildi, lutfen bir dakika sonra tekrar dene."
+        if request.is_json or request.headers.get("X-Requested-With") == "fetch":
+            return jsonify({"ok": False, "message": message}), 429
+        from flask import redirect, url_for
+        return redirect(url_for("home"))
+
     email = request.form.get("email") or (request.get_json(silent=True) or {}).get("email", "")
     result = subscribe_email(email)
     if result == "gecersiz":
@@ -786,6 +817,9 @@ def collection_detail(slug):
 @app.route("/api/advisor", methods=["POST"])
 def api_advisor():
     """Hibrit AI Danisman API'si"""
+    if not rate_limited("api_advisor", max_istek=5, pencere_saniye=60):
+        return jsonify({"error": "Cok fazla istek gonderildi, lutfen bir dakika sonra tekrar dene."}), 429
+
     data = request.get_json(silent=True) or {}
     query = data.get("query", "").strip()
     if not query:
