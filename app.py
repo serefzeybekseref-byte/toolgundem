@@ -866,7 +866,7 @@ JSON formatinda don. Format:
     }
 
     payload = {
-        "model": "llama-3.1-8b-instant",
+        "model": "openai/gpt-oss-20b",  # llama-3.1-8b-instant Groq tarafindan kaldirildi (model_not_found), 2026-08-27'de degistirildi
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.2,
         "response_format": {"type": "json_object"}
