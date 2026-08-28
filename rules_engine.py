@@ -8,6 +8,7 @@ geriye donuk backfill/migration gerekmez.
 """
 import json
 import os
+import re
 
 _RULES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules.json")
 _rules_cache = None
@@ -48,10 +49,16 @@ def derive_use_cases_and_personas(topics_str: str, tags_str: str = "", max_each:
             _add(rules[t])
 
     # 2. Yeterli sonuc yoksa keyword fallback taramasi (ham/gurultulu topic'ler icin)
+    # KELIME SINIRI (\b) ile eslesiyor - duz substring kontrolu ("kw in haystack")
+    # yanlis pozitiflere acikti: ornegin "art" kelimesi "ARTificial Intelligence"
+    # icinde de eslesip, neredeyse HER urune (bu bir AI dizini oldugu icin) yanlislikla
+    # "Gorsel uretmek/Tasarim yapmak" etiketi yapistiriyordu - canli veride dogrulandi
+    # (Claude CLI Proxy, Fuzzy AI gibi alakasiz urunlerde gozlemlendi). \b sinirlamasi
+    # "art" kelimesinin SADECE bagimsiz bir kelime olarak gectiginde eslesmesini saglar.
     if len(use_cases) < 1:
         for pattern, rule in rules.get("_keyword_fallback", {}).items():
             keywords = pattern.split("|")
-            if any(kw in haystack_lower for kw in keywords):
+            if any(re.search(r"\b" + re.escape(kw) + r"\b", haystack_lower) for kw in keywords):
                 _add(rule)
 
     # 3. Hala bos ise genel varsayilan
