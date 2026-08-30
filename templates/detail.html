@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ product.original_name }} — BulurumAI{% endblock %}
-{% block description %}{{ product.summary_tr }}{% endblock %}
+{% block description %}{{ product.summary_tr|truncate(155) }}{% endblock %}
 {% block og_title %}{{ product.original_name }}{% endblock %}
 {% block og_desc %}{{ product.summary_tr }}{% endblock %}
 {% if product.thumbnail %}
@@ -97,7 +97,7 @@
   {% if real_gallery %}
   <div class="detail-gallery" id="gallery-root">
     {% for img in real_gallery[:4] if img %}
-    <a href="{{ img }}" class="detail-gallery-item" data-lightbox-index="{{ loop.index0 }}">
+    <a href="{{ img }}" class="detail-gallery-item" rel="noopener" data-lightbox-index="{{ loop.index0 }}">
       <img src="{{ img }}" alt="{{ product.original_name }} ekran görüntüsü" loading="lazy">
     </a>
     {% endfor %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ comparison.title }} ({{ comparison.updated_at[:4] }}) — BulurumAI{% endblock %}
-{% block description %}{{ comparison.intro }}{% endblock %}
+{% block description %}{{ comparison.intro|truncate(155) }}{% endblock %}
 
 {% block extra_head %}
 <script type="application/ld+json">

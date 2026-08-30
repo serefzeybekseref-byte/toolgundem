@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 {% block title %}{{ guide.title }} — BulurumAI{% endblock %}
-{% block description %}{{ guide.meta_description or guide.excerpt }}{% endblock %}
+{% block description %}{{ (guide.meta_description or guide.excerpt)|truncate(155) }}{% endblock %}
 
 {% block extra_head %}
 <script type="application/ld+json">
