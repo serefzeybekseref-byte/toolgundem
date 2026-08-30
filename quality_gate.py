@@ -141,6 +141,20 @@ def check_collection(title: str, description: str, items: list, source_products_
     if not description or len(description.strip()) < 30:
         problems.append("description 30 karakterden kisa")
 
+    # Bilinen kaliplasmis/jenerik description kalibi (canli veride tekrarlayan
+    # bir sorun olarak gozlemlendi - "Bu koleksiyon, X icin temel araclari
+    # icerir" formatinda 9 koleksiyonun neredeyse hepsi ayni kalibi kullaniyordu).
+    # Tam eslesme aramiyoruz (AI ifadeyi hafifce degistirebilir), "temel
+    # araclari icerir" gibi ozgunlugu dusuk, jenerik bir govde varsa yakalar.
+    if description:
+        desc_lower = description.strip().lower()
+        jenerik_kaliplar = [
+            "temel araçları içerir", "temel araçlar içerir",
+            "için gerekli araçları içerir", "temel araçları sunar",
+        ]
+        if any(kalip in desc_lower for kalip in jenerik_kaliplar):
+            problems.append(f"description jenerik/kaliplasmis bir ifade iceriyor: '{description.strip()}'")
+
     reasons = [(it.get("reason") or "").strip().lower() for it in items if it.get("reason")]
     if len(reasons) >= 2 and len(set(reasons)) == 1:
         problems.append("'reason' metni tum urunlerde birebir ayni")

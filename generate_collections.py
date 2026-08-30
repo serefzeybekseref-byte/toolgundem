@@ -51,8 +51,16 @@ Araçlar:
 Kurallar:
 - Her koleksiyonda 4-6 arası araç olsun, sadece listedeki ID'leri kullan.
 - title: kısa, çekici, SEO'ya uygun (60 karakteri geçmesin).
-- description: koleksiyonun ne işe yaradığını 1 cümlede özetle.
-- Her araç için reason: neden bu koleksiyonda olduğunu 1 cümlede açıkla.
+- description: koleksiyonun ne işe yaradığını 1-2 cümlede anlat. SOMUT ol - hedef
+  kitlenin gerçek bir günlük problemine veya senaryosuna değin, jenerik/şablon bir
+  cümle kurma. "Bu koleksiyon, X için temel araçları içerir" GİBİ KALIPLAŞMIŞ,
+  BOŞ CÜMLELER YASAK - her description birbirinden belirgin şekilde farklı ve
+  o koleksiyona özgü hissettirmeli.
+  KÖTÜ ÖRNEK (kullanma): "Bu koleksiyon, girişimciler için temel araçları içerir."
+  İYİ ÖRNEK (byle yaz): "Fikri olan ama kod bilmeyen girişimciler için: bir hafta
+  sonunda MVP'nizi kurup, ilk müşterilerinizi bulmanıza yardımcı olacak 5 araç."
+- Her araç için reason: neden bu koleksiyonda olduğunu 1 cümlede, o aracın SPESIFIK
+  bir ozelligine referans vererek acikla (genel/degistirilebilir bir cumle yazma).
 - Sadece Türkçe yaz.
 
 Yalnızca şu JSON formatında cevap ver:
@@ -62,7 +70,7 @@ Yalnızca şu JSON formatında cevap ver:
   ]}}
 ]}}
 """
-    groq_extra = {"temperature": 0.3, "response_format": {"type": "json_object"}}
+    groq_extra = {"temperature": 0.6, "response_format": {"type": "json_object"}}
     result = _generate_with_fallback(prompt, groq_extra)
     return result.get("collections", [])
 

@@ -1,20 +1,52 @@
 {% extends "base.html" %}
+{% block title %}Hakkımızda — BulurumAI{% endblock %}
+{% block legal_body %}
+<p>BulurumAI, Türkiye'nin yapay zeka araçları için hazırlanmış keşif ve
+karşılaştırma platformudur. Amacımız, hızla büyüyen AI araç ekosisteminde
+Türkçe konuşan kullanıcıların ihtiyaçlarına en uygun aracı kolayca
+bulmasına yardımcı olmak.</p>
 
-{% block content %}
-<div class="container">
-  <nav class="breadcrumb">
-    <a href="/">Ana Sayfa</a>
-    <span class="breadcrumb-sep">/</span>
-    <span>{{ page_title }}</span>
-  </nav>
+<h2>Ne yapıyoruz?</h2>
+<p>Product Hunt ve diğer güvenilir kaynaklardan derlediğimiz yapay zeka
+araçlarını inceliyor, Türkçe içerik ve karşılaştırmalarla sunuyoruz. Her
+araç için platform, fiyatlandırma tipi ve öne çıkan özellikler gibi
+bilgileri özetleyerek karar verme sürecini kolaylaştırmayı hedefliyoruz.</p>
 
-  <div class="page-header">
-    <h1 class="page-title">{{ page_title }}</h1>
-    {% if page_updated %}<p class="page-subtitle mono">Son güncelleme: {{ page_updated }}</p>{% endif %}
-  </div>
+<h2>İçerik nasıl oluşturuluyor?</h2>
+<p>Sitedeki araç açıklamaları ve karşılaştırmalar, halka açık kaynaklardan
+derlenen bilgiler temel alınarak yapay zeka destekli araçlarla
+Türkçeleştirilir ve düzenlenir. Bir hata veya güncel olmayan bilgi
+fark ederseniz <a href="/iletisim">bize ulaşabilirsiniz</a>.</p>
 
-  <div class="legal-content">
-    {% block legal_body %}{% endblock %}
-  </div>
-</div>
+<h2>İletişim</h2>
+<p>Sorularınız, geri bildirimleriniz veya iş birliği talepleriniz için
+<a href="/iletisim">iletişim sayfamızı</a> ziyaret edebilirsiniz.</p>
+<p style="font-size:0.85rem; color:var(--text-secondary); margin-top:24px;">Not: Sitedeki bazı bağlantılar iş ortaklığı (affiliate) bağlantıları olabilir.</p>
+
+<!-- Organization Schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "BulurumAI",
+  "url": "https://www.bulurumai.com",
+  "logo": "https://www.bulurumai.com/static/icon-192.png",
+  "description": "Türkiye'nin AI araç keşif platformu"
+}
+</script>
+
+<!-- Website Schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "BulurumAI",
+  "url": "https://www.bulurumai.com",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://www.bulurumai.com/ara?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
 {% endblock %}

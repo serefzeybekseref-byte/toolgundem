@@ -1,6 +1,6 @@
 """
 AŞAMA 5: Groq API ile Product Hunt urunleri icin Turkce tanitim metni uretimi.
-Model: llama-3.3-70b-versatile (Groq'un hizli ve ucretsiz kotali modeli)
+Model: openai/gpt-oss-20b (Groq'un hizli ve ucretsiz kotali modeli, 2026-08-28'de guncellendi)
 """
 import os
 import json
@@ -12,16 +12,15 @@ load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "openai/gpt-oss-20b"  # llama-3.3-70b-versatile Groq tarafindan kaldirilmis (404 model_not_found), 2026-08-28'de degistirildi
 
 NVIDIA_NIM_API_KEY = os.getenv("NVIDIA_NIM_API_KEY")
 NVIDIA_NIM_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-# qwen3-next-80b-a3b-instruct: qwen3.5-122b-a10b kaldirilmis/adi degismisti (410 Gone hatasi
-# verdi), bu 'instruct' varyanti gercek 'content' alani donduruyor (bazi qwen3.5 varyantlari
-# 'reasoning' tipinde olup content'i bos birakiyor, dikkat).
-NVIDIA_NIM_MODEL = "meta/llama-3.3-70b-instruct"  # qwen3-next-80b hem duz metinde hem
-# tool-calling'de sik sik 30-45sn+ timeout veriyordu (gercek A/B testle dogrulandi,
-# ~5-10x daha yavas ve guvenilmezdi). llama-3.3-70b tutarli sekilde ~2-3sn'de yanit veriyor.
+# meta/llama-3.3-70b-instruct NVIDIA tarafindan resmi olarak "end of life" ilan edildi
+# (2026-08-26'da, API 410 Gone donuyor). openai/gpt-oss-20b ile degistirildi - hem Groq
+# hem NIM'de mevcut oldugu icin proje genelinde tutarlilik da sagliyor, canli test edildi
+# (200 OK, dogru JSON formati, hizli yanit).
+NVIDIA_NIM_MODEL = "openai/gpt-oss-20b"
 
 
 def _call_nvidia_nim(prompt: str, max_tokens: int = 1024) -> dict:

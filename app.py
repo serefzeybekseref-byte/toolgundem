@@ -693,6 +693,14 @@ def gizlilik():
     return render_template("gizlilik.html", page_title="Gizlilik Politikası", page_updated="16 Ağustos 2026")
 
 
+
+@app.route("/about")
+def about():
+    return render_template("hakkimizda.html", page_title="Hakkımızda")
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html", page_title="Gizlilik Politikası")
 @app.route("/kvkk")
 def kvkk():
     return render_template("kvkk.html", page_title="KVKK Aydınlatma Metni", page_updated="17 Temmuz 2026")

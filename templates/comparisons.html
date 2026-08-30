@@ -1,7 +1,6 @@
 ﻿{% extends "base.html" %}
 {% block title %}En İyi AI Araçları — BulurumAI{% endblock %}
 {% block description %}Kategorilere göre en iyi yapay zeka araçlarını keşfedin — puanlanmış, güncel tutulan listeler.{% endblock %}
-
 {% block content %}
 <div class="container">
   <nav class="breadcrumb">
@@ -30,7 +29,34 @@
     <div class="empty-state">
       <p>Henüz eklenmiş bir liste yok.</p>
     </div>
-    {% endfor %}
+    {% endif %}
   </div>
 </div>
+
+<!-- Organization Schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "BulurumAI",
+  "url": "https://www.bulurumai.com",
+  "logo": "https://www.bulurumai.com/static/icon-192.png",
+  "description": "Türkiye'nin AI araç keşif platformu"
+}
+</script>
+
+<!-- Website Schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "BulurumAI",
+  "url": "https://www.bulurumai.com",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://www.bulurumai.com/ara?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
 {% endblock %}
