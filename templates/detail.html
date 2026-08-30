@@ -3,6 +3,11 @@
 {% block description %}{{ product.summary_tr }}{% endblock %}
 {% block og_title %}{{ product.original_name }}{% endblock %}
 {% block og_desc %}{{ product.summary_tr }}{% endblock %}
+{% if product.thumbnail %}
+{% block og_image %}{{ product.thumbnail }}{% endblock %}
+{% block twitter_image %}{{ product.thumbnail }}{% endblock %}
+{% block twitter_card_type %}summary_large_image{% endblock %}
+{% endif %}
 
 {% block extra_head %}
 <script type="application/ld+json">

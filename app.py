@@ -164,7 +164,18 @@ def _track_visit():
 
 @app.after_request
 def _set_visit_cookie(response):
-    """Oturum ve ziyaret çerezlerini tarayıcıya yazar."""
+    """Oturum ve ziyaret çerezlerini tarayıcıya yazar, ayrica temel guvenlik
+    basliklarini ekler (onceden HIC guvenlik basligi yoktu - profesyonel bir
+    sitede beklenen X-Frame-Options/X-Content-Type-Options/Referrer-Policy/HSTS
+    eksikti). CSP bilerek gevsek tutuldu (AdSense, Google Fonts, kendi
+    script/style'larimiz calismaya devam etsin diye) - siki bir CSP mevcut
+    3.-taraf entegrasyonlari (AdSense reklamlari, Google Fonts) kirabilir."""
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+
     today = getattr(g, "_mark_visit_cookie", None)
     if today:
         response.set_cookie("tg_visited", today, max_age=60 * 60 * 24, httponly=True, samesite="Lax", secure=True)
