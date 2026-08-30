@@ -1,12 +1,32 @@
 import os
 import json
 import re
+import random
 import time
 from dotenv import load_dotenv
 from generate_content import _generate_with_fallback
 from quality_gate import check_guide
 
 load_dotenv()
+
+# Rehber basliklari icin BIRDEN FAZLA varyant - hepsi ayni dinamik degiskene ({guide_title}/
+# {product_adi}) Turkce unlu uyumu gerektiren bir cekim eki (-'ya/-'ye/-'a/-'e vb.) EKLEMEDEN
+# calisiyor (bunun yerine ":" veya "ve" gibi sabit ayiraclar kullaniyor), boylece hangi
+# kelime gelirse gelsin gramer hatasi riski olmuyor. Once "X ve Alternatifleri: Hangisini
+# Secmelisiniz? (2026 Rehberi)" kalibi HER rehberde birebir tekrarlaniyordu - listede
+# yan yana gorununce cok robotik/otomatik-uretilmis hissettiriyordu (kullanici geri bildirimi).
+_URUN_BASLIK_VARYANTLARI = [
+    "{X} ve Alternatifleri: Hangisini Seçmelisiniz? (2026 Rehberi)",
+    "{X} Karşılaştırması: En İyi Alternatifler ve Farkları",
+    "{X} ve Rakipleri: Detaylı Karşılaştırma (2026)",
+    "{X}: Alternatifleriyle Yan Yana Karşılaştırma",
+]
+_KARSILASTIRMA_BASLIK_VARYANTLARI = [
+    "{X}: Hangisini Seçmelisiniz? (Rehber)",
+    "{X} Karşılaştırması: Hangisi Size Uygun?",
+    "{X}: Artıları, Eksileri ve Öneriler",
+    "{X}: Detaylı Karşılaştırma Rehberi",
+]
 
 _SUSPICIOUS_WORDS = [
     "thus", "however", "the", "and", "with", "your", "this", "that",
@@ -422,7 +442,7 @@ def discover_candidate_guides(max_candidates: int = 3) -> list:
             guide_title = re.sub(r"\s*\(20\d{2}\)", "", guide_title)
         candidates.append({
             "slug": f"{comp['slug']}-rehberi",
-            "title": f"{guide_title}: Hangisini Seçmelisiniz? (Rehber)",
+            "title": random.choice(_KARSILASTIRMA_BASLIK_VARYANTLARI).format(X=guide_title),
             "comparison_slug": comp["slug"],
             "related_topic": "",
         })
@@ -481,7 +501,7 @@ def build_guide_cfg_for_product(product_id: int):
 
     return {
         "slug": f"{product['slug']}-rehberi",
-        "title": f"{product['original_name']} ve Alternatifleri: Hangisini Seçmelisiniz? (2026 Rehberi)",
+        "title": random.choice(_URUN_BASLIK_VARYANTLARI).format(X=product["original_name"]),
         "comparison_slug": None,
         "related_topic": first_topic,
         "manual_tools": manual_tools,
