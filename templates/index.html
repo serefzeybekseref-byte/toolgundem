@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}BulurumAI — Türkiye'nin AI Araç Keşif Platformu{% endblock %}
-{% block description %}Yapay zeka araçlarını keşfedin, karşılaştırın ve en iyisini seçin. Türkçe incelemeler, günlük güncellemeler.{% endblock %}
+
 {% block ticker %}
 <div class="ticker">
   <div class="ticker-track">
@@ -22,7 +22,6 @@
     <div class="hero-badge">✨ Türkiye'nin Yapay Zeka Haritası</div>
     <h1 class="hero-title">Türkiye'nin En Kapsamlı<br><span class="gradient-text">AI Araç Keşif Platformu</span></h1>
     <p class="hero-subtitle">{{ total_products }}+ AI aracını sizin yerinize inceledik, karşılaştırdık ve doğru seçimi kolaylaştırdık.</p>
-
     <div class="trust-checks">
       <span class="trust-chip"><span class="check-icon">✓</span> {{ total_products }}+ doğrulanmış araç</span>
       {% if new_today and new_today > 0 %}<span class="trust-chip"><span class="check-icon">✓</span> Bugün {{ new_today }} yeni araç eklendi</span>{% endif %}
@@ -35,11 +34,11 @@
       <div class="use-case-cta-grid">
         {% for label, icon, topic in use_case_cta %}
         <a href="{{ url_for('category', topic=topic) }}" class="use-case-chip">
-          <span class="use-case-chip-icon">{{ icon }}</span>{{ label }}</a>
+          <span class="use-case-chip-icon">{{ icon }}</span>{{ label }}
+        </a>
         {% endfor %}
       </div>
     </div>
-
     <div class="hero-stats">
       <div class="stat"><span class="stat-number">{{ total_products }}+</span><span class="stat-label">Araç</span></div>
       <div class="stat"><span class="stat-number">{{ comparisons|length }}</span><span class="stat-label">Karşılaştırma</span></div>
@@ -49,93 +48,300 @@
     <div class="advisor-box fade-in">
       <h3 class="advisor-title"><span style="font-size: 1.8rem;">🤖</span> AI Karar Danışmanı</h3>
       <p class="advisor-subtitle">Ne yapmak istediğinizi kendi kelimelerinizle yazın, aradığınızı sizin yerinize bulup filtreleyelim.</p>
+      <form id="ai-advisor-form" class="advisor-form">
+        <input type="text" id="advisor-input" placeholder="Örn: Sunum hazırlamam lazım, hangi araç işimi çözer?" class="advisor-input" required>
+        <button type="submit" class="btn btn-primary advisor-submit" id="advisor-submit">Danış</button>
+      </form>
+      <div id="advisor-results" class="advisor-results">
+        <div id="advisor-message" class="advisor-message"></div>
+        <div id="advisor-tools" class="advisor-tools"></div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- Blog/Son içerikler bölümü -->
-<section class="recent section" id="recent">
+<!-- AI Trend Aracı -->
+{% if ai_trends %}
+<section class="section" style="padding-top: var(--space-4);">
+  <div class="container">
+    <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <h2 class="section-title">⚡ Günün AI Trendleri</h2>
+    </div>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
+      {% for t in ai_trends %}
+      <a href="{{ url_for('detail', slug=t.internal_slug) }}" class="compare-card fade-in" style="border-left: 3px solid var(--accent); padding:16px; text-decoration:none; color:inherit; display:block;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span class="badge" style="background:rgba(255,255,255,0.06); font-size:0.7rem; color:var(--accent);">🔥 Trend Gelişme</span>
+          <span class="compare-date mono" style="font-size:0.7rem;">{{ turkce_tarih(t.created_at) if t.created_at else '' }}</span>
+        </div>
+        <h3 style="font-size:0.95rem; font-weight:600; margin:0 0 6px; color:var(--text);">{{ t.title }}</h3>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin:0; line-height:1.5;">{{ t.summary }}</p>
+        <span class="mono" style="font-size:0.72rem; color:var(--accent); display:inline-block; margin-top:8px;">İncelemeyi Gör ➔</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Trending -->
+<section class="section">
   <div class="container">
     <div class="section-header">
-      <h2>Son Eklenen Araçlar</h2>
+      <h2 class="section-title">🔥 Öne Çıkan Araçlar</h2>
     </div>
-    <div class="row recent-grid">
-      {% for p in recent %}
-      <div class="col-1-3">
-        <div class="recent-card">
-          <div class="recent-image">
-            <img src="{{ p.thumbnail_url }}" alt="{{ p.original_name }}" class="recent-img" loading="lazy">
+    <div class="leaderboard-list">
+      {% for p in trending %}
+      <a class="leaderboard-item fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+        <div class="leaderboard-rank">#{{ loop.index }}</div>
+        <div class="leaderboard-logo">
+          {% if p.thumbnail %}
+          <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+          {% else %}
+          <span class="leaderboard-logo-fallback">{{ p.original_name[0]|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="leaderboard-main">
+          <div class="leaderboard-title-row">
+            <span class="leaderboard-title">{{ p.original_name }}</span>
+            {% if loop.index <= 3 %}<span class="badge badge-trend">🔥</span>{% endif %}
           </div>
-          <div class="recent-info">
-            <h3 class="recent-title">{{ p.original_name }}</h3>
-            <p class="recent-desc">{{ p.tagline_en }}</p>
-            <a href="/urun/{{ p.slug }}" class="recent-link">Daha Fazla</a>
+          <div class="leaderboard-summary">{{ p.summary_tr }}</div>
+          <div class="leaderboard-tags">
+            {% for t in p.tags.split(',')[:2] if t %}
+            <span class="tag">{{ t.strip() }}</span>
+            {% endfor %}
           </div>
         </div>
-      </div>
+        <div class="leaderboard-action">
+          <span>▲ {{ p.votes }}</span>
+          <span class="leaderboard-action-label">Siteye Git</span>
+        </div>
+      </a>
       {% endfor %}
     </div>
   </div>
 </section>
 
-<!-- Sosyal Proof / Quick Picks -->
-<section class="quick-picks section" id="quick-picks">
+<!-- Recent -->
+<section class="section section-alt">
   <div class="container">
-    <div class="quick-picks-header">
-      <span class="quick-picks-header-label">Vitrin</span>
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="quick-picks-header-icon"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg>
+    <div class="section-header">
+      <h2 class="section-title">🆕 Son Eklenenler</h2>
     </div>
-    <div class="quick-picks-body">
-      <p class="quick-picks-tagline">Ekibimizin düzenli olarak test ettiği ve güvenle önerdiği araçlar.</p>
-      <a href="https://go.nordvpn.net/aff_c?offer_id=15&aff_id=153130&url_id=902" target="_blank" rel="noopener sponsored" class="quick-picks-item">
-        <img src="/static/logos/nordvpn.svg" alt="NordVPN" loading="lazy" width="28" height="28" onerror="logoFallback(this,'nordvpn.com','N')">
-        <div class="quick-picks-item-text">
-          <span class="quick-picks-item-name">NordVPN</span>
-          <span class="quick-picks-item-desc">Veri gizliliğinizi koruyun</span>
+    <div class="card-grid">
+      {% for p in recent %}
+      <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+        <div class="tool-card-img">
+          {% if p.thumbnail %}
+          <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+          {% else %}
+          <span class="tool-card-img-fallback">{{ p.original_name[0]|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="tool-card-body">
+          <div class="tool-card-badges">
+            {% if p.created_at >= new_cutoff %}<span class="badge badge-new">🆕 Yeni</span>{% endif %}
+            {% if p.pricing_type == 'Ücretsiz' %}<span class="badge badge-free">🟢 Ücretsiz</span>
+            {% elif p.pricing_type == 'Freemium' %}<span class="badge badge-freemium">🟡 Freemium</span>
+            {% elif p.pricing_type == 'Ücretli' %}<span class="badge badge-paid">🔵 Ücretli</span>{% endif %}
+          </div>
+          <h3 class="tool-card-title">{{ p.original_name }}</h3>
+          <p class="tool-card-summary">{{ p.summary_tr }}</p>
+          <div class="tool-card-footer">
+            <div class="tool-card-tags">
+              {% for t in p.tags.split(',')[:2] if t %}
+              <span class="tag">{{ t.strip() }}</span>
+              {% endfor %}
+            </div>
+            <div class="tool-card-votes">▲ {{ p.votes }}</div>
+          </div>
         </div>
       </a>
-      <a href="https://go.nordpass.io/aff_c?offer_id=488&aff_id=153130&url_id=9356" target="_blank" rel="noopener sponsored" class="quick-picks-item">
-        <img src="/static/logos/nordpass.svg" alt="NordPass" loading="lazy" width="28" height="28" onerror="logoFallback(this,'nordpass.com','N')">
-        <div class="quick-picks-item-text">
-          <span class="quick-picks-item-name">NordPass</span>
-          <span class="quick-picks-item-desc">Şifrelerinizi güvenle saklayın</span>
-        </div>
-      </a>
-      <a href="https://systeme.io/tur?sa=sa0277271591001adea25eec4ebbb71dfce34fe226" target="_blank" rel="noopener sponsored" class="quick-picks-item">
-        <img src="https://d1yei2z3i6k35z.cloudfront.net/161/60ad0a3995f79_socialN.png" alt="Systeme.io" loading="lazy" width="28" height="28" onerror="logoFallback(this,'systeme.io','S')">
-        <div class="quick-picks-item-text">
-          <span class="quick-picks-item-name">Systeme.io</span>
-          <span class="quick-picks-item-desc">Pazarlamayı tek platformda topla</span>
-        </div>
-      </a>
+      {% endfor %}
     </div>
   </div>
 </section>
 
-<!-- Organization Schema -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "BulurumAI",
-  "url": "https://www.bulurumai.com",
-  "logo": "https://www.bulurumai.com/static/icon-192.png",
-  "description": "Türkiye'nin AI araç keşif platformu"
-}
+<!-- Weekly Top -->
+{% if weekly_top %}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">📅 Bu Haftanın En İyileri</h2>
+    </div>
+    <div class="card-grid">
+      {% for p in weekly_top %}
+      <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+        <div class="tool-card-img">
+          {% if p.thumbnail %}
+          <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+          {% else %}
+          <span class="tool-card-img-fallback">{{ p.original_name[0]|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="tool-card-body">
+          <div class="tool-card-badges">
+            {% if p.pricing_type == 'Ücretsiz' %}<span class="badge badge-free">🟢 Ücretsiz</span>
+            {% elif p.pricing_type == 'Freemium' %}<span class="badge badge-freemium">🟡 Freemium</span>
+            {% elif p.pricing_type == 'Ücretli' %}<span class="badge badge-paid">🔵 Ücretli</span>{% endif %}
+          </div>
+          <h3 class="tool-card-title">{{ p.original_name }}</h3>
+          <p class="tool-card-summary">{{ p.summary_tr }}</p>
+          <div class="tool-card-footer">
+            <div class="tool-card-tags">
+              {% for t in p.tags.split(',')[:2] if t %}
+              <span class="tag">{{ t.strip() }}</span>
+              {% endfor %}
+            </div>
+            <div class="tool-card-votes">▲ {{ p.votes }}</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Monthly Top -->
+{% if monthly_top %}
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">🗓️ Bu Ayın En İyileri</h2>
+    </div>
+    <div class="card-grid">
+      {% for p in monthly_top %}
+      <a class="tool-card fade-in" href="{{ url_for('detail', slug=p.slug) }}">
+        <div class="tool-card-img">
+          {% if p.thumbnail %}
+          <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy">
+          {% else %}
+          <span class="tool-card-img-fallback">{{ p.original_name[0]|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="tool-card-body">
+          <div class="tool-card-badges">
+            {% if p.pricing_type == 'Ücretsiz' %}<span class="badge badge-free">🟢 Ücretsiz</span>
+            {% elif p.pricing_type == 'Freemium' %}<span class="badge badge-freemium">🟡 Freemium</span>
+            {% elif p.pricing_type == 'Ücretli' %}<span class="badge badge-paid">🔵 Ücretli</span>{% endif %}
+          </div>
+          <h3 class="tool-card-title">{{ p.original_name }}</h3>
+          <p class="tool-card-summary">{{ p.summary_tr }}</p>
+          <div class="tool-card-footer">
+            <div class="tool-card-tags">
+              {% for t in p.tags.split(',')[:2] if t %}
+              <span class="tag">{{ t.strip() }}</span>
+              {% endfor %}
+            </div>
+            <div class="tool-card-votes">▲ {{ p.votes }}</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Newsletter banner -->
+<section class="section">
+  <div class="container">
+    <div class="newsletter-banner">
+      <div class="newsletter-banner-glow"></div>
+      <div class="newsletter-banner-content">
+        <div class="newsletter-banner-icon">📬</div>
+        <h2 class="newsletter-banner-title">Yeni AI araçlarını kaçırma</h2>
+        <p class="newsletter-banner-sub">Her Pazar, o haftanın en çok oy alan ve yeni eklenen AI araçlarını tek maille özetliyoruz. Spam yok, istediğin an çıkabilirsin.</p>
+        <form class="newsletter-banner-form" action="/abone" method="POST" id="newsletter-banner-form">
+          <input type="email" id="newsletter-banner-email" name="email" placeholder="eposta@ornek.com" required>
+          <button type="submit">Ücretsiz Abone Ol →</button>
+        </form>
+        <p class="newsletter-banner-msg" id="newsletter-banner-msg"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+document.getElementById("newsletter-banner-form").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const email = document.getElementById("newsletter-banner-email").value;
+  const msg = document.getElementById("newsletter-banner-msg");
+  try {
+    const res = await fetch("/abone", {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-Requested-With": "fetch"},
+      body: JSON.stringify({email: email}),
+    });
+    const data = await res.json();
+    msg.textContent = data.message;
+    msg.style.color = data.ok ? "#a5b4fc" : "#f8b4b4";
+    if (data.ok) document.getElementById("newsletter-banner-email").value = "";
+  } catch (err) {
+    msg.textContent = "Bir şeyler ters gitti, tekrar dene.";
+    msg.style.color = "#f8b4b4";
+  }
+});
 </script>
 
-<!-- Website Schema -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "BulurumAI",
-  "url": "https://www.bulurumai.com",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "https://www.bulurumai.com/ara?q={search_term_string}",
-    "query-input": "required name=search_term_string"
-  }
-}
-</script>
+{% if adsense_publisher_id %}
+<section class="section" style="padding: 24px 0 0;">
+  <div class="container" style="text-align: center;">
+    <div class="adsense-home-container" style="max-width: 970px; margin: 0 auto; border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); padding: 16px 0; overflow: hidden;">
+      <span style="display: block; font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Sponsorlu Bağlantı</span>
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="{{ adsense_publisher_id }}"
+           data-ad-slot="9988223313"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+           (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Categories -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">📂 Kategoriler</h2>
+    </div>
+    <div class="category-grid">
+      {% for t in topics[:16] %}
+      <a href="{{ url_for('category', topic=t.raw_topic) }}" class="category-chip fade-in">
+        <span class="category-icon">{{ get_topic_icon(t.raw_topic) }}</span>
+        <span class="category-name">{{ t.label }}</span>
+        <span class="category-count">{{ t.count }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Comparisons -->
+{% if comparisons %}
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">🏆 En İyi AI Araçları</h2>
+      <a href="/karsilastirma" class="section-link">Tümünü Gör →</a>
+    </div>
+    <div class="card-grid">
+      {% for c in comparisons[:3] %}
+      <a href="/karsilastirma/{{ c.slug }}" class="compare-card fade-in">
+        <div class="collection-icon">{{ get_comparison_icon(c.title) }}</div>
+        <span class="compare-count">{{ c.tool_count }} araç</span>
+        <h3 class="compare-title">{{ c.title }}</h3>
+        <span class="compare-date mono">{{ c.updated_at[:10] }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

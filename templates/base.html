@@ -1,79 +1,270 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="impact-site-verification" value="c4d8928d-229b-46b4-85ec-d7c6cef34df1">
+<title>{% block title %}BulurumAI — Türkiye'nin AI Araç Keşif Platformu{% endblock %}</title>
+<meta name="description" content="{% block description %}Yapay zeka araçlarını keşfedin, karşılaştırın ve en iyisini seçin. Türkçe incelemeler, günlük güncellemeler.{% endblock %}">
+<meta property="og:title" content="{% block og_title %}BulurumAI{% endblock %}">
+<meta property="og:description" content="{% block og_desc %}Türkiye'nin AI araç keşif platformu{% endblock %}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:url" content="https://{{ request.host }}{{ request.path }}">
+<meta property="og:site_name" content="BulurumAI">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{% block twitter_title %}BulurumAI{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_desc %}Türkiye'nin AI araç keşif platformu{% endblock %}">
+<link rel="canonical" href="https://{{ request.host }}{{ request.path }}">
+<link rel="icon" href="/static/icon-b.svg?v={{ asset_version }}" type="image/svg+xml">
+<link rel="icon" href="/static/icon-192.png?v={{ asset_version }}" type="image/png" sizes="192x192">
+<link rel="icon" href="/static/icon-96.png?v={{ asset_version }}" type="image/png" sizes="96x96">
+<link rel="icon" href="/static/icon-48.png?v={{ asset_version }}" type="image/png" sizes="48x48">
+<link rel="shortcut icon" href="/static/favicon.ico?v={{ asset_version }}">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v={{ asset_version }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=optional" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=optional"></noscript>
+<link rel="stylesheet" href="/static/style.css?v={{ asset_version }}">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "BulurumAI",
+  "url": "https://{{ request.host }}/",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://{{ request.host }}/ara?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "BulurumAI",
+  "url": "https://{{ request.host }}/",
+  "logo": "https://{{ request.host }}/static/icon-192.png",
+  "description": "Türkiye'nin AI araç keşif platformu",
+  "sameAs": []
+}
+</script>
+{% block extra_head %}{% endblock %}
+{% if adsense_publisher_id %}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_publisher_id }}" crossorigin="anonymous"></script>
+{% endif %}
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <a href="/" class="logo">
+      <img src="/static/icon-b.svg" alt="" class="logo-mark" width="28" height="28">
+      <span class="logo-accent">Bulurum</span>AI
+    </a>
+    <nav class="nav">
+      <a href="/" class="nav-link">Keşfet</a>
+      <a href="/koleksiyonlar" class="nav-link">Koleksiyonlar</a>
+      <a href="/karsilastirma" class="nav-link">En İyi AI Araçları</a>
+      <a href="/rehber" class="nav-link">Rehberler</a>
+    </nav>
+    <div class="header-actions">
+      <form id="search-form" action="/ara" method="GET" class="search-form" autocomplete="off">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="search-input" name="q" placeholder="Araç ara..." class="search-input" autocomplete="off" value="{{ request.args.get('q', '') }}">
+        <div id="search-suggest" class="search-suggest"></div>
+      </form>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="theme-hint">Modu Değiştir</span>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Tema değiştir">🌙</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+{% block ticker %}{% endblock %}
+
+<main class="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="logo"><img src="/static/icon-b.svg" alt="" class="logo-mark" width="24" height="24"><span class="logo-accent">Bulurum</span>AI</span>
+      <p class="footer-tagline">Türkiye'nin AI araç keşif platformu</p>
+    </div>
+    <div class="footer-newsletter">
+      <form class="newsletter-form" action="/abone" method="POST" id="newsletter-form">
+        <label for="newsletter-email" class="newsletter-label">📬 Haftalık bülten — yeni ve trend araçlar</label>
+        <div class="newsletter-input-row">
+          <input type="email" id="newsletter-email" name="email" placeholder="eposta@ornek.com" required>
+          <button type="submit">Abone ol</button>
+        </div>
+        <p class="newsletter-msg" id="newsletter-msg"></p>
+      </form>
+    </div>
+    <div class="footer-links-simple">
+      <a href="/">Ana Sayfa</a>
+      <a href="/karsilastirma">En İyi AI Araçları</a>
+      <a href="/rehber">Rehberler</a>
+      <a href="/koleksiyonlar">Koleksiyonlar</a>
+      <a href="/hakkimizda">Hakkımızda</a>
+      <a href="/iletisim">İletişim</a>
+      <span class="footer-links-sep">·</span>
+      <a href="/kvkk">KVKK</a>
+      <a href="/gizlilik">Gizlilik Politikası</a>
+      <a href="/kullanim-sartlari">Kullanım Şartları</a>
+    </div>
+    <div class="footer-copy">
+      Yapay zeka ekosisteminden günlük verilerle güncellenir.
+    </div>
+  </div>
+</footer>
+
+{% if not request.path.startswith('/admin') %}
+<script>
+  // app.js defer edildigi icin gec yuklenebiliyor - resimler daha erken hataya
+  // dusebiliyor ("logoFallback is not defined"). Bu yuzden burada da (satir ici,
+  // hemen calisan) tanimliyoruz, resimlerden once calismasi garanti olsun diye.
+  function logoFallback(imgEl, domain, letter) {
+    if (!imgEl.dataset.fallbackStep) {
+      imgEl.dataset.fallbackStep = "1";
+      imgEl.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+    } else {
+      imgEl.outerHTML = `<span class="leaderboard-logo-fallback" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0;">${letter}</span>`;
+    }
+  }
+</script>
+<div id="quick-picks" class="quick-picks quick-picks-visible">
+  <button id="quick-picks-toggle" class="quick-picks-header" type="button" aria-expanded="true" aria-controls="quick-picks-collapse">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="quick-picks-header-icon"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg>
+    <span class="quick-picks-header-label">Vitrin</span>
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="quick-picks-chevron"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div id="quick-picks-collapse" class="quick-picks-collapse">
+  <div class="quick-picks-body">
+  <p class="quick-picks-tagline">Ekibimizin düzenli olarak test ettiği ve güvenle önerdiği araçlar.</p>
+  <a href="https://go.nordvpn.net/aff_c?offer_id=15&aff_id=153130&url_id=902" target="_blank" rel="noopener sponsored" class="quick-picks-item">
+    <img src="/static/logos/nordvpn.svg" alt="NordVPN" loading="lazy" width="28" height="28" onerror="logoFallback(this,'nordvpn.com','N')">
+    <div class="quick-picks-item-text">
+      <span class="quick-picks-item-name">NordVPN</span>
+      <span class="quick-picks-item-desc">Veri gizliliğinizi koruyun</span>
+    </div>
+  </a>
+  <a href="https://go.nordpass.io/aff_c?offer_id=488&aff_id=153130&url_id=9356" target="_blank" rel="noopener sponsored" class="quick-picks-item">
+    <img src="/static/logos/nordpass.svg" alt="NordPass" loading="lazy" width="28" height="28" onerror="logoFallback(this,'nordpass.com','N')">
+    <div class="quick-picks-item-text">
+      <span class="quick-picks-item-name">NordPass</span>
+      <span class="quick-picks-item-desc">Şifrelerinizi güvenle saklayın</span>
+    </div>
+  </a>
+  <a href="https://systeme.io/tur?sa=sa0277271591001adea25eec4ebbb71dfce34fe226" target="_blank" rel="noopener sponsored" class="quick-picks-item">
+    <img src="https://d1yei2z3i6k35z.cloudfront.net/161/60ad0a3995f79_socialN.png" alt="Systeme.io" loading="lazy" width="28" height="28" onerror="logoFallback(this,'systeme.io','S')">
+    <div class="quick-picks-item-text">
+      <span class="quick-picks-item-name">Systeme.io</span>
+      <span class="quick-picks-item-desc">Pazarlamayı tek platformda topla</span>
+    </div>
+  </a>
+  {% for p in showcase_products %}
+  <a href="{{ url_for('detail', slug=p.slug) }}" class="quick-picks-item">
+    {% if p.thumbnail %}
+    <img src="{{ p.thumbnail }}" alt="{{ p.original_name }}" loading="lazy" width="28" height="28">
+    {% else %}
+    <span class="leaderboard-logo-fallback" style="width:28px;height:28px;font-size:0.8rem;">{{ p.original_name[0]|upper }}</span>
+    {% endif %}
+    <div class="quick-picks-item-text">
+      <span class="quick-picks-item-name">{{ p.original_name }}</span>
+      <span class="quick-picks-item-desc">{{ p.summary_tr|smart_truncate(32) }}</span>
+    </div>
+  </a>
+  {% endfor %}
+  </div>
+  </div>
+</div>
+<script>
+(function () {
+  // Vitrin basligi ("Vitrin" yazisi + ikon) artik TEK tiklanabilir alan -
+  // ayri bir kucultme kutusu yok. Icerik CSS grid-template-rows 0fr<->1fr
+  // teknigiyle akici bir sekilde acilip kapaniyor (JS ile yukseklik olcmeye
+  // gerek yok, saf CSS transition). VARSAYILAN artik HEM mobilde HEM
+  // masaustunde KAPALI baslar (kucuk pill) - eskiden masaustunde acik
+  // basliyordu ve sabit konumlandigi icin ("Ocak Cikan Araclar" basligi,
+  // urun kartlari, "Kategoriler" basligi vb.) sayfa icerigini kapsiyordu.
+  // Tiklaninca hala aciliyor, affiliate gelir ozelligi degismedi. Tercih
+  // sessionStorage'da tutulur, sayfa gezisinde korunur.
+  var widget = document.getElementById("quick-picks");
+  var toggleBtn = document.getElementById("quick-picks-toggle");
+  if (!widget || !toggleBtn) return;
+  var KEY = "quick_picks_collapsed";
+  var saved = sessionStorage.getItem(KEY);
+  var startCollapsed = saved !== null ? saved === "1" : true;
+  function apply(collapsed) {
+    widget.classList.toggle("quick-picks-collapsed", collapsed);
+    toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  }
+  apply(startCollapsed);
+  toggleBtn.addEventListener("click", function () {
+    var nowCollapsed = !widget.classList.contains("quick-picks-collapsed");
+    apply(nowCollapsed);
+    sessionStorage.setItem(KEY, nowCollapsed ? "1" : "0");
+  });
+})();
+</script>
+{% endif %}
+
+
+<script>
+document.getElementById("newsletter-form").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const email = document.getElementById("newsletter-email").value;
+  const msg = document.getElementById("newsletter-msg");
+  try {
+    const res = await fetch("/abone", {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-Requested-With": "fetch"},
+      body: JSON.stringify({email: email}),
+    });
+    const data = await res.json();
+    msg.textContent = data.message;
+    msg.style.color = data.ok ? "var(--accent, #6366f1)" : "#e05252";
+    if (data.ok) document.getElementById("newsletter-email").value = "";
+  } catch (err) {
+    msg.textContent = "Bir şeyler ters gitti, tekrar dene.";
+    msg.style.color = "#e05252";
+  }
+});
+</script>
+
+<button id="scroll-top" class="scroll-top" aria-label="Yukarı çık">↑</button>
+
 <div id="cookie-consent" class="cookie-consent" role="dialog" aria-label="Çerez onayı">
   <div class="cookie-consent-inner">
     <p class="cookie-consent-text">
       🍪 Bu site, size daha iyi bir deneyim sunmak ve <strong>Google AdSense</strong> aracılığıyla
-      ilgi alanlarınıza uygun reklamlar gösterebilmek için çerezler kullanır.
+      ilgi alanlarınıza uygun reklamlar gösterebilmek için çerezler kullanır. Devam ederek
+      <a href="/gizlilik">Gizlilik Politikamızı</a> kabul etmiş olursunuz.
     </p>
     <div class="cookie-consent-actions">
-      <button id="cookie-accept" class="btn btn-primary btn-sm">Tüm Çerezleri Kabul Et</button>
-      <button id="cookie-decline" class="btn btn-sm">Sadece Gerekli Çerezler</button>
+      <button id="cookie-accept" class="btn btn-primary btn-sm">Kabul Et</button>
+      <button id="cookie-decline" class="btn btn-sm">Sadece Gerekli Olanlar</button>
     </div>
   </div>
 </div>
 
-<script>
-  // Cookie consent ve AdSense entegrasyonu
-  document.addEventListener('DOMContentLoaded', function() {
-    const acceptBtn = document.getElementById('cookie-accept');
-    const declineBtn = document.getElementById('cookie-decline');
-    
-    // Kullanıcının önceki tercihini localStorage'ten al
-    const storedPreference = localStorage.getItem('cookie_consent_preference');
-    
-    if (storedPreference) {
-      applyConsentPreference(storedPreference);
-      // Banner'ı gizle
-      document.getElementById('cookie-consent').style.display = 'none';
-    }
-    
-    acceptBtn.addEventListener('click', function() {
-      // Tüm çerezleri kabul et - AdSense'i yükle
-      localStorage.setItem('cookie_consent_preference', 'all');
-      // GA4'i yükle
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX');
-      applyConsentPreference('all');
-      document.getElementById('cookie-consent').style.display = 'none';
-    });
-    
-    declineBtn.addEventListener('click', function() {
-      Sadece gerekli çerezleri kabul et - AdSense'i engelle
-      localStorage.setItem('cookie_consent_preference', 'necessary_only');
-      applyConsentPreference('necessary_only');
-      document.getElementById('cookie-consent').style.display = 'none';
-    });
-  });
-  
-  function applyConsentPreference(preference) {
-    if (preference === 'all') {
-      // AdSense scriptini yükle ve başlat
-      // async attribute'li loaded olana kadar bekle
-      var script = document.createElement('script');
-      script.async = true;
-      script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6584482528556827';
-      script.crossOrigin = 'anonymous';
-      
-      script.onload = function() {
-        // Adsense initialized
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-      };
-      
-      document.body.appendChild(script);
-    } else if (preference === 'necessary_only') {
-      // AdSense scriptini engelle - display:none veya body'siz tut
-      // Veya zaten var olan script'i kaldır
-      var existingScript = document.querySelector('script[src*="pagead2.googlesync"]');
-      if (existingScript) {
-        existingScript.remove();
-      }
-      // Alternative: script'i body'sinEklemeden önce kaldır
-      var scripts = document.querySelectorAll('script[src*="pagead2.googlesync"]');
-      scripts.forEach(function(s) {
-        s.parentNode.removeChild(s);
-      });
-    }
-  }
-</script>
+<div id="lightbox-overlay" class="lightbox-overlay">
+  <button id="lightbox-close" class="lightbox-close" aria-label="Kapat">✕</button>
+  <button id="lightbox-prev" class="lightbox-nav lightbox-prev" aria-label="Önceki">‹</button>
+  <img id="lightbox-img" class="lightbox-img" src="" alt="">
+  <button id="lightbox-next" class="lightbox-nav lightbox-next" aria-label="Sonraki">›</button>
 </div>
+
+<script src="/static/app.js" defer></script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
